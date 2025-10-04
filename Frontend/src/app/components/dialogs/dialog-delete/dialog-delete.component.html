@@ -1,0 +1,48 @@
+<div class="p-4">
+  <h2 mat-dialog-title class="text-xl font-semibold text-gray-800">
+    <span class="inline-flex gap-4">
+      <i
+        class="fas text-3xl"
+        [class]="
+          data.itemType === 'folder'
+            ? 'fa-folder-minus text-orange-500'
+            : 'fa-trash text-red-500'
+        ">
+      </i>
+      {{ data.title }}
+    </span>
+  </h2>
+
+  <div mat-dialog-content>
+    <p class="text-gray-600 mb-4">{{ data.message }}</p>
+    <div class="flex items-center mb-4">
+      <i
+        class="fas mr-2 fa-2x"
+        [ngClass]="{
+          'fa-folder': data.itemType === 'folder',
+          'fa-file': data.itemType === 'note',
+        }"></i>
+      <strong class="text-gray-800 text-2xl">{{ data.itemName }}</strong>
+    </div>
+
+    @if (data.itemType === 'folder') {
+      <div
+        class="bg-orange-50 p-3 rounded-lg border-l-4 border-orange-500 flex items-center gap-2">
+        <i class="fas fa-info-circle text-orange-500"></i>
+        <span class="text-orange-700 text-sm font-medium">
+          This will also delete all notes inside this folder.
+        </span>
+      </div>
+    }
+  </div>
+
+  <div class="flex justify-between">
+    <button class="btn btn-ghost" (click)="onCancel()" type="button">
+      Cancel
+    </button>
+    <button class="btn btn-error" (click)="onConfirm()" type="button">
+      <i class="fas fa-trash mr-2"></i>
+      {{ confirmButtonText }}
+    </button>
+  </div>
+</div>
