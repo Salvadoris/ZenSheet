@@ -5,7 +5,6 @@ import {
   effect,
   inject,
   input,
-  signal,
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -14,7 +13,9 @@ import Quill from 'quill';
 
 import { Note } from '../../interfaces/note.model';
 import { NotesService } from '../../services/notes.service';
-
+interface QuillModules {
+  toolbar: string;
+}
 @Component({
   selector: 'app-editor',
   imports: [CommonModule, QuillEditorComponent, FormsModule],
@@ -24,43 +25,64 @@ import { NotesService } from '../../services/notes.service';
 })
 export class EditorComponent {
   #notesService = inject(NotesService);
-
   readonly editor = viewChild.required<QuillEditorComponent>('editor');
   readonly note = input.required<Note>();
-
-  readonly storedNote = signal<Note | null>(null);
-
-  modules = {
-    toolbar: '#quill-toolbar',
-  };
-
+  readonly modules: QuillModules = { toolbar: '#quill-toolbar' };
   constructor() {
     effect(() => {
-      const content = this.note().content;
-      if (content && this.editor()?.quillEditor) {
-        this.editor().quillEditor.setContents(content);
-      }
+      this.syncContentWithEditor();
     });
   }
-
-  onEditorCreated(quill: Quill) {
-    const content = this.note().content;
-    if (content) {
-      quill.setContents(content);
+  private syncContentWithEditor() {
+    const currentNote = this.note();
+    const editorComponent = this.editor();
+    if (editorComponent?.quillEditor) {
+      try {
+        const folders = this.#notesService.getFolders();
+        const note = folders
+          .flatMap(folder => folder.notes)
+          .find(note => note.id === currentNote.id);
+        const content = note?.content || currentNote.content;
+        if (content) {
+          editorComponent.quillEditor.setContents(content);
+        }
+      } catch (error) {
+        console.error('Failed to sync content with editor:', error);
+      }
     }
   }
-
+  onEditorCreated(quill: Quill) {
+    const currentNote = this.note();
+    try {
+      const folders = this.#notesService.getFolders();
+      const note = folders
+        .flatMap(folder => folder.notes)
+        .find(note => note.id === currentNote.id);
+      const content = note?.content || currentNote.content;
+      if (content) {
+        quill.setContents(content);
+      }
+    } catch (error) {
+      console.error('Failed to set initial content:', error);
+    }
+  }
   onContentChanged(event: ContentChange) {
     if (event.source !== 'user') return;
-
+    this.updateNoteContent();
+  }
+  private updateNoteContent() {
     const editorComponent = this.editor();
-    if (editorComponent && editorComponent.quillEditor) {
-      const delta = editorComponent.quillEditor.getContents();
-      this.#notesService.updateNoteContent(
-        this.note().parentFolderId,
-        this.note().id,
-        delta
-      );
+    if (editorComponent?.quillEditor) {
+      try {
+        const delta = editorComponent.quillEditor.getContents();
+        this.#notesService.updateNoteContent(
+          this.note().parentFolderId,
+          this.note().id,
+          delta
+        );
+      } catch (error) {
+        console.error('Failed to update note content:', error);
+      }
     }
   }
 }

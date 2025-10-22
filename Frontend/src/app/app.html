@@ -1,6 +1,6 @@
 <div class="flex h-screen">
   <app-sidebar
-    class="absolute left-5 top-5 z-10"
+    class="relative p-5"
     (noteSelected)="onNoteSelected($event.note)">
   </app-sidebar>
 
@@ -31,5 +31,3 @@
     }
   </div>
 </div>
-
-{{ selectedNote() | json }}

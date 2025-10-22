@@ -53,7 +53,12 @@ export class App implements OnInit {
   }
 
   onNoteSelected(note: Note) {
-    this.selectedNote.set(note);
+    const folders = this.#notesService.getFolders();
+    const selectedNote = folders
+      .flatMap(folder => folder.notes)
+      .find(n => n.id === note.id);
+
+    this.selectedNote.set(selectedNote || note);
   }
 
   refreshSelectedNote() {
