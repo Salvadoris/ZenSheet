@@ -3,9 +3,9 @@ import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { QuillModule } from 'ngx-quill';
 
 import { EditorComponent } from './components/editor/editor.component';
-import { SidebarComponent } from './components/sidebar/sidebar.component';
-import { ToolbarComponent } from './components/toolbar/toolbar.component';
 import { Note } from './interfaces/note.model';
+import { SidebarComponent } from './layout/sidebar/sidebar.component';
+import { ToolbarComponent } from './layout/toolbar/toolbar.component';
 import { NotesService } from './services/notes.service';
 
 @Component({
