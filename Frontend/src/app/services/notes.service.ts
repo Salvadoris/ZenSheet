@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { Folder, Note } from '../interfaces/note.model';
 import { Delta } from 'quill';
+
+import { Folder, Note } from '../interfaces/note.model';
 
 @Injectable({
   providedIn: 'root',
