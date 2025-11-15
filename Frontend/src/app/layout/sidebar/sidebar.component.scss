@@ -1,4 +1,10 @@
 :host {
   display: block;
-  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+:host.sidebar-hidden {
+  pointer-events: none;
 }
