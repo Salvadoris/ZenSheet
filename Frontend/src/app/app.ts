@@ -2,8 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { QuillModule } from 'ngx-quill';
 
-import { EditorComponent } from './components/editor/editor.component';
 import { Note } from './interfaces/note.model';
+import { CanvasComponent } from './layout/canvas/canvas.component';
 import { SidebarComponent } from './layout/sidebar/sidebar.component';
 import { ToolbarComponent } from './layout/toolbar/toolbar.component';
 import { NotesService } from './services/notes.service';
@@ -14,8 +14,8 @@ import { NotesService } from './services/notes.service';
     CommonModule,
     SidebarComponent,
     ToolbarComponent,
-    EditorComponent,
     QuillModule,
+    CanvasComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
