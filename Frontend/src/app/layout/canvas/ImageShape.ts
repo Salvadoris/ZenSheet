@@ -1,4 +1,5 @@
 import { Point } from './Point';
+import { Rect } from './Rect';
 import { Shape } from './Shape';
 
 export class ImageShape extends Shape {
@@ -10,7 +11,8 @@ export class ImageShape extends Shape {
     this.img.src = src;
   }
 
-  override render(ctx: CanvasRenderingContext2D): void {
+  override render(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
+    super.render(ctx, canvasRect);
     if (this.loaded) {
       this.drawImage(ctx);
     } else {
@@ -22,16 +24,26 @@ export class ImageShape extends Shape {
   }
 
   private drawImage(ctx: CanvasRenderingContext2D) {
-    ctx.drawImage(this.img, this.originX, this.originY, this.width, this.height);
+    ctx.drawImage(
+      this.img,
+      this.originX,
+      this.originY,
+      this.width,
+      this.height
+    );
   }
 
   override path(): Path2D {
-    let path = new Path2D();
+    const path = new Path2D();
     path.rect(this.originX, this.originY, this.width, this.height);
     return path;
   }
 
-  override pointInside(ctx: CanvasRenderingContext2D, x: number, y: number): boolean {
+  override pointInside(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number
+  ): boolean {
     return ctx.isPointInPath(this.path(), x, y);
   }
 }

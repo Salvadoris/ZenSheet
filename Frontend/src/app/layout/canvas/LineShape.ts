@@ -33,27 +33,34 @@ export class LineShape extends Shape {
     const height = maxY(points, lineWidth) - originY;
     super([originX, originY], width, height);
 
-    const pts: Point[] = points.map((p) => [p[0] - originX, p[1] - originY]);
+    const pts: Point[] = points.map(p => [p[0] - originX, p[1] - originY]);
     this.points = pts;
-    this.chunks = getLineChunks({ rect: [0, 0, width, height], visible: false }, pts, lineWidth);
+    this.chunks = getLineChunks(
+      { rect: [0, 0, width, height], visible: false },
+      pts,
+      lineWidth
+    );
 
     let segmentPoints: Point[] = [];
     let prevChunkIdx = -1;
-    for (let i = 0; i < pts.length; i++) {
+    for (const p of pts) {
       let chunkIdx = -1;
       for (let j = 0; j < this.chunks.length; j++) {
-        if (pointInsideRect(pts[i], this.chunks[j].rect)) {
+        if (pointInsideRect(p, this.chunks[j].rect)) {
           chunkIdx = j;
           break;
         }
       }
       if (chunkIdx == prevChunkIdx) {
-        segmentPoints.push(pts[i]);
+        segmentPoints.push(p);
       } else {
         if (segmentPoints.length > 0) {
-          this.segments.push({ points: segmentPoints, chunkIndex: prevChunkIdx });
+          this.segments.push({
+            points: segmentPoints,
+            chunkIndex: prevChunkIdx,
+          });
         }
-        segmentPoints = [pts[i]];
+        segmentPoints = [p];
       }
       prevChunkIdx = chunkIdx;
     }
@@ -61,11 +68,12 @@ export class LineShape extends Shape {
   }
 
   override render(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
+    super.render(ctx, canvasRect);
     const xMin = (canvasRect[0] - this.originX) / this.scaleX;
     const yMin = (canvasRect[1] - this.originY) / this.scaleY;
     const xMax = (canvasRect[2] - this.originX) / this.scaleX;
     const yMax = (canvasRect[3] - this.originY) / this.scaleY;
-    const cvsRect: Rect = [
+    const localCanvasRect: Rect = [
       Math.min(xMin, xMax),
       Math.min(yMin, yMax),
       Math.max(xMin, xMax),
@@ -77,11 +85,11 @@ export class LineShape extends Shape {
     ctx.strokeStyle = this.color;
     ctx.lineJoin = 'round';
 
-    for (let i = 0; i < this.chunks.length; i++) {
-      if (rectsOverlap(this.chunks[i].rect, cvsRect)) {
-        this.chunks[i].visible = true;
+    for (const chunk of this.chunks) {
+      if (rectsOverlap(chunk.rect, localCanvasRect)) {
+        chunk.visible = true;
       } else {
-        this.chunks[i].visible = false;
+        chunk.visible = false;
       }
     }
 
@@ -89,18 +97,22 @@ export class LineShape extends Shape {
   }
 
   override path(): Path2D {
-    let path = new Path2D();
+    const path = new Path2D();
 
     let prevDrawn = false;
     let prevPoint: Point | null = null;
-    for (let i = 0; i < this.segments.length; i++) {
-      const segment = this.segments[i];
-      const draw = this.chunks[segment.chunkIndex] && this.chunks[segment.chunkIndex].visible;
+    for (const segment of this.segments) {
+      const draw =
+        this.chunks[segment.chunkIndex] &&
+        this.chunks[segment.chunkIndex].visible;
       if (draw) {
         let startIdx = 0;
         if (!prevDrawn) {
           if (prevPoint) {
-            path.moveTo(this.calcXToVisual(prevPoint[0]), this.calcYToVisual(prevPoint[1]));
+            path.moveTo(
+              this.calcXToVisual(prevPoint[0]),
+              this.calcYToVisual(prevPoint[1])
+            );
           } else {
             path.moveTo(
               this.calcXToVisual(segment.points[0][0]),
@@ -129,7 +141,11 @@ export class LineShape extends Shape {
     return path;
   }
 
-  override pointInside(ctx: CanvasRenderingContext2D, x: number, y: number): boolean {
+  override pointInside(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number
+  ): boolean {
     ctx.lineWidth = this.lineWidth;
     ctx.lineCap = this.cap;
     return ctx.isPointInStroke(this.path(), x, y);
@@ -147,21 +163,22 @@ function getLineChunks(
   chunk: Chunk,
   points: Point[],
   lineWidth: number,
-  maxPoints: number = 100
+  maxPoints = 100
 ): Chunk[] {
   if (points.length <= maxPoints) {
     return [chunk];
   }
-  const horizontal = chunk.rect[2] - chunk.rect[0] < chunk.rect[3] - chunk.rect[1];
+  const horizontal =
+    chunk.rect[2] - chunk.rect[0] < chunk.rect[3] - chunk.rect[1];
   if (horizontal) {
     const midY = (chunk.rect[1] + chunk.rect[3]) / 2;
-    let topPoints: Point[] = [];
-    let bottomPoints: Point[] = [];
-    for (let i = 0; i < points.length; i++) {
-      if (points[i][1] < midY) {
-        topPoints.push(points[i]);
+    const topPoints: Point[] = [];
+    const bottomPoints: Point[] = [];
+    for (const p of points) {
+      if (p[1] < midY) {
+        topPoints.push(p);
       } else {
-        bottomPoints.push(points[i]);
+        bottomPoints.push(p);
       }
     }
 
@@ -184,13 +201,13 @@ function getLineChunks(
     return [...topChunks, ...bottomChunks];
   } else {
     const midX = (chunk.rect[0] + chunk.rect[2]) / 2;
-    let leftPoints: Point[] = [];
-    let rightPoints: Point[] = [];
-    for (let i = 0; i < points.length; i++) {
-      if (points[i][0] < midX) {
-        leftPoints.push(points[i]);
+    const leftPoints: Point[] = [];
+    const rightPoints: Point[] = [];
+    for (const p of points) {
+      if (p[0] < midX) {
+        leftPoints.push(p);
       } else {
-        rightPoints.push(points[i]);
+        rightPoints.push(p);
       }
     }
 
@@ -234,41 +251,17 @@ function calcRect(points: Point[], lineWidth: number): Rect {
 }
 
 function minX(points: Point[], lineWidth: number) {
-  return (
-    Math.min.apply(
-      Math,
-      points.map((p) => p[0])
-    ) -
-    lineWidth / 2
-  );
+  return Math.min(...points.map(p => p[0])) - lineWidth / 2;
 }
 
 function minY(points: Point[], lineWidth: number) {
-  return (
-    Math.min.apply(
-      Math,
-      points.map((p) => p[1])
-    ) -
-    lineWidth / 2
-  );
+  return Math.min(...points.map(p => p[1])) - lineWidth / 2;
 }
 
 function maxX(points: Point[], lineWidth: number) {
-  return (
-    Math.max.apply(
-      Math,
-      points.map((p) => p[0])
-    ) +
-    lineWidth / 2
-  );
+  return Math.max(...points.map(p => p[0])) + lineWidth / 2;
 }
 
 function maxY(points: Point[], lineWidth: number) {
-  return (
-    Math.max.apply(
-      Math,
-      points.map((p) => p[1])
-    ) +
-    lineWidth / 2
-  );
+  return Math.max(...points.map(p => p[1])) + lineWidth / 2;
 }

@@ -1,3 +1,4 @@
+import { Point } from './Point';
 import { Rect } from './Rect';
 import { Shape } from './Shape';
 
@@ -14,6 +15,7 @@ export enum Resize {
 }
 
 export class SelectedShape {
+  shape!: Shape;
   topLine!: Path2D;
   bottomLine!: Path2D;
   leftLine!: Path2D;
@@ -22,78 +24,21 @@ export class SelectedShape {
   topRightCorner!: Path2D;
   bottomLeftCorner!: Path2D;
   bottomRightCorner!: Path2D;
-  width = 6;
+  lineWidth = 6;
   color = '#00c8';
   dragged = false;
   resized = Resize.None;
-  horizontalInverted = false;
-  verticallyInverted = false;
 
-  constructor(public shape: Shape) {}
-
-  setLines(canvasScale: number) {
-    const width = this.width / canvasScale;
-    this.topLine = new Path2D();
-    this.topLine.rect(
-      this.shape.originX,
-      this.shape.originY,
-      this.shape.width,
-      this.verticallyInverted ? width : -width
-    );
-    this.bottomLine = new Path2D();
-    this.bottomLine.rect(
-      this.shape.originX,
-      this.shape.originY + this.shape.height,
-      this.shape.width,
-      this.verticallyInverted ? -width : width
-    );
-    this.leftLine = new Path2D();
-    this.leftLine.rect(
-      this.shape.originX,
-      this.shape.originY,
-      this.horizontalInverted ? width : -width,
-      this.shape.height
-    );
-    this.rightLine = new Path2D();
-    this.rightLine.rect(
-      this.shape.originX + this.shape.width,
-      this.shape.originY,
-      this.horizontalInverted ? -width : width,
-      this.shape.height
-    );
-    this.topLeftCorner = new Path2D();
-    this.topLeftCorner.rect(
-      this.shape.originX,
-      this.shape.originY,
-      this.horizontalInverted ? width : -width,
-      this.verticallyInverted ? width : -width
-    );
-    this.topRightCorner = new Path2D();
-    this.topRightCorner.rect(
-      this.shape.originX + this.shape.width,
-      this.shape.originY,
-      this.horizontalInverted ? -width : width,
-      this.verticallyInverted ? width : -width
-    );
-    this.bottomLeftCorner = new Path2D();
-    this.bottomLeftCorner.rect(
-      this.shape.originX,
-      this.shape.originY + this.shape.height,
-      this.horizontalInverted ? width : -width,
-      this.verticallyInverted ? -width : width
-    );
-    this.bottomRightCorner = new Path2D();
-    this.bottomRightCorner.rect(
-      this.shape.originX + this.shape.width,
-      this.shape.originY + this.shape.height,
-      this.horizontalInverted ? -width : width,
-      this.verticallyInverted ? -width : width
-    );
+  constructor(shape: Shape) {
+    this.shape = shape;
   }
 
-  render(ctx: CanvasRenderingContext2D, canvasScale: number, canvasRect: Rect) {
-    this.horizontalInverted = this.shape.width < 0;
-    this.verticallyInverted = this.shape.height < 0;
+  render(
+    ctx: CanvasRenderingContext2D,
+    canvasScale: number,
+    canvasRect: Rect
+  ): void {
+    this.shape.render(ctx, canvasRect);
     ctx.fillStyle = this.color;
     ctx.strokeStyle = this.color;
     this.setLines(canvasScale);
@@ -105,49 +50,53 @@ export class SelectedShape {
     ctx.fill(this.topRightCorner);
     ctx.fill(this.bottomLeftCorner);
     ctx.fill(this.bottomRightCorner);
-    this.shape.render(ctx, canvasRect);
   }
 
   move(dx: number, dy: number): void {
     this.shape.move(dx, dy);
   }
 
-  resize(dx: number, dy: number) {
+  resize(p: Point) {
     switch (this.resized) {
       case Resize.Top:
-        this.shape.resizeTop(dy);
+        this.shape.resizeTop(p[1]);
         break;
       case Resize.Bottom:
-        this.shape.resizeBottom(dy);
+        this.shape.resizeBottom(p[1]);
         break;
       case Resize.Left:
-        this.shape.resizeLeft(dx);
+        this.shape.resizeLeft(p[0]);
         break;
       case Resize.Right:
-        this.shape.resizeRight(dx);
+        this.shape.resizeRight(p[0]);
         break;
       case Resize.TopLeft:
-        this.shape.resizeTop(dy);
-        this.shape.resizeLeft(dx);
+        this.shape.resizeTop(p[1]);
+        this.shape.resizeLeft(p[0]);
         break;
       case Resize.TopRight:
-        this.shape.resizeTop(dy);
-        this.shape.resizeRight(dx);
+        this.shape.resizeTop(p[1]);
+        this.shape.resizeRight(p[0]);
         break;
       case Resize.BottomLeft:
-        this.shape.resizeBottom(dy);
-        this.shape.resizeLeft(dx);
+        this.shape.resizeBottom(p[1]);
+        this.shape.resizeLeft(p[0]);
         break;
       case Resize.BottomRight:
-        this.shape.resizeBottom(dy);
-        this.shape.resizeRight(dx);
+        this.shape.resizeBottom(p[1]);
+        this.shape.resizeRight(p[0]);
         break;
     }
   }
 
   path() {
-    let path = new Path2D();
-    path.rect(this.shape.originX, this.shape.originY, this.shape.width, this.shape.height);
+    const path = new Path2D();
+    path.rect(
+      this.shape.originX,
+      this.shape.originY,
+      this.shape.width,
+      this.shape.height
+    );
     return path;
   }
 
@@ -175,7 +124,71 @@ export class SelectedShape {
   pointOnBottomLeftCorner(ctx: CanvasRenderingContext2D, x: number, y: number) {
     return ctx.isPointInPath(this.bottomLeftCorner, x, y);
   }
-  pointOnBottomRightCorner(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  pointOnBottomRightCorner(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number
+  ) {
     return ctx.isPointInPath(this.bottomRightCorner, x, y);
+  }
+
+  setLines(canvasScale: number) {
+    const lineWidth = this.lineWidth / canvasScale;
+    this.topLine = new Path2D();
+    this.topLine.rect(
+      this.shape.originX,
+      this.shape.originY,
+      this.shape.width,
+      this.shape.verticallyInverted ? lineWidth : -lineWidth
+    );
+    this.bottomLine = new Path2D();
+    this.bottomLine.rect(
+      this.shape.originX,
+      this.shape.originY + this.shape.height,
+      this.shape.width,
+      this.shape.verticallyInverted ? -lineWidth : lineWidth
+    );
+    this.leftLine = new Path2D();
+    this.leftLine.rect(
+      this.shape.originX,
+      this.shape.originY,
+      this.shape.horizontalInverted ? lineWidth : -lineWidth,
+      this.shape.height
+    );
+    this.rightLine = new Path2D();
+    this.rightLine.rect(
+      this.shape.originX + this.shape.width,
+      this.shape.originY,
+      this.shape.horizontalInverted ? -lineWidth : lineWidth,
+      this.shape.height
+    );
+    this.topLeftCorner = new Path2D();
+    this.topLeftCorner.rect(
+      this.shape.originX,
+      this.shape.originY,
+      this.shape.horizontalInverted ? lineWidth : -lineWidth,
+      this.shape.verticallyInverted ? lineWidth : -lineWidth
+    );
+    this.topRightCorner = new Path2D();
+    this.topRightCorner.rect(
+      this.shape.originX + this.shape.width,
+      this.shape.originY,
+      this.shape.horizontalInverted ? -lineWidth : lineWidth,
+      this.shape.verticallyInverted ? lineWidth : -lineWidth
+    );
+    this.bottomLeftCorner = new Path2D();
+    this.bottomLeftCorner.rect(
+      this.shape.originX,
+      this.shape.originY + this.shape.height,
+      this.shape.horizontalInverted ? lineWidth : -lineWidth,
+      this.shape.verticallyInverted ? -lineWidth : lineWidth
+    );
+    this.bottomRightCorner = new Path2D();
+    this.bottomRightCorner.rect(
+      this.shape.originX + this.shape.width,
+      this.shape.originY + this.shape.height,
+      this.shape.horizontalInverted ? -lineWidth : lineWidth,
+      this.shape.verticallyInverted ? -lineWidth : lineWidth
+    );
   }
 }

@@ -13,7 +13,9 @@ import { FilledRectDrawing } from './FilledRectDrawing';
 import { LineDrawing, smoothLine } from './LineDrawing';
 import { Point } from './Point';
 import { Rect } from './Rect';
+import { SelectedMultiShape } from './SelectedMultiShape';
 import { SelectedShape, Resize } from './SelectedShape';
+import { SelectRect } from './SelectRect';
 import { Shape } from './Shape';
 import { StrokedRectDrawing } from './StrokedRectDrawing';
 
@@ -39,7 +41,9 @@ export class CanvasComponent implements AfterViewInit {
   private shapes: Shape[] = [];
   private drawings: Drawing[] = [];
   private currentDrawing: Drawing | null = null;
-  private selectedShape: SelectedShape | null = null;
+
+  private selectedShape: SelectedShape | SelectedMultiShape | null = null;
+  private selectRect: SelectRect | null = null;
 
   private scale = 1;
   private prevScale = 1;
@@ -105,24 +109,55 @@ export class CanvasComponent implements AfterViewInit {
     }
   }
 
-  selectShape(shape: Shape) {
+  selectSingleShape(shape: Shape) {
+    this.unSelectShape();
     const idx = this.shapes.indexOf(shape);
     if (idx !== -1) {
       this.shapes.splice(idx, 1);
     }
-    if (this.selectedShape) {
-      this.shapes.push(this.selectedShape.shape);
-      this.selectedShape.shape = shape;
+    this.selectedShape = new SelectedShape(shape);
+  }
+
+  selectAdditionalShape(shape: Shape) {
+    const idx = this.shapes.indexOf(shape);
+    if (idx !== -1) {
+      this.shapes.splice(idx, 1);
+    }
+    if (
+      this.selectedShape &&
+      this.selectedShape instanceof SelectedMultiShape
+    ) {
+      this.selectedShape.shape.addShape(shape);
+    } else if (this.selectedShape) {
+      const firstShape = this.selectedShape.shape;
+      this.selectedShape = new SelectedMultiShape([firstShape, shape]);
     } else {
-      this.selectedShape = new SelectedShape(shape);
+      this.selectedShape = new SelectedMultiShape([shape]);
+    }
+  }
+
+  selectedMultipleShapes(shapes: Shape[]) {
+    if (shapes.length > 0) {
+      if (shapes.length == 1) {
+        this.selectSingleShape(shapes[0]);
+      } else {
+        this.shapes = this.shapes.filter(shape => !shapes.includes(shape));
+        this.selectedShape = new SelectedMultiShape(shapes);
+      }
     }
   }
 
   unSelectShape() {
     if (this.selectedShape) {
-      this.shapes.push(this.selectedShape.shape);
+      if (this.selectedShape instanceof SelectedMultiShape) {
+        for (const shape of this.selectedShape.shape.shapes) {
+          this.shapes.push(shape);
+        }
+        this.selectedShape.shape.removeAllShapes();
+      } else {
+        this.shapes.push(this.selectedShape.shape);
+      }
       this.selectedShape = null;
-      this.renderCanvas(true, true);
     }
   }
 
@@ -249,7 +284,7 @@ export class CanvasComponent implements AfterViewInit {
     const originX = -this.origin[0] / this.scale;
     const originY = -this.origin[1] / this.scale;
     const xMax = originX + window.innerWidth / this.scale;
-    const yMax = originY + window.innerWidth / this.scale;
+    const yMax = originY + window.innerHeight / this.scale;
     this.trueRect = [originX, originY, xMax, yMax];
 
     if (main) {
@@ -266,12 +301,6 @@ export class CanvasComponent implements AfterViewInit {
 
       this.mainCtx.translate(this.origin[0], this.origin[1]);
       this.mainCtx.scale(this.scale, this.scale);
-
-      // for (let i = 0; i < this.shapes.length; i++) {
-      //   if (this.shapeInside(this.shapes[i])) {
-      //     this.shapes[i].render(this.mainCtx, this.trueRect);
-      //   }
-      // }
       for (const shape of this.shapes) {
         if (this.shapeInside(shape)) {
           shape.render(this.mainCtx, this.trueRect);
@@ -296,14 +325,14 @@ export class CanvasComponent implements AfterViewInit {
       this.tmpCtx.translate(this.origin[0], this.origin[1]);
       this.tmpCtx.scale(this.scale, this.scale);
 
-      // for (let i = 0; i < this.drawings.length; i++) {
-      //   this.drawings[i].render(this.tmpCtx);
-      // }
       for (const drawing of this.drawings) {
         drawing.render(this.tmpCtx);
       }
       if (this.selectedShape) {
         this.selectedShape.render(this.tmpCtx, this.scale, this.trueRect);
+      }
+      if (this.selectRect) {
+        this.selectRect.render(this.tmpCtx, this.scale);
       }
 
       this.tmpCtx.restore();
@@ -388,9 +417,30 @@ export class CanvasComponent implements AfterViewInit {
       this.tmpCtx.canvas.style.cursor = 'grabbing';
     }
 
-    if (this.leftMouseDown) {
+    if (this.leftMouseDown && this.mode == Mode.Select) {
+      const gotSelectedShape = this.mouseDownSelectedShape();
+      if (!gotSelectedShape) {
+        const shape = this.findSelectedShape(this.cursor);
+        if (shape) {
+          if (event.shiftKey && this.selectedShape) {
+            this.selectAdditionalShape(shape);
+          } else {
+            this.selectSingleShape(shape);
+          }
+          if (this.selectedShape) {
+            this.selectedShape.dragged = true;
+          }
+        } else {
+          this.unSelectShape();
+        }
+      }
+    }
+    this.renderCanvas(true, true);
+  };
+
+  mouseDownSelectedShape(): boolean {
+    if (this.selectedShape) {
       if (
-        this.selectedShape &&
         this.selectedShape.pointInside(
           this.mainCtx,
           this.cursor[0],
@@ -398,8 +448,9 @@ export class CanvasComponent implements AfterViewInit {
         )
       ) {
         this.selectedShape.dragged = true;
-      } else if (
-        this.selectedShape &&
+        return true;
+      }
+      if (
         this.selectedShape.pointOnTopLine(
           this.mainCtx,
           this.cursor[0],
@@ -407,8 +458,9 @@ export class CanvasComponent implements AfterViewInit {
         )
       ) {
         this.selectedShape.resized = Resize.Top;
-      } else if (
-        this.selectedShape &&
+        return true;
+      }
+      if (
         this.selectedShape.pointOnBottomLine(
           this.mainCtx,
           this.cursor[0],
@@ -416,8 +468,9 @@ export class CanvasComponent implements AfterViewInit {
         )
       ) {
         this.selectedShape.resized = Resize.Bottom;
-      } else if (
-        this.selectedShape &&
+        return true;
+      }
+      if (
         this.selectedShape.pointOnLeftLine(
           this.mainCtx,
           this.cursor[0],
@@ -425,8 +478,9 @@ export class CanvasComponent implements AfterViewInit {
         )
       ) {
         this.selectedShape.resized = Resize.Left;
-      } else if (
-        this.selectedShape &&
+        return true;
+      }
+      if (
         this.selectedShape.pointOnRightLine(
           this.mainCtx,
           this.cursor[0],
@@ -434,8 +488,9 @@ export class CanvasComponent implements AfterViewInit {
         )
       ) {
         this.selectedShape.resized = Resize.Right;
-      } else if (
-        this.selectedShape &&
+        return true;
+      }
+      if (
         this.selectedShape.pointOnTopLeftCorner(
           this.mainCtx,
           this.cursor[0],
@@ -443,8 +498,9 @@ export class CanvasComponent implements AfterViewInit {
         )
       ) {
         this.selectedShape.resized = Resize.TopLeft;
-      } else if (
-        this.selectedShape &&
+        return true;
+      }
+      if (
         this.selectedShape.pointOnTopRightCorner(
           this.mainCtx,
           this.cursor[0],
@@ -452,8 +508,9 @@ export class CanvasComponent implements AfterViewInit {
         )
       ) {
         this.selectedShape.resized = Resize.TopRight;
-      } else if (
-        this.selectedShape &&
+        return true;
+      }
+      if (
         this.selectedShape.pointOnBottomLeftCorner(
           this.mainCtx,
           this.cursor[0],
@@ -461,8 +518,9 @@ export class CanvasComponent implements AfterViewInit {
         )
       ) {
         this.selectedShape.resized = Resize.BottomLeft;
-      } else if (
-        this.selectedShape &&
+        return true;
+      }
+      if (
         this.selectedShape.pointOnBottomRightCorner(
           this.mainCtx,
           this.cursor[0],
@@ -470,24 +528,11 @@ export class CanvasComponent implements AfterViewInit {
         )
       ) {
         this.selectedShape.resized = Resize.BottomRight;
-      } else {
-        if (this.mode == Mode.Select) {
-          const shape = this.findSelectedShape(this.cursor);
-          if (shape) {
-            this.selectShape(shape);
-            if (this.selectedShape) {
-              this.selectedShape.dragged = true;
-            }
-          } else {
-            this.unSelectShape();
-          }
-        } else {
-          this.selectedShape = null;
-        }
+        return true;
       }
     }
-    this.renderCanvas(true, true);
-  };
+    return false;
+  }
 
   onHoveringMouseMove = (event: MouseEvent) => {
     event.preventDefault();
@@ -539,9 +584,15 @@ export class CanvasComponent implements AfterViewInit {
       }
       this.renderCanvas(true, true);
     }
-    if (this.selectedShape) {
-      this.selectedShape.dragged = false;
-      this.selectedShape.resized = Resize.None;
+    if (this.mode == Mode.Select) {
+      if (this.selectedShape) {
+        this.selectedShape.dragged = false;
+        this.selectedShape.resized = Resize.None;
+      }
+      if (this.selectRect) {
+        this.selectFromRect();
+        this.renderCanvas(false, true);
+      }
     }
     if (this.mode == Mode.Hand) {
       this.moveEnabled = true;
@@ -555,6 +606,32 @@ export class CanvasComponent implements AfterViewInit {
     this.firstMove = false;
     this.changeToHover();
   };
+
+  selectFromRect() {
+    if (this.selectRect) {
+      const trueSelectRect: Rect = [
+        Math.min(this.selectRect.p0[0], this.selectRect.p1[0]),
+        Math.min(this.selectRect.p0[1], this.selectRect.p1[1]),
+        Math.max(this.selectRect.p0[0], this.selectRect.p1[0]),
+        Math.max(this.selectRect.p0[1], this.selectRect.p1[1]),
+      ];
+      const shapes: Shape[] = [];
+      for (const shape of this.shapes) {
+        const shapeTrueRect = shape.trueRect();
+        if (
+          this.shapeInside(shape) &&
+          shapeTrueRect[0] >= trueSelectRect[0] &&
+          shapeTrueRect[1] >= trueSelectRect[1] &&
+          shapeTrueRect[2] <= trueSelectRect[2] &&
+          shapeTrueRect[3] <= trueSelectRect[3]
+        ) {
+          shapes.push(shape);
+        }
+      }
+      this.selectedMultipleShapes(shapes);
+      this.selectRect = null;
+    }
+  }
 
   findSelectedShape(p: Point): Shape | null {
     for (let i = this.shapes.length - 1; i >= 0; i--) {
@@ -617,16 +694,17 @@ export class CanvasComponent implements AfterViewInit {
   }
 
   mousePressSelectMode() {
-    if (this.selectedShape) {
-      if (this.selectedShape.dragged) {
-        const dx = this.cursor[0] - this.prevCursor[0];
-        const dy = this.cursor[1] - this.prevCursor[1];
-        this.selectedShape.move(dx, dy);
-      } else if (this.selectedShape.resized != Resize.None) {
-        const dx = this.cursor[0] - this.prevCursor[0];
-        const dy = this.cursor[1] - this.prevCursor[1];
-        this.selectedShape.resize(dx, dy);
-      }
+    if (this.selectedShape && this.selectedShape.dragged) {
+      const dx = this.cursor[0] - this.prevCursor[0];
+      const dy = this.cursor[1] - this.prevCursor[1];
+      this.selectedShape.move(dx, dy);
+    } else if (
+      this.selectedShape &&
+      this.selectedShape.resized != Resize.None
+    ) {
+      this.selectedShape.resize(this.cursor);
+    } else if (this.firstMove) {
+      this.selectRect = new SelectRect(this.startCursor, this.cursor);
     }
   }
 
@@ -682,8 +760,8 @@ export class CanvasComponent implements AfterViewInit {
         ))
     ) {
       if (
-        this.selectedShape.horizontalInverted !==
-        this.selectedShape.verticallyInverted
+        this.selectedShape.shape.horizontalInverted !==
+        this.selectedShape.shape.verticallyInverted
       ) {
         this.tmpCtx.canvas.style.cursor = 'nesw-resize';
       } else {
@@ -703,19 +781,15 @@ export class CanvasComponent implements AfterViewInit {
         ))
     ) {
       if (
-        this.selectedShape.horizontalInverted !==
-        this.selectedShape.verticallyInverted
+        this.selectedShape.shape.horizontalInverted !==
+        this.selectedShape.shape.verticallyInverted
       ) {
         this.tmpCtx.canvas.style.cursor = 'nwse-resize';
       } else {
         this.tmpCtx.canvas.style.cursor = 'nesw-resize';
       }
     } else if (this.mode == Mode.Select) {
-      const selectedShape = this.findSelectedShape(this.cursor);
-      if (
-        selectedShape &&
-        (!this.selectedShape || this.selectedShape.shape != selectedShape)
-      ) {
+      if (this.findSelectedShape(this.cursor)) {
         this.tmpCtx.canvas.style.cursor = 'move';
       } else {
         this.tmpCtx.canvas.style.cursor = 'default';
@@ -733,11 +807,12 @@ export class CanvasComponent implements AfterViewInit {
   }
 
   shapeInside(shape: Shape) {
-    return !(
-      shape.originX + shape.width < this.trueRect[0] ||
-      this.trueRect[2] < shape.originX ||
-      shape.originY + shape.height < this.trueRect[1] ||
-      this.trueRect[3] < shape.originY
-    );
+    return this.rectsOverlap(shape.trueRect(), this.trueRect);
+  }
+
+  rectsOverlap(a: Rect, b: Rect): boolean {
+    if (a[2] < b[0] || b[2] < a[0]) return false;
+    if (a[3] < b[1] || b[3] < a[1]) return false;
+    return true;
   }
 }
