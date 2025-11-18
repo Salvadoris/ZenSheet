@@ -11,26 +11,27 @@ export class GroupShape extends Shape {
     }
   }
 
-  override render(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
-    super.render(ctx, canvasRect);
+  override renderShape(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
+    const localCanvasRect: Rect = [
+      (canvasRect[0] - this.originX) / this.scaleX,
+      (canvasRect[1] - this.originY) / this.scaleY,
+      (canvasRect[2] - this.originX) / this.scaleX,
+      (canvasRect[3] - this.originY) / this.scaleY,
+    ];
     for (const shape of this.shapes) {
-      this.shapeToGlobal(shape);
-      shape.render(ctx, canvasRect);
-      this.shapeToLocal(shape);
+      shape.render(ctx, localCanvasRect);
     }
   }
 
   override path(): Path2D {
     const path = new Path2D();
     for (const shape of this.shapes) {
-      this.shapeToGlobal(shape);
       path.addPath(shape.path());
-      this.shapeToLocal(shape);
     }
     return path;
   }
 
-  override pointInside(
+  override pointInsideShape(
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number
@@ -41,8 +42,10 @@ export class GroupShape extends Shape {
   private shapeToLocal(globalShape: Shape) {
     globalShape.originX = (globalShape.originX - this.originX) / this.scaleX;
     globalShape.width /= this.scaleX;
+    globalShape.scaleX = globalShape.width / globalShape.originalWidth;
     globalShape.originY = (globalShape.originY - this.originY) / this.scaleY;
     globalShape.height /= this.scaleY;
+    globalShape.scaleY = globalShape.height / globalShape.originalHeight;
   }
 
   private shapeToGlobal(localShape: Shape) {

@@ -11,8 +11,7 @@ export class ImageShape extends Shape {
     this.img.src = src;
   }
 
-  override render(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
-    super.render(ctx, canvasRect);
+  override renderShape(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
     if (this.loaded) {
       this.drawImage(ctx);
     } else {
@@ -24,22 +23,16 @@ export class ImageShape extends Shape {
   }
 
   private drawImage(ctx: CanvasRenderingContext2D) {
-    ctx.drawImage(
-      this.img,
-      this.originX,
-      this.originY,
-      this.width,
-      this.height
-    );
+    ctx.drawImage(this.img, 0, 0, this.width, this.height);
   }
 
   override path(): Path2D {
     const path = new Path2D();
-    path.rect(this.originX, this.originY, this.width, this.height);
+    path.rect(0, 0, this.width, this.height);
     return path;
   }
 
-  override pointInside(
+  override pointInsideShape(
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number

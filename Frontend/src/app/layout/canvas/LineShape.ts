@@ -67,8 +67,7 @@ export class LineShape extends Shape {
     this.segments.push({ points: segmentPoints, chunkIndex: prevChunkIdx });
   }
 
-  override render(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
-    super.render(ctx, canvasRect);
+  override renderShape(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
     const xMin = (canvasRect[0] - this.originX) / this.scaleX;
     const yMin = (canvasRect[1] - this.originY) / this.scaleY;
     const xMax = (canvasRect[2] - this.originX) / this.scaleX;
@@ -109,30 +108,18 @@ export class LineShape extends Shape {
         let startIdx = 0;
         if (!prevDrawn) {
           if (prevPoint) {
-            path.moveTo(
-              this.calcXToVisual(prevPoint[0]),
-              this.calcYToVisual(prevPoint[1])
-            );
+            path.moveTo(prevPoint[0], prevPoint[1]);
           } else {
-            path.moveTo(
-              this.calcXToVisual(segment.points[0][0]),
-              this.calcYToVisual(segment.points[0][1])
-            );
+            path.moveTo(segment.points[0][0], segment.points[0][1]);
             startIdx = 1;
           }
         }
         for (let j = startIdx; j < segment.points.length; j++) {
-          path.lineTo(
-            this.calcXToVisual(segment.points[j][0]),
-            this.calcYToVisual(segment.points[j][1])
-          );
+          path.lineTo(segment.points[j][0], segment.points[j][1]);
         }
       } else {
         if (prevDrawn) {
-          path.lineTo(
-            this.calcXToVisual(segment.points[0][0]),
-            this.calcYToVisual(segment.points[0][1])
-          );
+          path.lineTo(segment.points[0][0], segment.points[0][1]);
         }
         prevPoint = segment.points[segment.points.length - 1];
       }
@@ -141,7 +128,7 @@ export class LineShape extends Shape {
     return path;
   }
 
-  override pointInside(
+  override pointInsideShape(
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number
@@ -149,13 +136,6 @@ export class LineShape extends Shape {
     ctx.lineWidth = this.lineWidth;
     ctx.lineCap = this.cap;
     return ctx.isPointInStroke(this.path(), x, y);
-  }
-
-  private calcXToVisual(x: number) {
-    return x * this.scaleX + this.originX;
-  }
-  private calcYToVisual(y: number) {
-    return y * this.scaleY + this.originY;
   }
 }
 

@@ -11,19 +11,18 @@ export class FilledRectShape extends Shape {
     super(p0, p1[0] - p0[0], p1[1] - p0[1]);
   }
 
-  override render(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
-    super.render(ctx, canvasRect);
+  override renderShape(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
     ctx.fillStyle = this.color;
     ctx.fill(this.path());
   }
 
   override path(): Path2D {
     const path = new Path2D();
-    path.rect(this.originX, this.originY, this.width, this.height);
+    path.rect(0, 0, this.originalWidth, this.originalHeight);
     return path;
   }
 
-  override pointInside(
+  override pointInsideShape(
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number

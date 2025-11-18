@@ -13,8 +13,7 @@ export class StrokedRectShape extends Shape {
     super(p0, p1[0] - p0[0], p1[1] - p0[1]);
   }
 
-  override render(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
-    super.render(ctx, canvasRect);
+  override renderShape(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
     ctx.lineWidth = this.lineWidth;
     ctx.lineCap = this.cap;
     ctx.strokeStyle = this.color;
@@ -26,23 +25,19 @@ export class StrokedRectShape extends Shape {
     const verticallyInverted = this.height < 0;
     const path = new Path2D();
     path.rect(
+      horizontalInverted ? -this.lineWidth / 2 : this.lineWidth / 2,
+      verticallyInverted ? -this.lineWidth / 2 : this.lineWidth / 2,
       horizontalInverted
-        ? this.originX - this.lineWidth / 2
-        : this.originX + this.lineWidth / 2,
+        ? this.originalWidth + this.lineWidth
+        : this.originalWidth - this.lineWidth,
       verticallyInverted
-        ? this.originY - this.lineWidth / 2
-        : this.originY + this.lineWidth / 2,
-      horizontalInverted
-        ? this.width + this.lineWidth
-        : this.width - this.lineWidth,
-      verticallyInverted
-        ? this.height + this.lineWidth
-        : this.height - this.lineWidth
+        ? this.originalHeight + this.lineWidth
+        : this.originalHeight - this.lineWidth
     );
     return path;
   }
 
-  override pointInside(
+  override pointInsideShape(
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number

@@ -35,7 +35,14 @@ export abstract class Shape {
   render(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
     this.horizontalInverted = this.width < 0;
     this.verticallyInverted = this.height < 0;
+    ctx.save();
+    ctx.translate(this.originX, this.originY);
+    ctx.scale(this.scaleX, this.scaleY);
+    this.renderShape(ctx, canvasRect);
+    ctx.restore();
   }
+
+  abstract renderShape(ctx: CanvasRenderingContext2D, canvasRect: Rect): void;
 
   move(dx: number, dy: number): void {
     this.originX += dx;
@@ -44,7 +51,16 @@ export abstract class Shape {
 
   abstract path(): Path2D;
 
-  abstract pointInside(
+  pointInside(ctx: CanvasRenderingContext2D, x: number, y: number): boolean {
+    ctx.save();
+    ctx.translate(this.originX, this.originY);
+    ctx.scale(this.scaleX, this.scaleY);
+    const inside = this.pointInsideShape(ctx, x, y);
+    ctx.restore();
+    return inside;
+  }
+
+  abstract pointInsideShape(
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number
