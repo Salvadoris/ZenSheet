@@ -333,6 +333,8 @@ export class CanvasComponent implements AfterViewInit {
       }
       if (this.selectRect) {
         this.selectRect.render(this.tmpCtx, this.scale);
+        const shapes = this.shapesInsideSelectRect();
+        this.selectRect.renderShapeOutlines(this.tmpCtx, this.scale, shapes);
       }
 
       this.tmpCtx.restore();
@@ -609,13 +611,20 @@ export class CanvasComponent implements AfterViewInit {
 
   selectFromRect() {
     if (this.selectRect) {
+      this.selectedMultipleShapes(this.shapesInsideSelectRect());
+      this.selectRect = null;
+    }
+  }
+
+  shapesInsideSelectRect() {
+    const shapes: Shape[] = [];
+    if (this.selectRect) {
       const trueSelectRect: Rect = [
         Math.min(this.selectRect.p0[0], this.selectRect.p1[0]),
         Math.min(this.selectRect.p0[1], this.selectRect.p1[1]),
         Math.max(this.selectRect.p0[0], this.selectRect.p1[0]),
         Math.max(this.selectRect.p0[1], this.selectRect.p1[1]),
       ];
-      const shapes: Shape[] = [];
       for (const shape of this.shapes) {
         const shapeTrueRect = shape.trueRect();
         if (
@@ -628,9 +637,8 @@ export class CanvasComponent implements AfterViewInit {
           shapes.push(shape);
         }
       }
-      this.selectedMultipleShapes(shapes);
-      this.selectRect = null;
     }
+    return shapes;
   }
 
   findSelectedShape(p: Point): Shape | null {

@@ -25,7 +25,8 @@ export class SelectedShape {
   bottomLeftCorner!: Path2D;
   bottomRightCorner!: Path2D;
   lineWidth = 6;
-  color = '#00c8';
+  hoverLineWidth = 12;
+  color = '#00f8';
   dragged = false;
   resized = Resize.None;
 
@@ -39,9 +40,8 @@ export class SelectedShape {
     canvasRect: Rect
   ): void {
     this.shape.render(ctx, canvasRect);
-    ctx.fillStyle = this.color;
-    ctx.strokeStyle = this.color;
-    this.setLines(canvasScale);
+    ctx.fillStyle = 'transparent';
+    this.setHoverLines(canvasScale);
     ctx.fill(this.topLine);
     ctx.fill(this.bottomLine);
     ctx.fill(this.leftLine);
@@ -50,6 +50,12 @@ export class SelectedShape {
     ctx.fill(this.topRightCorner);
     ctx.fill(this.bottomLeftCorner);
     ctx.fill(this.bottomRightCorner);
+
+    ctx.strokeStyle = this.color;
+    ctx.fillStyle = this.color;
+    ctx.lineWidth = this.lineWidth / canvasScale;
+    ctx.lineCap = 'square';
+    ctx.stroke(this.markedLine(ctx.lineWidth));
   }
 
   move(dx: number, dy: number): void {
@@ -132,8 +138,8 @@ export class SelectedShape {
     return ctx.isPointInPath(this.bottomRightCorner, x, y);
   }
 
-  setLines(canvasScale: number) {
-    const lineWidth = this.lineWidth / canvasScale;
+  setHoverLines(canvasScale: number) {
+    const lineWidth = this.hoverLineWidth / canvasScale;
     this.topLine = new Path2D();
     this.topLine.rect(
       this.shape.originX,
@@ -190,5 +196,28 @@ export class SelectedShape {
       this.shape.horizontalInverted ? -lineWidth : lineWidth,
       this.shape.verticallyInverted ? -lineWidth : lineWidth
     );
+  }
+
+  markedLine(lineWidth: number): Path2D {
+    const halfLineWidth = lineWidth / 2;
+    const path = new Path2D();
+    const xMin = this.shape.horizontalInverted
+      ? this.shape.originX + halfLineWidth
+      : this.shape.originX - halfLineWidth;
+    const yMin = this.shape.verticallyInverted
+      ? this.shape.originY + halfLineWidth
+      : this.shape.originY - halfLineWidth;
+    const xMax = this.shape.horizontalInverted
+      ? this.shape.originX + this.shape.width - halfLineWidth
+      : this.shape.originX + this.shape.width + halfLineWidth;
+    const yMax = this.shape.verticallyInverted
+      ? this.shape.originY + this.shape.height - halfLineWidth
+      : this.shape.originY + this.shape.height + halfLineWidth;
+    path.moveTo(xMin, yMin);
+    path.lineTo(xMax, yMin);
+    path.lineTo(xMax, yMax);
+    path.lineTo(xMin, yMax);
+    path.closePath();
+    return path;
   }
 }
