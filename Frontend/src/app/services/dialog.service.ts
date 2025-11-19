@@ -3,13 +3,17 @@ import { MatDialog } from '@angular/material/dialog';
 import { Observable } from 'rxjs';
 
 import {
-  DialogCreateComponent,
-  CreateDialogData,
-} from '../components/dialogs/dialog-create/dialog-create.component';
+  ColorPickerDialogData,
+  DialogColorPickerComponent,
+} from '../components/dialogs/dialog-color/dialog-color.component';
 import {
   DialogDeleteComponent,
   DeleteDialogData,
 } from '../components/dialogs/dialog-delete/dialog-delete.component';
+import {
+  DialogInputComponent,
+  InputDialogData,
+} from '../components/dialogs/dialog-input/dialog-input.component';
 
 @Injectable({
   providedIn: 'root',
@@ -48,10 +52,8 @@ export class DialogService {
     });
   }
 
-  openCreateDialog(
-    data: CreateDialogData
-  ): Observable<{ name: string } | undefined> {
-    const dialogRef = this.#dialog.open(DialogCreateComponent, {
+  openInputDialog(data: InputDialogData): Observable<{ name: string } | null> {
+    const dialogRef = this.#dialog.open(DialogInputComponent, {
       data,
       width: '400px',
       maxWidth: '90vw',
@@ -64,20 +66,88 @@ export class DialogService {
   }
 
   openCreateFolderDialog(initialValue?: string) {
-    return this.openCreateDialog({
+    return this.openInputDialog({
       title: 'Create New Folder',
-      placeholder: 'Enter folder name...',
-      itemType: 'folder',
-      initialValue: initialValue || '',
+      icon: 'fa-folder text-blue-500',
+      label: 'Folder name',
+      inputPlaceholder: 'Enter folder name...',
+      initialValue: initialValue,
+      submitButton: {
+        text: 'Create folder',
+        icon: 'fa-folder-plus',
+      },
     });
   }
 
   openCreateNoteDialog(initialValue?: string) {
-    return this.openCreateDialog({
+    return this.openInputDialog({
       title: 'Create New Note',
-      placeholder: 'Enter note title...',
-      itemType: 'note',
-      initialValue: initialValue || '',
+      icon: 'fa-file-circle-plus text-yellow-500',
+      label: 'Note name',
+      inputPlaceholder: 'Enter note name...',
+      initialValue: initialValue,
+      submitButton: {
+        text: 'Create note',
+        icon: 'fa-file-circle-plus',
+      },
     });
+  }
+
+  openRenameFolderDialog(initialValue?: string) {
+    return this.openInputDialog({
+      title: 'Rename Folder',
+      icon: 'fa-file-circle-plus text-yellow-500',
+      label: 'New folder name:',
+      inputPlaceholder: 'Enter folder name...',
+      initialValue: initialValue,
+      submitButton: {
+        text: 'Save',
+      },
+    });
+  }
+
+  openRenameNoteDialog(initialValue?: string) {
+    return this.openInputDialog({
+      title: 'Create New Note',
+      icon: 'fa-file-circle-plus text-yellow-500',
+      label: 'New note name',
+      inputPlaceholder: 'Enter note name...',
+      initialValue: initialValue,
+      submitButton: {
+        text: 'Save',
+      },
+    });
+  }
+
+  openFolderColorDialog(initialColor?: string) {
+    const defaultColors = [
+      '#3b82f6',
+      '#22d3ee',
+      '#14b8a6',
+      '#84cc16',
+      '#f97316',
+      '#ef4444',
+      '#a855f7',
+      '#6366f1',
+    ];
+
+    const dialogRef = this.#dialog.open<
+      DialogColorPickerComponent,
+      ColorPickerDialogData,
+      string | null
+    >(DialogColorPickerComponent, {
+      data: {
+        title: 'Choose Folder Color',
+        defaultColors,
+        initialColor,
+      },
+      width: '420px',
+      maxWidth: '90vw',
+      disableClose: false,
+      autoFocus: false,
+      restoreFocus: true,
+    });
+
+    return dialogRef.afterClosed();
   }
 }

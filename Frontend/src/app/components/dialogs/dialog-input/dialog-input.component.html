@@ -1,0 +1,63 @@
+<div class="p-2">
+  <h2 mat-dialog-title>
+    <span class="inline-flex gap-4 items-center">
+      <i class="fas text-3xl" [class]="data.icon"></i>
+      {{ data.title }}
+    </span>
+  </h2>
+
+  <div mat-dialog-content>
+    <form (submit)="onSubmit($event)">
+      <div class="form-control">
+        <label class="label" for="nameInput">
+          <span class="label-text font-medium text-gray-700">
+            {{ data.label }}
+          </span>
+        </label>
+
+        <input
+          id="nameInput"
+          type="text"
+          [formControl]="inputControl"
+          [placeholder]="data.inputPlaceholder"
+          class="input input-bordered w-full focus:input-primary"
+          [ngClass]="{
+            'input-error': inputControl.invalid && inputControl.touched,
+          }"
+          [maxlength]="data.maxLength ?? 50" />
+
+        <div class="label" id="nameInput-info">
+          <span class="label-text-alt text-gray-500">
+            {{ inputControl.value.length || 0 }}/50 characters
+          </span>
+          @if (inputControl.invalid && inputControl.touched) {
+            <span class="label-text-alt text-red-500">
+              @if (inputControl.errors?.['required']) {
+                Cannot be empty
+              }
+              @if (inputControl.errors?.['minlength']) {
+                Name must be at least {{ data.minLength }} characters
+              }
+              @if (inputControl.errors?.['maxlength']) {
+                Name must be less than
+                {{ data.maxLength ? data.maxLength : 50 }} characters
+              }
+            </span>
+          }
+        </div>
+      </div>
+    </form>
+  </div>
+  <div mat-dialog-actions class="flex justify-between gap-3 mt-5">
+    <button type="button" class="btn btn-ghost" (click)="dialogRef.close(null)">
+      Cancel
+    </button>
+
+    <button type="submit" class="btn btn-primary" [disabled]="!isFormValid">
+      @if (data.submitButton.icon) {
+        <i class="fas mr-2" [class]="data.submitButton.icon"></i>
+      }
+      {{ data.submitButton.text }}
+    </button>
+  </div>
+</div>

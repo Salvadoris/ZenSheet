@@ -115,6 +115,16 @@ export class NotesService {
     this.saveFolders(folders);
   }
 
+  renameNote(noteId: string, name: string) {
+    const folders = this.getFolders().map(f => ({
+      ...f,
+      notes: f.notes.map(n =>
+        n.id === noteId ? { ...n, title: name, updatedAt: new Date() } : n
+      ),
+    }));
+    this.saveFolders(folders);
+  }
+
   updateFolderColor(folderId: string, color: string) {
     const folders = this.getFolders().map(f =>
       f.id === folderId ? { ...f, color } : f

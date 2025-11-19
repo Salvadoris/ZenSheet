@@ -20,7 +20,7 @@ export interface ListItemData {
     <div class="flex justify-between items-center mb-1 gap-1">
       <button
         type="button"
-        class="p-2 rounded cursor-pointer hover:!bg-blue-200 flex-1 text-left focus:outline-none focus:ring-2 focus:ring-blue-400"
+        class="p-2 rounded cursor-pointer hover:bg-blue-200! flex-1 text-left focus:outline-none focus:ring-2 focus:ring-blue-400"
         [style.backgroundColor]="itemData().color"
         (click)="onItemClick()"
         [attr.aria-label]="'Select ' + itemData().name">
