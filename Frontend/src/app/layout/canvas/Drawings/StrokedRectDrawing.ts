@@ -1,7 +1,8 @@
+import { Point } from '../Geometry';
+import { Shape } from '../Shapes/Shape';
+import { StrokedRectShape } from '../Shapes/StrokedRectShape';
+
 import { Drawing } from './Drawing';
-import { Point } from './Point';
-import { Shape } from './Shape';
-import { StrokedRectShape } from './StrokedRectShape';
 
 export class StrokedRectDrawing implements Drawing {
   constructor(
@@ -13,12 +14,16 @@ export class StrokedRectDrawing implements Drawing {
   ) {}
 
   path(): Path2D {
-    let horizontalInverted = this.p1[0] < this.p0[0];
-    let verticallyInverted = this.p1[1] < this.p0[1];
-    let path = new Path2D();
+    const horizontalInverted = this.p1[0] < this.p0[0];
+    const verticallyInverted = this.p1[1] < this.p0[1];
+    const path = new Path2D();
     path.rect(
-      horizontalInverted ? this.p0[0] - this.lineWidth / 2 : this.p0[0] + this.lineWidth / 2,
-      verticallyInverted ? this.p0[1] - this.lineWidth / 2 : this.p0[1] + this.lineWidth / 2,
+      horizontalInverted
+        ? this.p0[0] - this.lineWidth / 2
+        : this.p0[0] + this.lineWidth / 2,
+      verticallyInverted
+        ? this.p0[1] - this.lineWidth / 2
+        : this.p0[1] + this.lineWidth / 2,
       horizontalInverted
         ? this.p1[0] - this.p0[0] + this.lineWidth
         : this.p1[0] - this.p0[0] - this.lineWidth,
@@ -30,7 +35,13 @@ export class StrokedRectDrawing implements Drawing {
   }
 
   toShape(): Shape {
-    return new StrokedRectShape(this.p0, this.p1, this.lineWidth, this.cap, this.color);
+    return new StrokedRectShape(
+      this.p0,
+      this.p1,
+      this.lineWidth,
+      this.cap,
+      this.color
+    );
   }
 
   update(p: Point): void {

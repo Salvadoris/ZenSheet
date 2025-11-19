@@ -8,16 +8,15 @@ import {
 
 import { Mode } from '../toolbar/toolbar.component';
 
-import { Drawing } from './Drawing';
-import { FilledRectDrawing } from './FilledRectDrawing';
-import { LineDrawing, smoothLine } from './LineDrawing';
-import { Point } from './Point';
-import { Rect } from './Rect';
-import { SelectedMultiShape } from './SelectedMultiShape';
-import { SelectedShape, Resize } from './SelectedShape';
-import { SelectRect } from './SelectRect';
-import { Shape } from './Shape';
-import { StrokedRectDrawing } from './StrokedRectDrawing';
+import { Drawing } from './Drawings/Drawing';
+import { FilledRectDrawing } from './Drawings/FilledRectDrawing';
+import { LineDrawing, smoothLine } from './Drawings/LineDrawing';
+import { StrokedRectDrawing } from './Drawings/StrokedRectDrawing';
+import { Point, Rect } from './Geometry';
+import { SelectedMultiShape } from './Selected/SelectedMultiShape';
+import { SelectedShape, Resize } from './Selected/SelectedShape';
+import { SelectRect } from './Selected/SelectRect';
+import { Shape } from './Shapes/Shape';
 
 @Component({
   selector: 'app-canvas',

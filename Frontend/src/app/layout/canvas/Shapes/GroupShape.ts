@@ -1,4 +1,5 @@
-import { Rect } from './Rect';
+import { Rect } from '../Geometry';
+
 import { Shape } from './Shape';
 
 export class GroupShape extends Shape {

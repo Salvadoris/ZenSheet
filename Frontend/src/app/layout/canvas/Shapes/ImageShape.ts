@@ -1,5 +1,5 @@
-import { Point } from './Point';
-import { Rect } from './Rect';
+import { Point, Rect } from '../Geometry';
+
 import { Shape } from './Shape';
 
 export class ImageShape extends Shape {

@@ -1,5 +1,4 @@
-import { Point } from './Point';
-import { Rect } from './Rect';
+import { Point, Rect } from '../Geometry';
 
 export abstract class Shape {
   scaleX = 1;

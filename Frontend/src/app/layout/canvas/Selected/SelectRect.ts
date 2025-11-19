@@ -1,5 +1,5 @@
-import { Point } from './Point';
-import { Shape } from './Shape';
+import { Point } from '../Geometry';
+import { Shape } from '../Shapes/Shape';
 
 export class SelectRect {
   private fillColor = '#00f2';

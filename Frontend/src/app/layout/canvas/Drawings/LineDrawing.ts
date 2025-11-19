@@ -1,7 +1,8 @@
+import { Point } from '../Geometry';
+import { LinePoints, LineShape } from '../Shapes/LineShape';
+import { Shape } from '../Shapes/Shape';
+
 import { Drawing } from './Drawing';
-import { LineShape, LinePoints } from './LineShape';
-import { Point } from './Point';
-import { Shape } from './Shape';
 
 export class LineDrawing implements Drawing {
   constructor(
@@ -12,7 +13,7 @@ export class LineDrawing implements Drawing {
   ) {}
 
   path(): Path2D {
-    let path = new Path2D();
+    const path = new Path2D();
     path.moveTo(this.points[0][0], this.points[0][1]);
     for (let i = 1; i < this.points.length; i++) {
       path.lineTo(this.points[i][0], this.points[i][1]);

@@ -1,7 +1,8 @@
-import { GroupShape } from './GroupShape';
-import { Rect } from './Rect';
+import { Rect } from '../Geometry';
+import { GroupShape } from '../Shapes/GroupShape';
+import { Shape } from '../Shapes/Shape';
+
 import { SelectedShape } from './SelectedShape';
-import { Shape } from './Shape';
 
 export class SelectedMultiShape extends SelectedShape {
   declare shape: GroupShape;

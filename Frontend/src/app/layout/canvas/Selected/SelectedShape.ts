@@ -1,6 +1,5 @@
-import { Point } from './Point';
-import { Rect } from './Rect';
-import { Shape } from './Shape';
+import { Point, Rect } from '../Geometry';
+import { Shape } from '../Shapes/Shape';
 
 export enum Resize {
   None,

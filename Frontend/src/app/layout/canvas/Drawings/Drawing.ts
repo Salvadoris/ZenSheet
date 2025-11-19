@@ -1,5 +1,5 @@
-import { Point } from './Point';
-import { Shape } from './Shape';
+import { Point } from '../Geometry';
+import { Shape } from '../Shapes/Shape';
 
 export interface Drawing {
   update(p: Point): void;
