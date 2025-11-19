@@ -142,10 +142,21 @@ export class SidebarComponent implements OnInit {
   }
 
   changeFolderColor(folderId: string) {
-    const color = prompt('Enter a hex color (e.g., #3b82f6):');
-    if (!color) return;
-    this.notesService.updateFolderColor(folderId, color);
-    this.loadFolders();
+    const folder = this.folders().find(f => f.id === folderId);
+    if (!folder) return;
+
+    const wasSelected = this.selectedFolder()?.id === folderId;
+
+    this.dialogService.openFolderColorDialog(folder.color).subscribe(color => {
+      if (!color) return;
+      this.notesService.updateFolderColor(folderId, color);
+      this.loadFolders();
+      if (wasSelected) {
+        this.selectedFolder.set(
+          this.folders().find(f => f.id === folderId) || null
+        );
+      }
+    });
   }
 
   deleteFolder(folderId: string) {

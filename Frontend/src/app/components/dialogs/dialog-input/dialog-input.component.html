@@ -36,34 +36,28 @@
                 Cannot be empty
               }
               @if (inputControl.errors?.['minlength']) {
-                Name must be at least 1 character
+                Name must be at least {{ data.minLength }} characters
               }
               @if (inputControl.errors?.['maxlength']) {
-                Name must be less than 50 characters
+                Name must be less than
+                {{ data.maxLength ? data.maxLength : 50 }} characters
               }
             </span>
           }
         </div>
-
-        <div class="flex justify-between mt-5">
-          <button
-            type="button"
-            class="btn btn-ghost"
-            (click)="dialogRef.close()">
-            Cancel
-          </button>
-
-          <button
-            type="submit"
-            class="btn btn-primary"
-            [disabled]="!isFormValid">
-            @if (data.submitButton.icon) {
-              <i class="fas mr-2" [class]="data.submitButton.icon"></i>
-            }
-            {{ data.submitButton.text }}
-          </button>
-        </div>
       </div>
     </form>
+  </div>
+  <div mat-dialog-actions class="flex justify-between gap-3 mt-5">
+    <button type="button" class="btn btn-ghost" (click)="dialogRef.close(null)">
+      Cancel
+    </button>
+
+    <button type="submit" class="btn btn-primary" [disabled]="!isFormValid">
+      @if (data.submitButton.icon) {
+        <i class="fas mr-2" [class]="data.submitButton.icon"></i>
+      }
+      {{ data.submitButton.text }}
+    </button>
   </div>
 </div>

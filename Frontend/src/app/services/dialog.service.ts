@@ -3,6 +3,10 @@ import { MatDialog } from '@angular/material/dialog';
 import { Observable } from 'rxjs';
 
 import {
+  ColorPickerDialogData,
+  DialogColorPickerComponent,
+} from '../components/dialogs/dialog-color/dialog-color.component';
+import {
   DialogDeleteComponent,
   DeleteDialogData,
 } from '../components/dialogs/dialog-delete/dialog-delete.component';
@@ -113,5 +117,37 @@ export class DialogService {
         text: 'Save',
       },
     });
+  }
+
+  openFolderColorDialog(initialColor?: string) {
+    const defaultColors = [
+      '#3b82f6',
+      '#22d3ee',
+      '#14b8a6',
+      '#84cc16',
+      '#f97316',
+      '#ef4444',
+      '#a855f7',
+      '#6366f1',
+    ];
+
+    const dialogRef = this.#dialog.open<
+      DialogColorPickerComponent,
+      ColorPickerDialogData,
+      string | null
+    >(DialogColorPickerComponent, {
+      data: {
+        title: 'Choose Folder Color',
+        defaultColors,
+        initialColor,
+      },
+      width: '420px',
+      maxWidth: '90vw',
+      disableClose: false,
+      autoFocus: false,
+      restoreFocus: true,
+    });
+
+    return dialogRef.afterClosed();
   }
 }
