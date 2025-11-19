@@ -7,7 +7,7 @@
   </h2>
 
   <div mat-dialog-content>
-    <form>
+    <form (submit)="onSubmit($event)">
       <div class="form-control">
         <label class="label" for="nameInput">
           <span class="label-text font-medium text-gray-700">
@@ -18,13 +18,12 @@
         <input
           id="nameInput"
           type="text"
-          formControlName="name"
+          [formControl]="inputControl"
           [placeholder]="data.inputPlaceholder"
           class="input input-bordered w-full focus:input-primary"
           [ngClass]="{
             'input-error': inputControl.invalid && inputControl.touched,
           }"
-          [minlength]="data.minLength ?? 50"
           [maxlength]="data.maxLength ?? 50" />
 
         <div class="label" id="nameInput-info">
@@ -55,11 +54,12 @@
           </button>
 
           <button
-            type="button"
+            type="submit"
             class="btn btn-primary"
-            (click)="dialogRef.close({ result: inputControl.value.trim() })"
             [disabled]="!isFormValid">
-            <i class="fas mr-2" [class]="data.submitButton.icon"></i>
+            @if (data.submitButton.icon) {
+              <i class="fas mr-2" [class]="data.submitButton.icon"></i>
+            }
             {{ data.submitButton.text }}
           </button>
         </div>

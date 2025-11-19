@@ -9,19 +9,14 @@ import {
 
 type FaIcon = `fa-${string}`;
 
-interface DialogIcon {
-  name: FaIcon;
-  color: string;
-}
-
 interface SubmitButton {
   text: string;
-  icon: FaIcon;
+  icon?: FaIcon;
 }
 
 export interface InputDialogData {
   title: string;
-  icon: DialogIcon;
+  icon: string;
   label: string;
   inputPlaceholder: string;
   initialValue?: string;
@@ -40,15 +35,23 @@ export class DialogInputComponent {
   data: InputDialogData = inject(MAT_DIALOG_DATA);
   dialogRef = inject(MatDialogRef<DialogInputComponent>);
 
-  inputControl = new FormControl(this.data.initialValue ?? '', {
+  inputControl = new FormControl<string>(this.data.initialValue ?? '', {
     nonNullable: true,
     validators: [
-      Validators.minLength(this.data.minLength ?? 50),
+      Validators.required,
+      Validators.minLength(this.data.minLength ?? 1),
       Validators.maxLength(this.data.maxLength ?? 50),
     ],
   });
 
   get isFormValid() {
-    return this.inputControl?.valid || false;
+    return this.inputControl.valid || false;
+  }
+
+  onSubmit(event?: Event) {
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (!this.isFormValid) return;
+    this.dialogRef.close({ name: this.inputControl.value.trim() });
   }
 }

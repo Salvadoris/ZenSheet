@@ -74,7 +74,7 @@ export class SidebarComponent implements OnInit {
 
   addFolder() {
     this.dialogService.openCreateFolderDialog().subscribe(result => {
-      if (result?.name) {
+      if (result) {
         this.notesService.createFolder(result.name);
         this.loadFolders();
       }
@@ -85,7 +85,7 @@ export class SidebarComponent implements OnInit {
     if (!this.selectedFolder) return;
 
     this.dialogService.openCreateNoteDialog().subscribe(result => {
-      if (result?.name) {
+      if (result) {
         const note = this.notesService.createNote(
           this.selectedFolder()!.id,
           result.name
@@ -166,10 +166,15 @@ export class SidebarComponent implements OnInit {
   }
 
   renameFolder(folderId: string) {
-    const current = this.folders().find(f => f.id === folderId)?.name || '';
-    const name = prompt('New folder name:', current);
-    if (!name) return;
-    this.notesService.renameFolder(folderId, name);
+    const currentFolder = this.folders().find(f => f.id === folderId);
+    this.dialogService
+      .openRenameFolderDialog(currentFolder?.name)
+      .subscribe(result => {
+        if (result) {
+          this.notesService.renameFolder(folderId, result.name);
+          this.loadFolders();
+        }
+      });
     this.loadFolders();
   }
 
@@ -245,8 +250,21 @@ export class SidebarComponent implements OnInit {
   }
 
   renameNote(noteId: string) {
-    // TODO: Implement rename note
-    console.log('Rename note:', noteId);
+    const currentFolder = this.selectedFolder();
+    if (!currentFolder) return;
+
+    const currentNote = currentFolder.notes.find(n => n.id === noteId);
+    this.dialogService
+      .openRenameNoteDialog(currentNote?.title)
+      .subscribe(result => {
+        if (result) {
+          this.notesService.renameNote(noteId, result.name);
+          this.loadFolders();
+          this.selectedFolder.set(
+            this.folders().find(f => f.id === currentFolder.id) || null
+          );
+        }
+      });
   }
 
   getContrastingTextColor(background?: string): string {
