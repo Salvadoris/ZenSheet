@@ -1,19 +1,17 @@
-@let nameForm = createForm.get('name');
-
 <div class="p-2">
   <h2 mat-dialog-title>
     <span class="inline-flex gap-4 items-center">
-      <i class="fas text-3xl" [class]="iconClass"></i>
+      <i class="fas text-3xl" [class]="data.icon"></i>
       {{ data.title }}
     </span>
   </h2>
 
   <div mat-dialog-content>
-    <form [formGroup]="createForm" (ngSubmit)="onSubmit()">
+    <form>
       <div class="form-control">
         <label class="label" for="nameInput">
           <span class="label-text font-medium text-gray-700">
-            {{ data.itemType === 'folder' ? 'Folder Name' : 'Note Title' }}
+            {{ data.label }}
           </span>
         </label>
 
@@ -21,24 +19,27 @@
           id="nameInput"
           type="text"
           formControlName="name"
-          [placeholder]="data.placeholder"
+          [placeholder]="data.inputPlaceholder"
           class="input input-bordered w-full focus:input-primary"
-          [ngClass]="{ 'input-error': nameForm?.invalid && nameForm?.touched }"
-          maxlength="50" />
+          [ngClass]="{
+            'input-error': inputControl.invalid && inputControl.touched,
+          }"
+          [minlength]="data.minLength ?? 50"
+          [maxlength]="data.maxLength ?? 50" />
 
         <div class="label" id="nameInput-info">
           <span class="label-text-alt text-gray-500">
-            {{ nameForm?.value?.length || 0 }}/50 characters
+            {{ inputControl.value.length || 0 }}/50 characters
           </span>
-          @if (nameForm?.invalid && nameForm?.touched) {
+          @if (inputControl.invalid && inputControl.touched) {
             <span class="label-text-alt text-red-500">
-              @if (nameForm?.errors?.['required']) {
-                Name is required
+              @if (inputControl.errors?.['required']) {
+                Cannot be empty
               }
-              @if (nameForm?.errors?.['minlength']) {
+              @if (inputControl.errors?.['minlength']) {
                 Name must be at least 1 character
               }
-              @if (nameForm?.errors?.['maxlength']) {
+              @if (inputControl.errors?.['maxlength']) {
                 Name must be less than 50 characters
               }
             </span>
@@ -46,22 +47,20 @@
         </div>
 
         <div class="flex justify-between mt-5">
-          <button class="btn btn-ghost" (click)="onCancel()" type="button">
+          <button
+            type="button"
+            class="btn btn-ghost"
+            (click)="dialogRef.close()">
             Cancel
           </button>
+
           <button
-            class="btn btn-primary"
-            (click)="onSubmit()"
             type="button"
+            class="btn btn-primary"
+            (click)="dialogRef.close({ result: inputControl.value.trim() })"
             [disabled]="!isFormValid">
-            <i
-              class="fas mr-2"
-              [class]="
-                data.itemType === 'folder'
-                  ? 'fa-folder-plus'
-                  : 'fa-file-circle-plus'
-              "></i>
-            {{ submitButtonText }}
+            <i class="fas mr-2" [class]="data.submitButton.icon"></i>
+            {{ data.submitButton.text }}
           </button>
         </div>
       </div>
