@@ -17,6 +17,9 @@ import { SelectedMultiShape } from './Selected/SelectedMultiShape';
 import { SelectedShape, Resize } from './Selected/SelectedShape';
 import { SelectRect } from './Selected/SelectRect';
 import { Shape } from './Shapes/Shape';
+import { FilledRectStyle } from './ShapeStyles/FilledRectStyle';
+import { LineStyle } from './ShapeStyles/LineStyle';
+import { StrokedRectStyle } from './ShapeStyles/StrokedRectStyle';
 
 @Component({
   selector: 'app-canvas',
@@ -76,9 +79,13 @@ export class CanvasComponent implements AfterViewInit {
   private mouseDown = false;
   private leftMouseDown = false;
 
-  private lineWidth = 8;
-  private cap: CanvasLineCap = 'round';
-  private color = '#000';
+  private lineStyle: LineStyle = { color: '#000', width: 8, cap: 'round' };
+  private filledRectStyle: FilledRectStyle = { color: '#000' };
+  private strokedRectStyle: StrokedRectStyle = {
+    color: '#000',
+    lineWidth: 8,
+    cap: 'round',
+  };
 
   private smoothLine = true;
   private smoothLineFactor = 4;
@@ -666,9 +673,7 @@ export class CanvasComponent implements AfterViewInit {
               [this.prevCursor[0], this.prevCursor[1]],
               [this.cursor[0], this.cursor[1]],
             ],
-            this.lineWidth,
-            this.cap,
-            this.color
+            this.lineStyle
           );
           this.drawings.push(this.currentDrawing);
         } else if (this.currentDrawing) {
@@ -680,7 +685,7 @@ export class CanvasComponent implements AfterViewInit {
           this.currentDrawing = new FilledRectDrawing(
             this.startCursor,
             this.cursor,
-            this.color
+            this.filledRectStyle
           );
           this.drawings.push(this.currentDrawing);
         }
@@ -690,9 +695,7 @@ export class CanvasComponent implements AfterViewInit {
           this.currentDrawing = new StrokedRectDrawing(
             this.startCursor,
             this.cursor,
-            this.lineWidth,
-            this.cap,
-            this.color
+            this.strokedRectStyle
           );
           this.drawings.push(this.currentDrawing);
         }

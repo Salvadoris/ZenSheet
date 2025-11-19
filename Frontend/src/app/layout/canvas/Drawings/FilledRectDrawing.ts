@@ -1,6 +1,7 @@
 import { Point } from '../Geometry';
 import { FilledRectShape } from '../Shapes/FilledRectShape';
 import { Shape } from '../Shapes/Shape';
+import { FilledRectStyle } from '../ShapeStyles/FilledRectStyle';
 
 import { Drawing } from './Drawing';
 
@@ -8,7 +9,7 @@ export class FilledRectDrawing implements Drawing {
   constructor(
     public p0: Point,
     public p1: Point,
-    public color: string
+    public style: FilledRectStyle
   ) {}
   path(): Path2D {
     const path = new Path2D();
@@ -22,7 +23,7 @@ export class FilledRectDrawing implements Drawing {
   }
 
   toShape(): Shape {
-    return new FilledRectShape(this.p0, this.p1, this.color);
+    return new FilledRectShape(this.p0, this.p1, this.style);
   }
 
   update(p: Point): void {
@@ -31,7 +32,7 @@ export class FilledRectDrawing implements Drawing {
   }
 
   render(ctx: CanvasRenderingContext2D): void {
-    ctx.fillStyle = this.color;
+    ctx.fillStyle = this.style.color;
     ctx.fill(this.path());
   }
 }

@@ -1,4 +1,5 @@
 import { Point, Rect } from '../Geometry';
+import { FilledRectStyle } from '../ShapeStyles/FilledRectStyle';
 
 import { Shape } from './Shape';
 
@@ -6,13 +7,13 @@ export class FilledRectShape extends Shape {
   constructor(
     p0: Point,
     p1: Point,
-    public color: string
+    public style: FilledRectStyle
   ) {
     super(p0, p1[0] - p0[0], p1[1] - p0[1]);
   }
 
   override renderShape(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
-    ctx.fillStyle = this.color;
+    ctx.fillStyle = this.style.color;
     ctx.fill(this.path());
   }
 

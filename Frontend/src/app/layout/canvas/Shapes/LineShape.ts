@@ -1,4 +1,5 @@
 import { Point, Rect } from '../Geometry';
+import { LineStyle } from '../ShapeStyles/LineStyle';
 
 import { Shape } from './Shape';
 
@@ -23,14 +24,12 @@ export class LineShape extends Shape {
   private segments: Segment[] = [];
   constructor(
     points: LinePoints,
-    public lineWidth: number,
-    public cap: CanvasLineCap,
-    public color: string
+    public style: LineStyle
   ) {
-    const originX = minX(points, lineWidth);
-    const originY = minY(points, lineWidth);
-    const width = maxX(points, lineWidth) - originX;
-    const height = maxY(points, lineWidth) - originY;
+    const originX = minX(points, style.width);
+    const originY = minY(points, style.width);
+    const width = maxX(points, style.width) - originX;
+    const height = maxY(points, style.width) - originY;
     super([originX, originY], width, height);
 
     const pts: Point[] = points.map(p => [p[0] - originX, p[1] - originY]);
@@ -38,7 +37,7 @@ export class LineShape extends Shape {
     this.chunks = getLineChunks(
       { rect: [0, 0, width, height], visible: false },
       pts,
-      lineWidth
+      style.width
     );
 
     let segmentPoints: Point[] = [];
@@ -79,9 +78,9 @@ export class LineShape extends Shape {
       Math.max(yMin, yMax),
     ];
 
-    ctx.lineWidth = this.lineWidth;
-    ctx.lineCap = this.cap;
-    ctx.strokeStyle = this.color;
+    ctx.lineWidth = this.style.width;
+    ctx.lineCap = this.style.cap;
+    ctx.strokeStyle = this.style.color;
     ctx.lineJoin = 'round';
 
     for (const chunk of this.chunks) {
@@ -133,8 +132,8 @@ export class LineShape extends Shape {
     x: number,
     y: number
   ): boolean {
-    ctx.lineWidth = this.lineWidth;
-    ctx.lineCap = this.cap;
+    ctx.lineWidth = this.style.width;
+    ctx.lineCap = this.style.cap;
     return ctx.isPointInStroke(this.path(), x, y);
   }
 }

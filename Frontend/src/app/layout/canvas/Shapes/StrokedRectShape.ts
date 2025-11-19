@@ -1,4 +1,5 @@
 import { Point, Rect } from '../Geometry';
+import { StrokedRectStyle } from '../ShapeStyles/StrokedRectStyle';
 
 import { Shape } from './Shape';
 
@@ -6,17 +7,15 @@ export class StrokedRectShape extends Shape {
   constructor(
     p0: Point,
     p1: Point,
-    public lineWidth: number,
-    public cap: CanvasLineCap,
-    public color: string
+    public style: StrokedRectStyle
   ) {
     super(p0, p1[0] - p0[0], p1[1] - p0[1]);
   }
 
   override renderShape(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
-    ctx.lineWidth = this.lineWidth;
-    ctx.lineCap = this.cap;
-    ctx.strokeStyle = this.color;
+    ctx.lineWidth = this.style.lineWidth;
+    ctx.lineCap = this.style.cap;
+    ctx.strokeStyle = this.style.color;
     ctx.stroke(this.path());
   }
 
@@ -25,14 +24,14 @@ export class StrokedRectShape extends Shape {
     const verticallyInverted = this.height < 0;
     const path = new Path2D();
     path.rect(
-      horizontalInverted ? -this.lineWidth / 2 : this.lineWidth / 2,
-      verticallyInverted ? -this.lineWidth / 2 : this.lineWidth / 2,
+      horizontalInverted ? -this.style.lineWidth / 2 : this.style.lineWidth / 2,
+      verticallyInverted ? -this.style.lineWidth / 2 : this.style.lineWidth / 2,
       horizontalInverted
-        ? this.originalWidth + this.lineWidth
-        : this.originalWidth - this.lineWidth,
+        ? this.originalWidth + this.style.lineWidth
+        : this.originalWidth - this.style.lineWidth,
       verticallyInverted
-        ? this.originalHeight + this.lineWidth
-        : this.originalHeight - this.lineWidth
+        ? this.originalHeight + this.style.lineWidth
+        : this.originalHeight - this.style.lineWidth
     );
     return path;
   }
@@ -42,8 +41,8 @@ export class StrokedRectShape extends Shape {
     x: number,
     y: number
   ): boolean {
-    ctx.lineWidth = this.lineWidth;
-    ctx.lineCap = this.cap;
+    ctx.lineWidth = this.style.lineWidth;
+    ctx.lineCap = this.style.cap;
     return ctx.isPointInStroke(this.path(), x, y);
   }
 }

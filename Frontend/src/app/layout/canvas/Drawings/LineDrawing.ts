@@ -1,15 +1,14 @@
 import { Point } from '../Geometry';
 import { LinePoints, LineShape } from '../Shapes/LineShape';
 import { Shape } from '../Shapes/Shape';
+import { LineStyle } from '../ShapeStyles/LineStyle';
 
 import { Drawing } from './Drawing';
 
 export class LineDrawing implements Drawing {
   constructor(
     public points: LinePoints,
-    public lineWidth: number,
-    public cap: CanvasLineCap,
-    public color: string
+    public style: LineStyle
   ) {}
 
   path(): Path2D {
@@ -22,16 +21,16 @@ export class LineDrawing implements Drawing {
   }
 
   toShape(): Shape {
-    return new LineShape(this.points, this.lineWidth, this.cap, this.color);
+    return new LineShape(this.points, this.style);
   }
 
   update(p: Point): void {
     this.points.push([p[0], p[1]]);
   }
   render(ctx: CanvasRenderingContext2D): void {
-    ctx.lineWidth = this.lineWidth;
-    ctx.lineCap = this.cap;
-    ctx.strokeStyle = this.color;
+    ctx.lineWidth = this.style.width;
+    ctx.lineCap = this.style.cap;
+    ctx.strokeStyle = this.style.color;
     ctx.lineJoin = 'round';
 
     ctx.stroke(this.path());
