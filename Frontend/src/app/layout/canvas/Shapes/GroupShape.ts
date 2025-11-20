@@ -33,7 +33,14 @@ export class GroupShape extends Shape {
     x: number,
     y: number
   ): boolean {
-    return ctx.isPointInPath(this.path(), x, y);
+    const localX = (x - this.originX) / this.scaleX;
+    const localY = (y - this.originY) / this.scaleY;
+    for (const shape of this.shapes) {
+      if (shape.pointInside(ctx, localX, localY)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private shapeToLocal(globalShape: Shape) {

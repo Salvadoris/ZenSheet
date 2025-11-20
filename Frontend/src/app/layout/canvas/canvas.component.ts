@@ -46,6 +46,7 @@ export class CanvasComponent implements AfterViewInit {
 
   private selectedShape: SelectedShape | SelectedMultiShape | null = null;
   private selectRect: SelectRect | null = null;
+  private selectedAction = false;
 
   private scale = 1;
   private prevScale = 1;
@@ -75,6 +76,7 @@ export class CanvasComponent implements AfterViewInit {
   private dragStart: Point = [0, 0];
 
   private firstMove = false;
+  private pressedMouseMoved = false;
 
   private mouseDown = false;
   private leftMouseDown = false;
@@ -441,6 +443,7 @@ export class CanvasComponent implements AfterViewInit {
         } else {
           this.unSelectShape();
         }
+        this.selectedAction = true;
       }
     }
     this.renderCanvas(true, true);
@@ -572,41 +575,74 @@ export class CanvasComponent implements AfterViewInit {
         break;
     }
     this.firstMove = false;
+    this.pressedMouseMoved = true;
     this.renderCanvas(main, tmp);
   };
 
   onMouseUp = (event: MouseEvent) => {
     event.preventDefault();
-    if (this.currentDrawing) {
-      if (this.smoothLine && this.currentDrawing instanceof LineDrawing) {
-        this.currentDrawing.points = smoothLine(
-          this.currentDrawing.points,
-          this.smoothLineFactor
-        );
+    if (this.leftMouseDown) {
+      if (this.currentDrawing) {
+        if (this.smoothLine && this.currentDrawing instanceof LineDrawing) {
+          this.currentDrawing.points = smoothLine(
+            this.currentDrawing.points,
+            this.smoothLineFactor
+          );
+        }
+        this.shapes.push(this.currentDrawing.toShape());
+        const idx = this.drawings.indexOf(this.currentDrawing);
+        this.currentDrawing = null;
+        if (idx !== -1) {
+          this.drawings.splice(idx, 1);
+        }
+        this.renderCanvas(true, true);
       }
-      this.shapes.push(this.currentDrawing.toShape());
-      const idx = this.drawings.indexOf(this.currentDrawing);
-      this.currentDrawing = null;
-      if (idx !== -1) {
-        this.drawings.splice(idx, 1);
+      if (this.mode == Mode.Select) {
+        if (this.selectedShape) {
+          this.selectedShape.dragged = false;
+          this.selectedShape.resized = Resize.None;
+        }
+        if (!this.pressedMouseMoved) {
+          if (
+            this.selectedShape &&
+            !this.selectedAction &&
+            this.selectedShape.pointInside(
+              this.tmpCtx,
+              this.cursor[0],
+              this.cursor[1]
+            ) &&
+            !this.selectedShape.shape.pointInside(
+              this.tmpCtx,
+              this.cursor[0],
+              this.cursor[1]
+            )
+          ) {
+            const shape = this.findSelectedShape(this.cursor);
+            if (shape) {
+              if (event.shiftKey) {
+                this.selectAdditionalShape(shape);
+              } else {
+                this.selectSingleShape(shape);
+              }
+            } else {
+              this.unSelectShape();
+            }
+            this.renderCanvas(true, true);
+          }
+        }
+        if (this.selectRect) {
+          this.selectFromRect();
+          this.renderCanvas(false, true);
+        }
       }
-      this.renderCanvas(true, true);
-    }
-    if (this.mode == Mode.Select) {
-      if (this.selectedShape) {
-        this.selectedShape.dragged = false;
-        this.selectedShape.resized = Resize.None;
+      if (this.mode == Mode.Hand) {
+        this.moveEnabled = true;
+        this.tmpCtx.canvas.style.cursor = 'grab';
       }
-      if (this.selectRect) {
-        this.selectFromRect();
-        this.renderCanvas(false, true);
-      }
-    }
-    if (this.mode == Mode.Hand) {
-      this.moveEnabled = true;
-      this.tmpCtx.canvas.style.cursor = 'grab';
     }
     this.firstMove = false;
+    this.pressedMouseMoved = false;
+    this.selectedAction = false;
     this.changeToHover();
   };
 
