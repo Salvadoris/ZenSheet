@@ -610,24 +610,43 @@ export class CanvasComponent implements AfterViewInit {
               this.tmpCtx,
               this.cursor[0],
               this.cursor[1]
-            ) &&
-            !this.selectedShape.shape.pointInside(
-              this.tmpCtx,
-              this.cursor[0],
-              this.cursor[1]
             )
           ) {
-            const shape = this.findSelectedShape(this.cursor);
-            if (shape) {
-              if (event.shiftKey) {
-                this.selectAdditionalShape(shape);
-              } else {
-                this.selectSingleShape(shape);
+            let insideShape = false;
+            if (this.selectedShape instanceof SelectedMultiShape) {
+              const localX = this.selectedShape.shape.toLocalX(this.cursor[0]);
+              const localY = this.selectedShape.shape.toLocalY(this.cursor[1]);
+              for (const shape of this.selectedShape.shape.shapes) {
+                if (shape.pointInside(this.tmpCtx, localX, localY)) {
+                  insideShape = true;
+                  this.selectSingleShape(shape);
+                  this.renderCanvas(true, true);
+                  break;
+                }
               }
-            } else {
-              this.unSelectShape();
+            } else if (
+              this.selectedShape.shape.pointInside(
+                this.tmpCtx,
+                this.cursor[0],
+                this.cursor[1]
+              )
+            ) {
+              insideShape = true;
             }
-            this.renderCanvas(true, true);
+
+            if (!insideShape) {
+              const shape = this.findSelectedShape(this.cursor);
+              if (shape) {
+                if (event.shiftKey) {
+                  this.selectAdditionalShape(shape);
+                } else {
+                  this.selectSingleShape(shape);
+                }
+              } else {
+                this.unSelectShape();
+              }
+              this.renderCanvas(true, true);
+            }
           }
         }
         if (this.selectRect) {

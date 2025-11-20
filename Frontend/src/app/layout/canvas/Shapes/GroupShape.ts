@@ -33,14 +33,22 @@ export class GroupShape extends Shape {
     x: number,
     y: number
   ): boolean {
-    const localX = (x - this.originX) / this.scaleX;
-    const localY = (y - this.originY) / this.scaleY;
+    const localX = this.toLocalX(x);
+    const localY = this.toLocalY(y);
     for (const shape of this.shapes) {
       if (shape.pointInside(ctx, localX, localY)) {
         return true;
       }
     }
     return false;
+  }
+
+  toLocalX(globalX: number) {
+    return (globalX - this.originX) / this.scaleX;
+  }
+
+  toLocalY(globalY: number) {
+    return (globalY - this.originY) / this.scaleY;
   }
 
   private shapeToLocal(globalShape: Shape) {
