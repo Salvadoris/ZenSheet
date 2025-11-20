@@ -13,14 +13,10 @@ export class GroupShape extends Shape {
   }
 
   override renderShape(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
-    const localCanvasRect: Rect = [
-      (canvasRect[0] - this.originX) / this.scaleX,
-      (canvasRect[1] - this.originY) / this.scaleY,
-      (canvasRect[2] - this.originX) / this.scaleX,
-      (canvasRect[3] - this.originY) / this.scaleY,
-    ];
     for (const shape of this.shapes) {
-      shape.render(ctx, localCanvasRect);
+      this.shapeToGlobal(shape);
+      shape.render(ctx, canvasRect);
+      this.shapeToLocal(shape);
     }
   }
 
@@ -32,7 +28,7 @@ export class GroupShape extends Shape {
     return path;
   }
 
-  override pointInsideShape(
+  override pointInside(
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number

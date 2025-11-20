@@ -17,13 +17,17 @@ export class ImageShape extends Shape {
     } else {
       this.img.onload = () => {
         this.loaded = true;
+        ctx.save();
+        ctx.translate(this.originX, this.originY);
+        ctx.scale(this.scaleX, this.scaleY);
         this.drawImage(ctx);
+        ctx.restore();
       };
     }
   }
 
   private drawImage(ctx: CanvasRenderingContext2D) {
-    ctx.drawImage(this.img, 0, 0, this.width, this.height);
+    ctx.drawImage(this.img, 0, 0, this.originalWidth, this.originalHeight);
   }
 
   override path(): Path2D {
@@ -32,11 +36,16 @@ export class ImageShape extends Shape {
     return path;
   }
 
-  override pointInsideShape(
+  override pointInside(
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number
   ): boolean {
-    return ctx.isPointInPath(this.path(), x, y);
+    ctx.save();
+    ctx.translate(this.originX, this.originY);
+    ctx.scale(this.scaleX, this.scaleY);
+    const inside = ctx.isPointInPath(this.path(), x, y);
+    ctx.restore();
+    return inside;
   }
 }

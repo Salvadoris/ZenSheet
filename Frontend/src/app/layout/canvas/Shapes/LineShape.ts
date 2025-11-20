@@ -78,6 +78,10 @@ export class LineShape extends Shape {
       Math.max(yMin, yMax),
     ];
 
+    ctx.save();
+    ctx.translate(this.originX, this.originY);
+    ctx.scale(this.scaleX, this.scaleY);
+
     ctx.lineWidth = this.style.width;
     ctx.lineCap = this.style.cap;
     ctx.strokeStyle = this.style.color;
@@ -92,6 +96,7 @@ export class LineShape extends Shape {
     }
 
     ctx.stroke(this.path());
+    ctx.restore();
   }
 
   override path(): Path2D {
@@ -127,14 +132,19 @@ export class LineShape extends Shape {
     return path;
   }
 
-  override pointInsideShape(
+  override pointInside(
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number
   ): boolean {
+    ctx.save();
+    ctx.translate(this.originX, this.originY);
+    ctx.scale(this.scaleX, this.scaleY);
     ctx.lineWidth = this.style.width;
     ctx.lineCap = this.style.cap;
-    return ctx.isPointInStroke(this.path(), x, y);
+    const inside = ctx.isPointInStroke(this.path(), x, y);
+    ctx.restore();
+    return inside;
   }
 }
 

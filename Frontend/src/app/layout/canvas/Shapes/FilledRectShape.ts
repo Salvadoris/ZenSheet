@@ -13,8 +13,12 @@ export class FilledRectShape extends Shape {
   }
 
   override renderShape(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
+    ctx.save();
+    ctx.translate(this.originX, this.originY);
+    ctx.scale(this.scaleX, this.scaleY);
     ctx.fillStyle = this.style.color;
     ctx.fill(this.path());
+    ctx.restore();
   }
 
   override path(): Path2D {
@@ -23,11 +27,16 @@ export class FilledRectShape extends Shape {
     return path;
   }
 
-  override pointInsideShape(
+  override pointInside(
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number
   ): boolean {
-    return ctx.isPointInPath(this.path(), x, y);
+    ctx.save();
+    ctx.translate(this.originX, this.originY);
+    ctx.scale(this.scaleX, this.scaleY);
+    const inside = ctx.isPointInPath(this.path(), x, y);
+    ctx.restore();
+    return inside;
   }
 }

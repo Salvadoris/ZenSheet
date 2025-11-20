@@ -20,23 +20,25 @@ export class StrokedRectShape extends Shape {
   }
 
   override path(): Path2D {
-    const horizontalInverted = this.width < 0;
-    const verticallyInverted = this.height < 0;
     const path = new Path2D();
     path.rect(
-      horizontalInverted ? -this.style.lineWidth / 2 : this.style.lineWidth / 2,
-      verticallyInverted ? -this.style.lineWidth / 2 : this.style.lineWidth / 2,
-      horizontalInverted
-        ? this.originalWidth + this.style.lineWidth
-        : this.originalWidth - this.style.lineWidth,
-      verticallyInverted
-        ? this.originalHeight + this.style.lineWidth
-        : this.originalHeight - this.style.lineWidth
+      this.horizontalInverted
+        ? this.originX - this.style.lineWidth / 2
+        : this.originX + this.style.lineWidth / 2,
+      this.verticallyInverted
+        ? this.originY - this.style.lineWidth / 2
+        : this.originY + this.style.lineWidth / 2,
+      this.horizontalInverted
+        ? this.width + this.style.lineWidth
+        : this.width - this.style.lineWidth,
+      this.verticallyInverted
+        ? this.height + this.style.lineWidth
+        : this.height - this.style.lineWidth
     );
     return path;
   }
 
-  override pointInsideShape(
+  override pointInside(
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number
