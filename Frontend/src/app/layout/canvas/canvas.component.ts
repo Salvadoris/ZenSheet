@@ -4,6 +4,7 @@ import {
   ElementRef,
   ViewChild,
   AfterViewInit,
+  HostListener,
 } from '@angular/core';
 
 import { Mode } from '../toolbar/toolbar.component';
@@ -26,7 +27,12 @@ import { StrokedRectStyle } from './ShapeStyles/StrokedRectStyle';
   imports: [],
   template: `<div class="relative">
     <canvas #mainCanvas class="absolute top-0 left-0"></canvas>
-    <canvas #tmpCanvas class="absolute top-0 left-0"></canvas>
+    <canvas
+      #tmpCanvas
+      (mousedown)="onMouseDown($event)"
+      (mousemove)="onHoveringMouseMove($event)"
+      (wheel)="onWheel($event)"
+      class="absolute top-0 left-0"></canvas>
   </div>`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -101,12 +107,6 @@ export class CanvasComponent implements AfterViewInit {
     this.changeToHover();
     this.cursorOnChangeMode();
     this.renderCanvas(true, true);
-
-    window.addEventListener('resize', () => {
-      this.renderCanvas(true, true);
-    });
-    tmpCanvas.addEventListener('mousedown', this.onMouseDown.bind(this));
-    tmpCanvas.addEventListener('wheel', this.onWheel);
   }
 
   changeMode(mode: Mode) {
@@ -180,21 +180,31 @@ export class CanvasComponent implements AfterViewInit {
   changeToHover() {
     this.mouseDown = false;
     this.leftMouseDown = false;
-    window.removeEventListener('mousemove', this.onPressedMouseMove);
-    window.removeEventListener('mouseup', this.onMouseUp);
-    window.removeEventListener('blur', this.onWindowBlur);
-    this.tmpCtx.canvas.addEventListener('mousemove', this.onHoveringMouseMove);
   }
 
   changeToMouseDown() {
     this.mouseDown = true;
-    this.tmpCtx.canvas.removeEventListener(
-      'mousemove',
-      this.onHoveringMouseMove
-    );
-    window.addEventListener('mousemove', this.onPressedMouseMove);
-    window.addEventListener('mouseup', this.onMouseUp);
-    window.addEventListener('blur', this.onWindowBlur);
+  }
+
+  @HostListener('window:mousemove', ['$event'])
+  handleWindowMouseMove(event: MouseEvent) {
+    if (!this.mouseDown) {
+      return;
+    }
+    this.onPressedMouseMove(event);
+  }
+
+  @HostListener('window:mouseup', ['$event'])
+  handleWindowMouseUp(event: MouseEvent) {
+    if (!this.mouseDown) {
+      return;
+    }
+    this.onMouseUp(event);
+  }
+
+  @HostListener('window:blur')
+  handleWindowBlur() {
+    this.onWindowBlur();
   }
 
   animateZoom() {
@@ -286,6 +296,11 @@ export class CanvasComponent implements AfterViewInit {
         this.hoverSelectedShape();
       }
     }
+  }
+
+  @HostListener('window:resize')
+  onResize() {
+    this.renderCanvas(true, true);
   }
 
   renderCanvas(main: boolean, tmp: boolean) {
@@ -546,6 +561,9 @@ export class CanvasComponent implements AfterViewInit {
   }
 
   onHoveringMouseMove = (event: MouseEvent) => {
+    if (!this.tmpCtx || this.mouseDown) {
+      return;
+    }
     event.preventDefault();
     this.updateCursor(event.clientX, event.clientY);
     if (this.mode == Mode.Select) {
