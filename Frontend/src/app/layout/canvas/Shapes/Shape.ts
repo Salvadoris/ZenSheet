@@ -39,11 +39,6 @@ export abstract class Shape {
 
   abstract renderShape(ctx: CanvasRenderingContext2D, canvasRect: Rect): void;
 
-  move(dx: number, dy: number): void {
-    this.originX += dx;
-    this.originY += dy;
-  }
-
   abstract path(): Path2D;
 
   abstract pointInside(

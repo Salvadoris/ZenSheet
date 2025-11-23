@@ -12,6 +12,11 @@ export class SelectRect {
     public p1: Point
   ) {}
 
+  update(x: number, y: number) {
+    this.p1[0] = x;
+    this.p1[1] = y;
+  }
+
   render(ctx: CanvasRenderingContext2D, canvasScale: number) {
     ctx.fillStyle = this.fillColor;
     ctx.strokeStyle = this.strokeColor;

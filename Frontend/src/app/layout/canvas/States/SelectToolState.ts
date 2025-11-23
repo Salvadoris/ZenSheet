@@ -1,0 +1,450 @@
+import { CanvasComponent } from '../canvas.component';
+import { Point, Rect } from '../Geometry';
+import { SelectedMultiShape } from '../Selected/SelectedMultiShape';
+import { Resize, SelectedShape } from '../Selected/SelectedShape';
+import { SelectRect } from '../Selected/SelectRect';
+import { Shape } from '../Shapes/Shape';
+
+import { CanvasToolState } from './CanvasToolState';
+
+export class SelectToolState extends CanvasToolState {
+  #selectedShape: SelectedShape | SelectedMultiShape | null = null;
+  #selectRect: SelectRect | null = null;
+  #selectedAction = false;
+
+  constructor(canvas: CanvasComponent) {
+    super(canvas);
+    if (this.canvas.tmpCtx) {
+      this.canvas.changeCursor('default');
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  override renderMain(): void {}
+
+  override renderTmp() {
+    if (this.#selectedShape) {
+      this.#selectedShape.render(
+        this.canvas.tmpCtx,
+        this.canvas.scale,
+        this.canvas.trueRect
+      );
+    }
+    if (this.#selectRect) {
+      this.#selectRect.render(this.canvas.tmpCtx, this.canvas.scale);
+      const shapes = this.shapesInsideSelectRect();
+      this.#selectRect.renderShapeOutlines(
+        this.canvas.tmpCtx,
+        this.canvas.scale,
+        shapes
+      );
+    }
+  }
+
+  override remove(): void {
+    this.unSelectShape();
+    this.canvas.renderCanvas(true, true);
+  }
+
+  override onMouseDown(event: MouseEvent): void {
+    if (this.canvas.leftmouseDown) {
+      const gotSelectedShape = this.mouseDownSelectedShape();
+      if (!gotSelectedShape) {
+        const shape = this.findSelectedShape(this.canvas.cursor);
+        if (shape) {
+          if (event.shiftKey && this.#selectedShape) {
+            this.selectAdditionalShape(shape);
+          } else {
+            this.selectSingleShape(shape);
+          }
+          if (this.#selectedShape) {
+            this.#selectedShape.dragged = true;
+            this.#selectedShape.originFromCursor = [
+              this.#selectedShape.shape.originX - this.canvas.startCursor[0],
+              this.#selectedShape.shape.originY - this.canvas.startCursor[1],
+            ];
+          }
+        } else {
+          this.unSelectShape();
+        }
+        this.#selectedAction = true;
+      }
+    }
+  }
+
+  override onPressedMouseMove(_event: MouseEvent): void {
+    if (this.#selectedShape && this.#selectedShape.dragged) {
+      this.#selectedShape.moveTo(this.canvas.cursor[0], this.canvas.cursor[1]);
+    } else if (
+      this.#selectedShape &&
+      this.#selectedShape.resized != Resize.None
+    ) {
+      this.#selectedShape.resize([
+        this.canvas.cursor[0],
+        this.canvas.cursor[1],
+      ]);
+    } else if (this.canvas.firstMove) {
+      this.#selectRect = new SelectRect(
+        [this.canvas.startCursor[0], this.canvas.startCursor[1]],
+        [this.canvas.cursor[0], this.canvas.cursor[1]]
+      );
+    } else if (this.#selectRect) {
+      this.#selectRect.update(this.canvas.cursor[0], this.canvas.cursor[1]);
+    }
+    this.canvas.renderCanvas(false, true);
+  }
+
+  override onHoveringMouseMove(_event: MouseEvent): void {
+    this.hoverSelectedShape();
+  }
+
+  override onMouseUp(event: MouseEvent): void {
+    if (this.canvas.leftmouseDown) {
+      if (this.#selectedShape) {
+        this.#selectedShape.dragged = false;
+        this.#selectedShape.resized = Resize.None;
+      }
+      if (!this.canvas.pressedMouseMoved) {
+        if (
+          this.#selectedShape &&
+          !this.#selectedAction &&
+          this.#selectedShape.pointInside(
+            this.canvas.tmpCtx,
+            this.canvas.cursor[0],
+            this.canvas.cursor[1]
+          )
+        ) {
+          let insideShape = false;
+          if (this.#selectedShape instanceof SelectedMultiShape) {
+            const localX = this.#selectedShape.shape.toLocalX(
+              this.canvas.cursor[0]
+            );
+            const localY = this.#selectedShape.shape.toLocalY(
+              this.canvas.cursor[1]
+            );
+            for (const shape of this.#selectedShape.shape.shapes) {
+              if (shape.pointInside(this.canvas.tmpCtx, localX, localY)) {
+                insideShape = true;
+                this.selectSingleShape(shape);
+                this.canvas.renderCanvas(true, true);
+                break;
+              }
+            }
+          } else if (
+            this.#selectedShape.shape.pointInside(
+              this.canvas.tmpCtx,
+              this.canvas.cursor[0],
+              this.canvas.cursor[1]
+            )
+          ) {
+            insideShape = true;
+          }
+
+          if (!insideShape) {
+            const shape = this.findSelectedShape(this.canvas.cursor);
+            if (shape) {
+              if (event.shiftKey) {
+                this.selectAdditionalShape(shape);
+              } else {
+                this.selectSingleShape(shape);
+              }
+            } else {
+              this.unSelectShape();
+            }
+            this.canvas.renderCanvas(true, true);
+          }
+        }
+      }
+      if (this.#selectRect) {
+        this.selectFromRect();
+        this.canvas.renderCanvas(false, true);
+      }
+    }
+    this.#selectedAction = false;
+  }
+
+  private mouseDownSelectedShape(): boolean {
+    if (this.#selectedShape) {
+      if (
+        this.#selectedShape.pointInside(
+          this.canvas.mainCtx,
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        )
+      ) {
+        this.#selectedShape.dragged = true;
+        this.#selectedShape.originFromCursor = [
+          this.#selectedShape.shape.originX - this.canvas.startCursor[0],
+          this.#selectedShape.shape.originY - this.canvas.startCursor[1],
+        ];
+        return true;
+      }
+      if (
+        this.#selectedShape.pointOnTopLine(
+          this.canvas.mainCtx,
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        )
+      ) {
+        this.#selectedShape.resized = Resize.Top;
+        return true;
+      }
+      if (
+        this.#selectedShape.pointOnBottomLine(
+          this.canvas.mainCtx,
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        )
+      ) {
+        this.#selectedShape.resized = Resize.Bottom;
+        return true;
+      }
+      if (
+        this.#selectedShape.pointOnLeftLine(
+          this.canvas.mainCtx,
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        )
+      ) {
+        this.#selectedShape.resized = Resize.Left;
+        return true;
+      }
+      if (
+        this.#selectedShape.pointOnRightLine(
+          this.canvas.mainCtx,
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        )
+      ) {
+        this.#selectedShape.resized = Resize.Right;
+        return true;
+      }
+      if (
+        this.#selectedShape.pointOnTopLeftCorner(
+          this.canvas.mainCtx,
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        )
+      ) {
+        this.#selectedShape.resized = Resize.TopLeft;
+        return true;
+      }
+      if (
+        this.#selectedShape.pointOnTopRightCorner(
+          this.canvas.mainCtx,
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        )
+      ) {
+        this.#selectedShape.resized = Resize.TopRight;
+        return true;
+      }
+      if (
+        this.#selectedShape.pointOnBottomLeftCorner(
+          this.canvas.mainCtx,
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        )
+      ) {
+        this.#selectedShape.resized = Resize.BottomLeft;
+        return true;
+      }
+      if (
+        this.#selectedShape.pointOnBottomRightCorner(
+          this.canvas.mainCtx,
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        )
+      ) {
+        this.#selectedShape.resized = Resize.BottomRight;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private selectFromRect() {
+    if (this.#selectRect) {
+      this.selectMultipleShapes(this.shapesInsideSelectRect());
+      this.#selectRect = null;
+    }
+  }
+
+  private shapesInsideSelectRect() {
+    const shapes: Shape[] = [];
+    if (this.#selectRect) {
+      const trueSelectRect: Rect = [
+        Math.min(this.#selectRect.p0[0], this.#selectRect.p1[0]),
+        Math.min(this.#selectRect.p0[1], this.#selectRect.p1[1]),
+        Math.max(this.#selectRect.p0[0], this.#selectRect.p1[0]),
+        Math.max(this.#selectRect.p0[1], this.#selectRect.p1[1]),
+      ];
+      for (const shape of this.canvas.shapes) {
+        const shapeTrueRect = shape.trueRect();
+        if (
+          this.canvas.shapeInside(shape) &&
+          shapeTrueRect[0] >= trueSelectRect[0] &&
+          shapeTrueRect[1] >= trueSelectRect[1] &&
+          shapeTrueRect[2] <= trueSelectRect[2] &&
+          shapeTrueRect[3] <= trueSelectRect[3]
+        ) {
+          shapes.push(shape);
+        }
+      }
+    }
+    return shapes;
+  }
+
+  private selectSingleShape(shape: Shape) {
+    this.unSelectShape();
+    const idx = this.canvas.shapes.indexOf(shape);
+    if (idx !== -1) {
+      this.canvas.shapes.splice(idx, 1);
+    }
+    this.#selectedShape = new SelectedShape(shape);
+  }
+
+  private selectAdditionalShape(shape: Shape) {
+    const idx = this.canvas.shapes.indexOf(shape);
+    if (idx !== -1) {
+      this.canvas.shapes.splice(idx, 1);
+    }
+    if (
+      this.#selectedShape &&
+      this.#selectedShape instanceof SelectedMultiShape
+    ) {
+      this.#selectedShape.shape.addShape(shape);
+    } else if (this.#selectedShape) {
+      const firstShape = this.#selectedShape.shape;
+      this.#selectedShape = new SelectedMultiShape([firstShape, shape]);
+    } else {
+      this.#selectedShape = new SelectedMultiShape([shape]);
+    }
+  }
+
+  private selectMultipleShapes(shapes: Shape[]) {
+    if (shapes.length > 0) {
+      if (shapes.length == 1) {
+        this.selectSingleShape(shapes[0]);
+      } else {
+        this.canvas.shapes = this.canvas.shapes.filter(
+          shape => !shapes.includes(shape)
+        );
+        this.#selectedShape = new SelectedMultiShape(shapes);
+      }
+    }
+  }
+
+  private unSelectShape() {
+    if (this.#selectedShape) {
+      if (this.#selectedShape instanceof SelectedMultiShape) {
+        for (const shape of this.#selectedShape.shape.shapes) {
+          this.canvas.shapes.push(shape);
+        }
+        this.#selectedShape.shape.removeAllShapes();
+      } else {
+        this.canvas.shapes.push(this.#selectedShape.shape);
+      }
+      this.#selectedShape = null;
+    }
+  }
+
+  private hoverSelectedShape() {
+    if (
+      this.#selectedShape &&
+      this.#selectedShape.pointInside(
+        this.canvas.mainCtx,
+        this.canvas.cursor[0],
+        this.canvas.cursor[1]
+      )
+    ) {
+      this.canvas.tmpCtx.canvas.style.cursor = 'move';
+    } else if (
+      this.#selectedShape &&
+      (this.#selectedShape.pointOnTopLine(
+        this.canvas.mainCtx,
+        this.canvas.cursor[0],
+        this.canvas.cursor[1]
+      ) ||
+        this.#selectedShape.pointOnBottomLine(
+          this.canvas.mainCtx,
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        ))
+    ) {
+      this.canvas.tmpCtx.canvas.style.cursor = 'ns-resize';
+    } else if (
+      this.#selectedShape &&
+      (this.#selectedShape.pointOnLeftLine(
+        this.canvas.mainCtx,
+        this.canvas.cursor[0],
+        this.canvas.cursor[1]
+      ) ||
+        this.#selectedShape.pointOnRightLine(
+          this.canvas.mainCtx,
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        ))
+    ) {
+      this.canvas.tmpCtx.canvas.style.cursor = 'ew-resize';
+    } else if (
+      this.#selectedShape &&
+      (this.#selectedShape.pointOnTopLeftCorner(
+        this.canvas.mainCtx,
+        this.canvas.cursor[0],
+        this.canvas.cursor[1]
+      ) ||
+        this.#selectedShape.pointOnBottomRightCorner(
+          this.canvas.mainCtx,
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        ))
+    ) {
+      if (
+        this.#selectedShape.shape.horizontalInverted !==
+        this.#selectedShape.shape.verticallyInverted
+      ) {
+        this.canvas.tmpCtx.canvas.style.cursor = 'nesw-resize';
+      } else {
+        this.canvas.tmpCtx.canvas.style.cursor = 'nwse-resize';
+      }
+    } else if (
+      this.#selectedShape &&
+      (this.#selectedShape.pointOnTopRightCorner(
+        this.canvas.mainCtx,
+        this.canvas.cursor[0],
+        this.canvas.cursor[1]
+      ) ||
+        this.#selectedShape.pointOnBottomLeftCorner(
+          this.canvas.mainCtx,
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        ))
+    ) {
+      if (
+        this.#selectedShape.shape.horizontalInverted !==
+        this.#selectedShape.shape.verticallyInverted
+      ) {
+        this.canvas.changeCursor('nwse-resize');
+      } else {
+        this.canvas.changeCursor('nesw-resize');
+      }
+    } else if (this.findSelectedShape(this.canvas.cursor)) {
+      this.canvas.changeCursor('move');
+    } else {
+      this.canvas.changeCursor('default');
+    }
+  }
+
+  private findSelectedShape(p: Point): Shape | null {
+    for (let i = this.canvas.shapes.length - 1; i >= 0; i--) {
+      if (
+        this.canvas.shapeInside(this.canvas.shapes[i]) &&
+        this.canvas.shapes[i].pointInside(this.canvas.mainCtx, p[0], p[1])
+      ) {
+        return this.canvas.shapes[i];
+      }
+    }
+    return null;
+  }
+}

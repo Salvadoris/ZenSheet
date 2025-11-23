@@ -27,6 +27,7 @@ export class SelectedShape {
   hoverLineWidth = 12;
   color = '#00f8';
   dragged = false;
+  originFromCursor: Point = [0, 0];
   resized = Resize.None;
 
   constructor(shape: Shape) {
@@ -57,8 +58,9 @@ export class SelectedShape {
     ctx.stroke(this.markedLine(ctx.lineWidth));
   }
 
-  move(dx: number, dy: number): void {
-    this.shape.move(dx, dy);
+  moveTo(x: number, y: number): void {
+    this.shape.originX = x + this.originFromCursor[0];
+    this.shape.originY = y + this.originFromCursor[1];
   }
 
   resize(p: Point) {
