@@ -1,8 +1,10 @@
 import { CanvasComponent } from '../canvas.component';
+import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 
 export abstract class CanvasToolState {
   constructor(protected canvas: CanvasComponent) {}
 
+  abstract setStyleProperty(styleProperty: ShapeStyleProperty): void;
   abstract remove(): void;
   abstract renderMain(): void;
   abstract renderTmp(): void;

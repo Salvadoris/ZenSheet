@@ -4,6 +4,7 @@ import { SelectedMultiShape } from '../Selected/SelectedMultiShape';
 import { Resize, SelectedShape } from '../Selected/SelectedShape';
 import { SelectRect } from '../Selected/SelectRect';
 import { Shape } from '../Shapes/Shape';
+import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 
 import { CanvasToolState } from './CanvasToolState';
 
@@ -14,8 +15,16 @@ export class SelectToolState extends CanvasToolState {
 
   constructor(canvas: CanvasComponent) {
     super(canvas);
+    this.canvas.removeCurrentStyle();
     if (this.canvas.tmpCtx) {
       this.canvas.changeCursor('default');
+    }
+  }
+
+  override setStyleProperty(styleProperty: ShapeStyleProperty): void {
+    if (this.#selectedShape) {
+      this.#selectedShape.shape.setStyleProperty(styleProperty);
+      this.canvas.renderCanvas(true, true);
     }
   }
 
@@ -302,6 +311,7 @@ export class SelectToolState extends CanvasToolState {
       this.canvas.shapes.splice(idx, 1);
     }
     this.#selectedShape = new SelectedShape(shape);
+    this.canvas.changeStyle(this.#selectedShape.shape.style);
   }
 
   private selectAdditionalShape(shape: Shape) {
@@ -320,6 +330,7 @@ export class SelectToolState extends CanvasToolState {
     } else {
       this.#selectedShape = new SelectedMultiShape([shape]);
     }
+    this.canvas.changeStyle(this.#selectedShape.shape.style);
   }
 
   private selectMultipleShapes(shapes: Shape[]) {
@@ -331,12 +342,14 @@ export class SelectToolState extends CanvasToolState {
           shape => !shapes.includes(shape)
         );
         this.#selectedShape = new SelectedMultiShape(shapes);
+        this.canvas.changeStyle(this.#selectedShape.shape.style);
       }
     }
   }
 
   private unSelectShape() {
     if (this.#selectedShape) {
+      this.canvas.removeCurrentStyle();
       if (this.#selectedShape instanceof SelectedMultiShape) {
         for (const shape of this.#selectedShape.shape.shapes) {
           this.canvas.shapes.push(shape);

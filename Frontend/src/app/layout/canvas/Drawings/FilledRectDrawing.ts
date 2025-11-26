@@ -2,6 +2,7 @@ import { Point } from '../Geometry';
 import { FilledRectShape } from '../Shapes/FilledRectShape';
 import { Shape } from '../Shapes/Shape';
 import { FilledRectStyle } from '../ShapeStyles/FilledRectStyle';
+import { StyleName } from '../ShapeStyles/StyleName';
 
 import { Drawing } from './Drawing';
 
@@ -32,7 +33,9 @@ export class FilledRectDrawing implements Drawing {
   }
 
   render(ctx: CanvasRenderingContext2D): void {
-    ctx.fillStyle = this.style.color;
+    ctx.fillStyle =
+      this.style[StyleName.Color] +
+      this.style[StyleName.Opacity].toString(16).padStart(2, '0');
     ctx.fill(this.path());
   }
 }

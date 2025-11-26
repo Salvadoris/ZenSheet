@@ -5,6 +5,7 @@ import {
   ViewChild,
   AfterViewInit,
   HostListener,
+  output,
 } from '@angular/core';
 
 import { Mode } from '../toolbar/toolbar.component';
@@ -12,9 +13,13 @@ import { Mode } from '../toolbar/toolbar.component';
 import { Drawing } from './Drawings/Drawing';
 import { Point, Rect } from './Geometry';
 import { Shape } from './Shapes/Shape';
-import { FilledRectStyle } from './ShapeStyles/FilledRectStyle';
-import { LineStyle } from './ShapeStyles/LineStyle';
-import { StrokedRectStyle } from './ShapeStyles/StrokedRectStyle';
+import { CanvasStyle } from './ShapeStyles/CanvasStyle';
+import {
+  NullableShapeStyle,
+  ShapeStyle,
+  ShapeStyleProperty,
+} from './ShapeStyles/ShapeStyle';
+import { StyleName } from './ShapeStyles/StyleName';
 import { CanvasToolState } from './States/CanvasToolState';
 import { FilledRectToolState } from './States/FilledRectToolState';
 import { HandToolState } from './States/HandToolState';
@@ -85,13 +90,14 @@ export class CanvasComponent implements AfterViewInit {
   #mouseDown = false;
   #leftMouseDown = false;
 
-  #lineStyle: LineStyle = { color: '#000', width: 8, cap: 'round' };
-  #filledRectStyle: FilledRectStyle = { color: '#000' };
-  #strokedRectStyle: StrokedRectStyle = {
-    color: '#000',
-    lineWidth: 8,
-    cap: 'round',
-  };
+  #style = new CanvasStyle({
+    [StyleName.Color]: '#000000',
+    [StyleName.LineWidth]: 10,
+    [StyleName.LineCap]: 'round',
+    [StyleName.Opacity]: 255,
+  } as Required<ShapeStyle>);
+
+  styleChange = output<NullableShapeStyle | null>();
 
   #smoothLine = true;
   #smoothLineFactor = 4;
@@ -178,16 +184,8 @@ export class CanvasComponent implements AfterViewInit {
     return this.#leftMouseDown;
   }
 
-  get lineStyle() {
-    return this.#lineStyle;
-  }
-
-  get filledRectStyle() {
-    return this.#filledRectStyle;
-  }
-
-  get strokedRectStyle() {
-    return this.#strokedRectStyle;
+  get style() {
+    return this.#style;
   }
 
   get smoothLine() {
@@ -219,6 +217,18 @@ export class CanvasComponent implements AfterViewInit {
         this.#toolState = new StrokedRectToolState(this);
         break;
     }
+  }
+
+  changeStyle(style: NullableShapeStyle) {
+    this.styleChange.emit(style);
+  }
+
+  setStyleProperty(styleProperty: ShapeStyleProperty) {
+    this.#toolState.setStyleProperty(styleProperty);
+  }
+
+  removeCurrentStyle() {
+    this.styleChange.emit(null);
   }
 
   changeCursor(cursor: string) {

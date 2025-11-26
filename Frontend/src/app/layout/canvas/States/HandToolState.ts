@@ -1,14 +1,19 @@
 import { CanvasComponent } from '../canvas.component';
+import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 
 import { CanvasToolState } from './CanvasToolState';
 
 export class HandToolState extends CanvasToolState {
   constructor(canvas: CanvasComponent) {
     super(canvas);
+    this.canvas.removeCurrentStyle();
     if (this.canvas.tmpCtx) {
       this.canvas.changeCursor('grab');
     }
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  override setStyleProperty(_styleProperty: ShapeStyleProperty): void {}
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   override renderMain(): void {}

@@ -1,22 +1,28 @@
 import { Point, Rect } from '../Geometry';
 import { FilledRectStyle } from '../ShapeStyles/FilledRectStyle';
+import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
+import { StyleName } from '../ShapeStyles/StyleName';
 
 import { Shape } from './Shape';
 
 export class FilledRectShape extends Shape {
-  constructor(
-    p0: Point,
-    p1: Point,
-    public style: FilledRectStyle
-  ) {
-    super(p0, p1[0] - p0[0], p1[1] - p0[1]);
+  declare style: FilledRectStyle;
+
+  constructor(p0: Point, p1: Point, style: FilledRectStyle) {
+    super(p0, p1[0] - p0[0], p1[1] - p0[1], style);
+  }
+
+  override setStyleProperty(styleProperty: ShapeStyleProperty): void {
+    this.style.updateProperty(styleProperty);
   }
 
   override renderShape(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
     ctx.save();
     ctx.translate(this.originX, this.originY);
     ctx.scale(this.scaleX, this.scaleY);
-    ctx.fillStyle = this.style.color;
+    ctx.fillStyle =
+      this.style[StyleName.Color] +
+      this.style[StyleName.Opacity].toString(16).padStart(2, '0');
     ctx.fill(this.path());
     ctx.restore();
   }

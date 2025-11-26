@@ -1,14 +1,29 @@
 import { Rect } from '../Geometry';
+import { GroupShapeStyle } from '../ShapeStyles/GroupShapeStyle';
+import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 
 import { Shape } from './Shape';
 
 export class GroupShape extends Shape {
+  declare style: GroupShapeStyle;
   constructor(public shapes: Shape[]) {
     const [originX, originY, width, height] = calcRect(shapes, false, false);
-    super([originX, originY], width, height);
+    super(
+      [originX, originY],
+      width,
+      height,
+      new GroupShapeStyle(shapes.map(s => s.style))
+    );
     for (const shape of this.shapes) {
       shape.originX -= this.originX;
       shape.originY -= this.originY;
+    }
+  }
+
+  override setStyleProperty(styleProperty: ShapeStyleProperty): void {
+    this.style.updateProperty(styleProperty);
+    for (const shape of this.shapes) {
+      shape.setStyleProperty(styleProperty);
     }
   }
 
@@ -120,6 +135,7 @@ export class GroupShape extends Shape {
     this.shapeToLocal(shape);
 
     this.shapes.push(shape);
+    this.style = new GroupShapeStyle(this.shapes.map(s => s.style));
   }
 
   removeAllShapes() {
@@ -135,6 +151,8 @@ export class GroupShape extends Shape {
       this.shapes.splice(idx, 1);
 
       this.shapeToGlobal(shape);
+
+      this.style = new GroupShapeStyle(this.shapes.map(s => s.style));
 
       // calc new rect
       const [localOriginX, localOriginY, localWidth, localHeight] = calcRect(

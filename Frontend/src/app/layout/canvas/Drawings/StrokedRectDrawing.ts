@@ -2,6 +2,7 @@ import { Point } from '../Geometry';
 import { Shape } from '../Shapes/Shape';
 import { StrokedRectShape } from '../Shapes/StrokedRectShape';
 import { StrokedRectStyle } from '../ShapeStyles/StrokedRectStyle';
+import { StyleName } from '../ShapeStyles/StyleName';
 
 import { Drawing } from './Drawing';
 
@@ -16,19 +17,20 @@ export class StrokedRectDrawing implements Drawing {
     const horizontalInverted = this.p1[0] < this.p0[0];
     const verticallyInverted = this.p1[1] < this.p0[1];
     const path = new Path2D();
+    const lineWidth = this.style[StyleName.LineWidth];
     path.rect(
       horizontalInverted
-        ? this.p0[0] - this.style.lineWidth / 2
-        : this.p0[0] + this.style.lineWidth / 2,
+        ? this.p0[0] - lineWidth / 2
+        : this.p0[0] + lineWidth / 2,
       verticallyInverted
-        ? this.p0[1] - this.style.lineWidth / 2
-        : this.p0[1] + this.style.lineWidth / 2,
+        ? this.p0[1] - lineWidth / 2
+        : this.p0[1] + lineWidth / 2,
       horizontalInverted
-        ? this.p1[0] - this.p0[0] + this.style.lineWidth
-        : this.p1[0] - this.p0[0] - this.style.lineWidth,
+        ? this.p1[0] - this.p0[0] + lineWidth
+        : this.p1[0] - this.p0[0] - lineWidth,
       verticallyInverted
-        ? this.p1[1] - this.p0[1] + this.style.lineWidth
-        : this.p1[1] - this.p0[1] - this.style.lineWidth
+        ? this.p1[1] - this.p0[1] + lineWidth
+        : this.p1[1] - this.p0[1] - lineWidth
     );
     return path;
   }
@@ -43,9 +45,11 @@ export class StrokedRectDrawing implements Drawing {
   }
 
   render(ctx: CanvasRenderingContext2D): void {
-    ctx.lineWidth = this.style.lineWidth;
-    ctx.lineCap = this.style.cap;
-    ctx.strokeStyle = this.style.color;
+    ctx.lineWidth = this.style[StyleName.LineWidth];
+    ctx.lineCap = this.style[StyleName.LineCap];
+    ctx.strokeStyle =
+      this.style[StyleName.Color] +
+      this.style[StyleName.Opacity].toString(16).padStart(2, '0');
     ctx.stroke(this.path());
   }
 }

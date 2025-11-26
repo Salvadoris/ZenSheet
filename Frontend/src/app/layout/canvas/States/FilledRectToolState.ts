@@ -1,14 +1,21 @@
 import { CanvasComponent } from '../canvas.component';
 import { FilledRectDrawing } from '../Drawings/FilledRectDrawing';
+import { FilledRectStyle } from '../ShapeStyles/FilledRectStyle';
+import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 
 import { CanvasToolState } from './CanvasToolState';
 
 export class FilledRectToolState extends CanvasToolState {
   constructor(canvas: CanvasComponent) {
     super(canvas);
+    this.canvas.changeStyle(new FilledRectStyle(this.canvas.style));
     if (this.canvas.tmpCtx) {
       this.canvas.changeCursor('default');
     }
+  }
+
+  override setStyleProperty(styleProperty: ShapeStyleProperty): void {
+    this.canvas.style.updateProperty(styleProperty);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -28,7 +35,7 @@ export class FilledRectToolState extends CanvasToolState {
       this.canvas.currentDrawing = new FilledRectDrawing(
         [this.canvas.startCursor[0], this.canvas.startCursor[1]],
         [this.canvas.cursor[0], this.canvas.cursor[1]],
-        this.canvas.filledRectStyle
+        new FilledRectStyle(this.canvas.style)
       );
       this.canvas.drawings.push(this.canvas.currentDrawing);
     } else if (this.canvas.currentDrawing) {

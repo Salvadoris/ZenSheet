@@ -1,5 +1,7 @@
 import { Point, Rect } from '../Geometry';
 import { LineStyle } from '../ShapeStyles/LineStyle';
+import { ShapeStyle, ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
+import { StyleName } from '../ShapeStyles/StyleName';
 
 import { Shape } from './Shape';
 
@@ -22,22 +24,21 @@ export class LineShape extends Shape {
   public points!: Point[];
   private chunks: Chunk[] = [];
   private segments: Segment[] = [];
-  constructor(
-    points: LinePoints,
-    public style: LineStyle
-  ) {
-    const originX = minX(points, style.width);
-    const originY = minY(points, style.width);
-    const width = maxX(points, style.width) - originX;
-    const height = maxY(points, style.width) - originY;
-    super([originX, originY], width, height);
+  declare style: LineStyle;
+
+  constructor(points: LinePoints, style: LineStyle) {
+    const originX = minX(points, style[StyleName.LineWidth]);
+    const originY = minY(points, style[StyleName.LineWidth]);
+    const width = maxX(points, style[StyleName.LineWidth]) - originX;
+    const height = maxY(points, style[StyleName.LineWidth]) - originY;
+    super([originX, originY], width, height, style);
 
     const pts: Point[] = points.map(p => [p[0] - originX, p[1] - originY]);
     this.points = pts;
     this.chunks = getLineChunks(
       { rect: [0, 0, width, height], visible: false },
       pts,
-      style.width
+      style[StyleName.LineWidth]
     );
 
     let segmentPoints: Point[] = [];
@@ -66,6 +67,10 @@ export class LineShape extends Shape {
     this.segments.push({ points: segmentPoints, chunkIndex: prevChunkIdx });
   }
 
+  override setStyleProperty(styleProperty: ShapeStyleProperty): void {
+    this.style.updateProperty(styleProperty);
+  }
+
   override renderShape(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
     const xMin = (canvasRect[0] - this.originX) / this.scaleX;
     const yMin = (canvasRect[1] - this.originY) / this.scaleY;
@@ -82,9 +87,11 @@ export class LineShape extends Shape {
     ctx.translate(this.originX, this.originY);
     ctx.scale(this.scaleX, this.scaleY);
 
-    ctx.lineWidth = this.style.width;
-    ctx.lineCap = this.style.cap;
-    ctx.strokeStyle = this.style.color;
+    ctx.lineWidth = this.style[StyleName.LineWidth];
+    ctx.lineCap = this.style[StyleName.LineCap];
+    ctx.strokeStyle =
+      this.style[StyleName.Color] +
+      this.style[StyleName.Opacity].toString(16).padStart(2, '0');
     ctx.lineJoin = 'round';
 
     for (const chunk of this.chunks) {
@@ -140,8 +147,8 @@ export class LineShape extends Shape {
     ctx.save();
     ctx.translate(this.originX, this.originY);
     ctx.scale(this.scaleX, this.scaleY);
-    ctx.lineWidth = this.style.width;
-    ctx.lineCap = this.style.cap;
+    ctx.lineWidth = this.style[StyleName.LineWidth];
+    ctx.lineCap = this.style[StyleName.LineCap];
     const inside = ctx.isPointInStroke(this.path(), x, y);
     ctx.restore();
     return inside;

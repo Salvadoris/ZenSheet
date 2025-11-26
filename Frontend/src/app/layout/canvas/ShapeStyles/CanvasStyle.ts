@@ -1,16 +1,16 @@
 import { ShapeStyle, ShapeStyleProperty } from './ShapeStyle';
 import { StyleName } from './StyleName';
 
-type FilledRectStyleType = Required<
-  Pick<ShapeStyle, StyleName.Color | StyleName.Opacity>
->;
-
-export class FilledRectStyle implements FilledRectStyleType {
+export class CanvasStyle implements Required<ShapeStyle> {
   [StyleName.Color]: string;
+  [StyleName.LineWidth]: number;
+  [StyleName.LineCap]: CanvasLineCap;
   [StyleName.Opacity]: number;
 
-  constructor(style: FilledRectStyleType) {
+  constructor(style: Required<ShapeStyle>) {
     this[StyleName.Color] = style[StyleName.Color];
+    this[StyleName.LineWidth] = style[StyleName.LineWidth];
+    this[StyleName.LineCap] = style[StyleName.LineCap];
     this[StyleName.Opacity] = style[StyleName.Opacity];
   }
 
@@ -18,6 +18,12 @@ export class FilledRectStyle implements FilledRectStyleType {
     switch (styleProperty.name) {
       case StyleName.Color:
         this[StyleName.Color] = styleProperty.value;
+        break;
+      case StyleName.LineWidth:
+        this[StyleName.LineWidth] = styleProperty.value;
+        break;
+      case StyleName.LineCap:
+        this[StyleName.LineCap] = styleProperty.value;
         break;
       case StyleName.Opacity:
         this[StyleName.Opacity] = styleProperty.value;

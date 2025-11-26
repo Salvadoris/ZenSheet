@@ -2,6 +2,7 @@ import { Point } from '../Geometry';
 import { LinePoints, LineShape } from '../Shapes/LineShape';
 import { Shape } from '../Shapes/Shape';
 import { LineStyle } from '../ShapeStyles/LineStyle';
+import { StyleName } from '../ShapeStyles/StyleName';
 
 import { Drawing } from './Drawing';
 
@@ -28,9 +29,11 @@ export class LineDrawing implements Drawing {
     this.points.push([p[0], p[1]]);
   }
   render(ctx: CanvasRenderingContext2D): void {
-    ctx.lineWidth = this.style.width;
-    ctx.lineCap = this.style.cap;
-    ctx.strokeStyle = this.style.color;
+    ctx.lineWidth = this.style[StyleName.LineWidth];
+    ctx.lineCap = this.style[StyleName.LineCap];
+    ctx.strokeStyle =
+      this.style[StyleName.Color] +
+      this.style[StyleName.Opacity].toString(16).padStart(2, '0');
     ctx.lineJoin = 'round';
 
     ctx.stroke(this.path());

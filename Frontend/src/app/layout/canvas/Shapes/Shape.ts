@@ -1,4 +1,8 @@
 import { Point, Rect } from '../Geometry';
+import {
+  NullableShapeStyle,
+  ShapeStyleProperty,
+} from '../ShapeStyles/ShapeStyle';
 
 export abstract class Shape {
   scaleX = 1;
@@ -13,8 +17,14 @@ export abstract class Shape {
   minHeight = 1;
   horizontalInverted: boolean;
   verticallyInverted: boolean;
+  style: NullableShapeStyle;
 
-  constructor(origin: Point, width: number, height: number) {
+  constructor(
+    origin: Point,
+    width: number,
+    height: number,
+    style: NullableShapeStyle
+  ) {
     if (width == 0) {
       throw new Error('Shape width cannot be zero');
     }
@@ -29,6 +39,7 @@ export abstract class Shape {
     this.height = height;
     this.horizontalInverted = this.width < 0;
     this.verticallyInverted = this.height < 0;
+    this.style = style;
   }
 
   render(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
@@ -40,6 +51,8 @@ export abstract class Shape {
   abstract renderShape(ctx: CanvasRenderingContext2D, canvasRect: Rect): void;
 
   abstract path(): Path2D;
+
+  abstract setStyleProperty(styleProperty: ShapeStyleProperty): void;
 
   abstract pointInside(
     ctx: CanvasRenderingContext2D,

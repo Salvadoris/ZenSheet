@@ -1,14 +1,21 @@
 import { CanvasComponent } from '../canvas.component';
 import { LineDrawing, smoothLine } from '../Drawings/LineDrawing';
+import { LineStyle } from '../ShapeStyles/LineStyle';
+import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 
 import { CanvasToolState } from './CanvasToolState';
 
 export class PenToolState extends CanvasToolState {
   constructor(canvas: CanvasComponent) {
     super(canvas);
+    this.canvas.changeStyle(new LineStyle(this.canvas.style));
     if (this.canvas.tmpCtx) {
       this.canvas.changeCursor('default');
     }
+  }
+
+  override setStyleProperty(styleProperty: ShapeStyleProperty): void {
+    this.canvas.style.updateProperty(styleProperty);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -30,7 +37,7 @@ export class PenToolState extends CanvasToolState {
           [this.canvas.prevCursor[0], this.canvas.prevCursor[1]],
           [this.canvas.cursor[0], this.canvas.cursor[1]],
         ],
-        this.canvas.lineStyle
+        new LineStyle(this.canvas.style)
       );
       this.canvas.drawings.push(this.canvas.currentDrawing);
     } else if (this.canvas.currentDrawing) {

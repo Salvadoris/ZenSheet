@@ -4,6 +4,7 @@ import { QuillModule } from 'ngx-quill';
 
 import { Note } from './interfaces/note.model';
 import { CanvasComponent } from './layout/canvas/canvas.component';
+import { DetailSidebar } from './layout/detail-sidebar/detail-sidebar.component';
 import { SidebarComponent } from './layout/sidebar/sidebar.component';
 import { ToolbarComponent } from './layout/toolbar/toolbar.component';
 import { NotesService } from './services/notes.service';
@@ -16,6 +17,7 @@ import { NotesService } from './services/notes.service';
     ToolbarComponent,
     QuillModule,
     CanvasComponent,
+    DetailSidebar,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
