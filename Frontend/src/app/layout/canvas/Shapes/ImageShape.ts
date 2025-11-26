@@ -1,6 +1,6 @@
 import { Point, Rect } from '../Geometry';
 import { ImageStyle } from '../ShapeStyles/ImageStyle';
-import { ShapeStyle, ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
+import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { StyleName } from '../ShapeStyles/StyleName';
 
 import { Shape } from './Shape';
@@ -21,22 +21,22 @@ export class ImageShape extends Shape {
 
   override renderShape(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
     if (this.loaded) {
-      this.drawImage(ctx);
+      this.renderImage(ctx);
     } else {
       this.img.onload = () => {
         this.loaded = true;
-        ctx.save();
-        ctx.translate(this.originX, this.originY);
-        ctx.scale(this.scaleX, this.scaleY);
-        this.drawImage(ctx);
-        ctx.restore();
+        this.renderImage(ctx);
       };
     }
   }
 
-  private drawImage(ctx: CanvasRenderingContext2D) {
+  private renderImage(ctx: CanvasRenderingContext2D) {
+    ctx.save();
+    ctx.translate(this.originX, this.originY);
+    ctx.scale(this.scaleX, this.scaleY);
     ctx.globalAlpha = this.style[StyleName.Opacity] / 255;
     ctx.drawImage(this.img, 0, 0, this.originalWidth, this.originalHeight);
+    ctx.restore();
   }
 
   override path(): Path2D {
