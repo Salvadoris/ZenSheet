@@ -27,6 +27,23 @@ import { PenToolState } from './States/PenToolState';
 import { SelectToolState } from './States/SelectToolState';
 import { StrokedRectToolState } from './States/StrokedRectToolState';
 
+type GestureEventWithScale = Event & {
+  scale: number;
+  clientX: number;
+  clientY: number;
+  pageX: number;
+  pageY: number;
+  preventDefault(): void;
+};
+
+declare global {
+  interface WindowEventMap {
+    gesturestart: GestureEventWithScale;
+    gesturechange: GestureEventWithScale;
+    gestureend: GestureEventWithScale;
+  }
+}
+
 @Component({
   selector: 'app-canvas',
   imports: [],
@@ -57,14 +74,10 @@ export class CanvasComponent implements AfterViewInit {
   #currentDrawing: Drawing | null = null;
 
   #scale = 1;
-  #prevScale = 1;
-  #targetScale = 1;
   #minScale = 0.1;
   #maxScale = 5;
 
   #origin: Point = [0, 0];
-  #prevOrigin: Point = [0, 0];
-  #targetOrigin: Point = [0, 0];
 
   #cursor: Point = [0, 0];
 
@@ -73,13 +86,11 @@ export class CanvasComponent implements AfterViewInit {
 
   #trueRect: Rect = [0, 0, 0, 0];
 
-  #zoomFactor = 1.5;
-  #isZooming = false;
-
-  #moveFactor = 0.2;
-  #moveSmoothFactor = 0.05;
-  #isMovingHorizontally = false;
-  #isMovingVertically = false;
+  #wheelZoomStep = 0.004;
+  #lineScrollPixels = 16;
+  #isPinching = false;
+  #pinchStartScale = 1;
+  #pinchFocus: Point = [0, 0];
   #moveEnabled = true;
 
   #dragStart: Point = [0, 0];
@@ -98,7 +109,6 @@ export class CanvasComponent implements AfterViewInit {
   } as Required<ShapeStyle>);
 
   styleChange = output<NullableShapeStyle | null>();
-
   #smoothLine = true;
   #smoothLineFactor = 4;
 
@@ -273,80 +283,40 @@ export class CanvasComponent implements AfterViewInit {
     this.onWindowBlur();
   }
 
-  private animateZoom() {
-    this.#origin[0] +=
-      (this.#targetOrigin[0] - this.#prevOrigin[0]) * this.#moveSmoothFactor;
-    this.#origin[1] +=
-      (this.#targetOrigin[1] - this.#prevOrigin[1]) * this.#moveSmoothFactor;
-    this.#scale +=
-      (this.#targetScale - this.#prevScale) * this.#moveSmoothFactor;
-    this.renderCanvas(true, true);
-    if (
-      this.#isZooming &&
-      (this.#targetScale - this.#prevScale) *
-        (this.#scale - this.#targetScale) <
-        0
-    ) {
-      requestAnimationFrame(() => this.animateZoom());
-    } else {
-      this.#isZooming = false;
+  private clampScale(value: number) {
+    if (value < this.#minScale) {
+      return this.#minScale;
     }
+    if (value > this.#maxScale) {
+      return this.#maxScale;
+    }
+    return value;
   }
 
-  private animateMoveHorizontally(event: MouseEvent) {
-    const prevOriginX = this.#origin[0];
-    const prevOriginY = this.#origin[1];
-    this.#origin[0] +=
-      (this.#targetOrigin[0] - this.#prevOrigin[0]) * this.#moveSmoothFactor;
-    if (this.#leftMouseDown) {
-      this.updateCursor(
-        this.#cursor[0] * this.#scale + prevOriginX,
-        this.#cursor[1] * this.#scale + prevOriginY
-      );
-      this.#toolState.onPressedMouseMove(event);
+  private applyZoom(nextScale: number, focusX: number, focusY: number) {
+    const clampedScale = this.clampScale(nextScale);
+    if (clampedScale === this.#scale) {
+      return;
     }
+
+    const scaleRatio = clampedScale / this.#scale;
+
+    this.#origin[0] = focusX - (focusX - this.#origin[0]) * scaleRatio;
+    this.#origin[1] = focusY - (focusY - this.#origin[1]) * scaleRatio;
+    this.#scale = clampedScale;
+
     this.renderCanvas(true, true);
-    if (
-      this.#isMovingHorizontally &&
-      (this.#targetOrigin[0] - this.#prevOrigin[0]) *
-        (this.#origin[0] - this.#targetOrigin[0]) <
-        0
-    ) {
-      requestAnimationFrame(() => this.animateMoveHorizontally(event));
-    } else {
-      this.#isMovingHorizontally = false;
-      if (!this.#mouseDown) {
-        this.#toolState.onHoveringMouseMove(event);
-      }
-    }
   }
 
-  private animateMoveVertically(event: MouseEvent) {
-    const prevOriginX = this.#origin[0];
-    const prevOriginY = this.#origin[1];
-    this.#origin[1] +=
-      (this.#targetOrigin[1] - this.#prevOrigin[1]) * this.#moveSmoothFactor;
-    this.updateCursor(
-      this.#cursor[0] * this.#scale + prevOriginX,
-      this.#cursor[1] * this.#scale + prevOriginY
-    );
-    if (this.#leftMouseDown) {
-      this.#toolState.onPressedMouseMove(event);
+  private panBy(deltaX: number, deltaY: number) {
+    if (deltaX === 0 && deltaY === 0) {
+      return;
     }
+
+    this.#origin[0] -= deltaX;
+    this.#origin[1] -= deltaY;
+
     this.renderCanvas(true, true);
-    if (
-      this.#isMovingVertically &&
-      (this.#targetOrigin[1] - this.#prevOrigin[1]) *
-        (this.#origin[1] - this.#targetOrigin[1]) <
-        0
-    ) {
-      requestAnimationFrame(() => this.animateMoveVertically(event));
-    } else {
-      this.#isMovingVertically = false;
-      if (!this.#mouseDown) {
-        this.#toolState.onHoveringMouseMove(event);
-      }
-    }
   }
 
   @HostListener('window:resize')
@@ -410,51 +380,44 @@ export class CanvasComponent implements AfterViewInit {
     }
   }
 
-  private zoom(event: WheelEvent) {
-    const delta = event.deltaY < 0 ? this.#zoomFactor : 1 / this.#zoomFactor;
+  private zoomWithWheel(event: WheelEvent) {
+    const delta = -event.deltaY;
+    if (delta === 0) {
+      return;
+    }
+    const step =
+      event.deltaMode === WheelEvent.DOM_DELTA_LINE
+        ? this.#wheelZoomStep * 15
+        : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+          ? this.#wheelZoomStep * window.innerHeight
+          : this.#wheelZoomStep;
+    const normalizedDelta = Math.max(-1, Math.min(1, delta * step));
+    const zoomFactor = Math.exp(normalizedDelta);
+    this.applyZoom(this.#scale * zoomFactor, event.pageX, event.pageY);
+  }
 
-    const newScale = this.#scale * delta;
+  private panWithWheel(event: WheelEvent) {
+    const unit =
+      event.deltaMode === WheelEvent.DOM_DELTA_LINE
+        ? this.#lineScrollPixels
+        : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+          ? window.innerHeight
+          : 1;
 
-    if (newScale < this.#minScale || newScale > this.#maxScale) {
+    let deltaX = event.deltaX * unit;
+    let deltaY = event.deltaY * unit;
+
+    if (event.shiftKey && Math.abs(deltaX) < Math.abs(deltaY)) {
+      deltaX = deltaY;
+      deltaY = 0;
+    }
+
+    const isTrackpadSwipe = Math.abs(deltaX) > 0 || Math.abs(deltaY) > 0;
+    if (!isTrackpadSwipe) {
       return;
     }
 
-    this.#prevOrigin[0] = this.#origin[0];
-    this.#prevOrigin[1] = this.#origin[1];
-    this.#targetOrigin[0] =
-      event.pageX - (event.pageX - this.#origin[0]) * (newScale / this.#scale);
-    this.#targetOrigin[1] =
-      event.pageY - (event.pageY - this.#origin[1]) * (newScale / this.#scale);
-
-    this.#prevScale = this.#scale;
-    this.#targetScale = newScale;
-
-    if (!this.#isZooming) {
-      this.#isZooming = true;
-      this.animateZoom();
-    }
-  }
-
-  private moveHorizontally(event: WheelEvent) {
-    const delta = event.deltaY < 0 ? this.#moveFactor : -this.#moveFactor;
-    this.#prevOrigin[0] = this.#origin[0];
-    this.#targetOrigin[0] =
-      this.#origin[0] + this.#mainCtx.canvas.height * delta;
-    if (!this.#isMovingHorizontally) {
-      this.#isMovingHorizontally = true;
-      this.animateMoveHorizontally(event);
-    }
-  }
-
-  private moveVertically(event: WheelEvent) {
-    const delta = event.deltaY < 0 ? this.#moveFactor : -this.#moveFactor;
-    this.#prevOrigin[1] = this.#origin[1];
-    this.#targetOrigin[1] =
-      this.#origin[1] + this.#mainCtx.canvas.height * delta;
-    if (!this.#isMovingVertically) {
-      this.#isMovingVertically = true;
-      this.animateMoveVertically(event);
-    }
+    this.panBy(deltaX, deltaY);
   }
 
   onWheel = (event: WheelEvent) => {
@@ -462,14 +425,44 @@ export class CanvasComponent implements AfterViewInit {
     if (!this.#moveEnabled) {
       return;
     }
-    if (event.ctrlKey) {
-      this.zoom(event);
-    } else if (event.shiftKey) {
-      this.moveHorizontally(event);
-    } else {
-      this.moveVertically(event);
+    const shouldZoom = event.ctrlKey || event.metaKey;
+    if (shouldZoom) {
+      this.zoomWithWheel(event);
+      return;
     }
+    this.panWithWheel(event);
   };
+
+  @HostListener('window:gesturestart', ['$event'])
+  handleGestureStart(event: GestureEventWithScale) {
+    if (!this.#moveEnabled) {
+      return;
+    }
+    event.preventDefault();
+    this.#isPinching = true;
+    this.#pinchStartScale = this.#scale;
+    this.#pinchFocus[0] = event.pageX ?? event.clientX ?? 0;
+    this.#pinchFocus[1] = event.pageY ?? event.clientY ?? 0;
+  }
+
+  @HostListener('window:gesturechange', ['$event'])
+  handleGestureChange(event: GestureEventWithScale) {
+    if (!this.#isPinching || !this.#moveEnabled) {
+      return;
+    }
+    event.preventDefault();
+    const targetScale = this.#pinchStartScale * event.scale;
+    const focusX = event.pageX ?? event.clientX ?? this.#pinchFocus[0];
+    const focusY = event.pageY ?? event.clientY ?? this.#pinchFocus[1];
+    this.#pinchFocus[0] = focusX;
+    this.#pinchFocus[1] = focusY;
+    this.applyZoom(targetScale, focusX, focusY);
+  }
+
+  @HostListener('window:gestureend')
+  handleGestureEnd() {
+    this.#isPinching = false;
+  }
 
   onMouseDown = (event: MouseEvent) => {
     event.preventDefault();
