@@ -18,6 +18,9 @@ export class GroupShape extends Shape {
       shape.originX -= this.originX;
       shape.originY -= this.originY;
     }
+    this.invertable = !shapes.some(s => !s.invertable);
+    this.minWidth = this.calcMinWidth();
+    this.minHeight = this.calcMinHeight();
   }
 
   override setStyleProperty(styleProperty: ShapeStyleProperty): void {
@@ -136,6 +139,10 @@ export class GroupShape extends Shape {
 
     this.shapes.push(shape);
     this.style = new GroupShapeStyle(this.shapes.map(s => s.style));
+
+    this.invertable = !this.shapes.some(s => !s.invertable);
+    this.minWidth = this.calcMinWidth();
+    this.minHeight = this.calcMinHeight();
   }
 
   removeAllShapes() {
@@ -153,6 +160,10 @@ export class GroupShape extends Shape {
       this.shapeToGlobal(shape);
 
       this.style = new GroupShapeStyle(this.shapes.map(s => s.style));
+
+      this.invertable = !this.shapes.some(s => !s.invertable);
+      this.minWidth = this.calcMinWidth();
+      this.minHeight = this.calcMinHeight();
 
       // calc new rect
       const [localOriginX, localOriginY, localWidth, localHeight] = calcRect(
@@ -186,6 +197,22 @@ export class GroupShape extends Shape {
       this.originalWidth = localWidth;
       this.originalHeight = localHeight;
     }
+  }
+
+  private calcMinWidth() {
+    return (this.minWidth = Math.max(
+      ...this.shapes.map(
+        s => s.minWidth * (this.originalWidth / (s.originalWidth * s.scaleX))
+      )
+    ));
+  }
+
+  private calcMinHeight() {
+    return (this.minHeight = Math.max(
+      ...this.shapes.map(
+        s => s.minHeight * (this.originalHeight / (s.originalHeight * s.scaleY))
+      )
+    ));
   }
 }
 

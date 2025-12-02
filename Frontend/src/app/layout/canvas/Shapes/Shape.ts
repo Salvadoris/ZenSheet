@@ -15,6 +15,7 @@ export abstract class Shape {
   height: number;
   minWidth = 1;
   minHeight = 1;
+  invertable = true;
   horizontalInverted: boolean;
   verticallyInverted: boolean;
   style: NullableShapeStyle;
@@ -61,8 +62,19 @@ export abstract class Shape {
   ): boolean;
 
   resizeTop(y: number) {
-    const newHeight = this.originY + this.height - y;
-    if (Math.abs(newHeight) >= this.minHeight) {
+    let newHeight = this.originY + this.height - y;
+    if (
+      !this.invertable &&
+      this.height > this.minHeight &&
+      newHeight < this.minHeight
+    ) {
+      newHeight = this.minHeight;
+      y = this.originY + this.height - newHeight;
+    }
+    if (
+      (!this.invertable && newHeight >= this.minHeight) ||
+      (this.invertable && Math.abs(newHeight) >= this.minHeight)
+    ) {
       this.height = newHeight;
       this.originY = y;
       this.scaleY = this.height / this.originalHeight;
@@ -70,16 +82,36 @@ export abstract class Shape {
   }
 
   resizeBottom(y: number) {
-    const newHeight = y - this.originY;
-    if (Math.abs(newHeight) >= this.minHeight) {
+    let newHeight = y - this.originY;
+    if (
+      !this.invertable &&
+      this.height > this.minHeight &&
+      newHeight < this.minHeight
+    ) {
+      newHeight = this.minHeight;
+    }
+    if (
+      (!this.invertable && newHeight >= this.minHeight) ||
+      (this.invertable && Math.abs(newHeight) >= this.minHeight)
+    ) {
       this.height = newHeight;
       this.scaleY = this.height / this.originalHeight;
     }
   }
 
   resizeLeft(x: number) {
-    const newWidth = this.originX + this.width - x;
-    if (Math.abs(newWidth) >= this.minWidth) {
+    let newWidth = this.originX + this.width - x;
+    if (
+      !this.invertable &&
+      this.width > this.minWidth &&
+      newWidth < this.minWidth
+    ) {
+      newWidth = this.minWidth;
+    }
+    if (
+      (!this.invertable && newWidth >= this.minWidth) ||
+      (this.invertable && Math.abs(newWidth) >= this.minWidth)
+    ) {
       this.width = newWidth;
       this.originX = x;
       this.scaleX = this.width / this.originalWidth;
@@ -87,8 +119,18 @@ export abstract class Shape {
   }
 
   resizeRight(x: number) {
-    const newWidth = x - this.originX;
-    if (Math.abs(newWidth) >= this.minWidth) {
+    let newWidth = x - this.originX;
+    if (
+      !this.invertable &&
+      this.width > this.minWidth &&
+      newWidth < this.minWidth
+    ) {
+      newWidth = this.minWidth;
+    }
+    if (
+      (!this.invertable && newWidth >= this.minWidth) ||
+      (this.invertable && Math.abs(newWidth) >= this.minWidth)
+    ) {
       this.width = newWidth;
       this.scaleX = this.width / this.originalWidth;
     }
