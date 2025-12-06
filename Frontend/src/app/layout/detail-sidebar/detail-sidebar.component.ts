@@ -44,47 +44,22 @@ export class DetailSidebar {
     this.#cdr.markForCheck();
   }
 
-  changeStyleColor(color: string) {
-    if (this.style[StyleName.Color] !== undefined) {
-      this.style[StyleName.Color] = color;
-      this.#cdr.markForCheck();
-      this.stylePropertyChange.emit({
-        name: StyleName.Color,
-        value: color,
-      });
+  changeStyle(styleProperty: ShapeStyleProperty) {
+    switch (styleProperty.name) {
+      case StyleName.Color:
+        this.style[StyleName.Color] = styleProperty.value;
+        break;
+      case StyleName.LineWidth:
+        this.style[StyleName.LineWidth] = styleProperty.value;
+        break;
+      case StyleName.LineCap:
+        this.style[StyleName.LineCap] = styleProperty.value;
+        break;
+      case StyleName.Opacity:
+        this.style[StyleName.Opacity] = styleProperty.value;
+        break;
     }
-  }
-
-  changeStyleLineWidth(lineWidth: number) {
-    if (this.style[StyleName.LineWidth] !== undefined) {
-      this.style[StyleName.LineWidth] = lineWidth;
-      this.#cdr.markForCheck();
-      this.stylePropertyChange.emit({
-        name: StyleName.LineWidth,
-        value: lineWidth,
-      });
-    }
-  }
-
-  changeStyleLineCap(lineCap: CanvasLineCap) {
-    if (this.style[StyleName.LineCap] !== undefined) {
-      this.style[StyleName.LineCap] = lineCap;
-      this.#cdr.markForCheck();
-      this.stylePropertyChange.emit({
-        name: StyleName.LineCap,
-        value: lineCap,
-      });
-    }
-  }
-
-  changeStyleOpacity(opacity: number) {
-    if (this.style[StyleName.Opacity] !== undefined) {
-      this.style[StyleName.Opacity] = opacity;
-      this.#cdr.markForCheck();
-      this.stylePropertyChange.emit({
-        name: StyleName.Opacity,
-        value: opacity,
-      });
-    }
+    this.#cdr.markForCheck();
+    this.stylePropertyChange.emit(styleProperty);
   }
 }

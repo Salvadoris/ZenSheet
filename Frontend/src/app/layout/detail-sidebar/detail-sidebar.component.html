@@ -5,7 +5,7 @@
       <div class="flex flex-row gap-1">
         @for (color of colors; track $index) {
           <div
-            (click)="changeStyleColor(color)"
+            (click)="changeStyle({ name: StyleName.Color, value: color })"
             tabindex="0"
             [ngClass]="{
               'border-2 border-gray-100 outline-2 outline-blue-600':
@@ -23,7 +23,9 @@
       <div class="flex flex-row gap-1 pb-1">
         @for (lineWidth of lineWidths; track $index) {
           <div
-            (click)="changeStyleLineWidth(lineWidth)"
+            (click)="
+              changeStyle({ name: StyleName.LineWidth, value: lineWidth })
+            "
             tabindex="0"
             [ngClass]="{
               'border-2 border-gray-100 outline-2 outline-blue-600':
@@ -45,7 +47,7 @@
       <div class="flex flex-row gap-1 pb-1">
         @for (lineCap of lineCaps; track $index) {
           <div
-            (click)="changeStyleLineCap(lineCap)"
+            (click)="changeStyle({ name: StyleName.LineCap, value: lineCap })"
             tabindex="0"
             [ngClass]="{
               'border-2 border-gray-100 outline-2 outline-blue-600':
@@ -71,7 +73,9 @@
         min="0"
         max="255"
         [value]="style[StyleName.Opacity]"
-        (input)="changeStyleOpacity(+opacityslider.value)" />
+        (input)="
+          changeStyle({ name: StyleName.Opacity, value: +opacityslider.value })
+        " />
     </div>
   }
 </div>
