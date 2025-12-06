@@ -214,6 +214,14 @@ export class GroupShape extends Shape {
       )
     ));
   }
+
+  override resizeContent(): void {
+    for (const shape of this.shapes) {
+      this.shapeToGlobal(shape);
+      shape.resizeContent();
+      this.shapeToLocal(shape);
+    }
+  }
 }
 
 function calcRect(

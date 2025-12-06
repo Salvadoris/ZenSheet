@@ -59,4 +59,7 @@ export class ImageShape extends Shape {
     this.ctx.restore();
     return inside;
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  override resizeContent(): void {}
 }

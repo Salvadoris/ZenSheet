@@ -77,6 +77,7 @@ export abstract class Shape {
       this.height = newHeight;
       this.originY = y;
       this.scaleY = this.height / this.originalHeight;
+      this.resizeContent();
     }
   }
 
@@ -95,6 +96,7 @@ export abstract class Shape {
     ) {
       this.height = newHeight;
       this.scaleY = this.height / this.originalHeight;
+      this.resizeContent();
     }
   }
 
@@ -114,6 +116,7 @@ export abstract class Shape {
       this.width = newWidth;
       this.originX = x;
       this.scaleX = this.width / this.originalWidth;
+      this.resizeContent();
     }
   }
 
@@ -132,8 +135,11 @@ export abstract class Shape {
     ) {
       this.width = newWidth;
       this.scaleX = this.width / this.originalWidth;
+      this.resizeContent();
     }
   }
+
+  abstract resizeContent(): void;
 
   trueRect(): Rect {
     let minX = 0;

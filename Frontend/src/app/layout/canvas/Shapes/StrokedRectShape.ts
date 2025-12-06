@@ -53,4 +53,7 @@ export class StrokedRectShape extends Shape {
     this.ctx.lineCap = this.style[StyleName.LineCap];
     return this.ctx.isPointInStroke(this.path(), x, y);
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  override resizeContent(): void {}
 }
