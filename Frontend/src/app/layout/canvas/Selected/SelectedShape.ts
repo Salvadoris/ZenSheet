@@ -74,20 +74,20 @@ export class SelectedShape {
         this.shape.resizeRight(p[0]);
         break;
       case Resize.TopLeft:
-        this.shape.resizeTop(p[1]);
         this.shape.resizeLeft(p[0]);
+        this.shape.resizeTop(p[1]);
         break;
       case Resize.TopRight:
-        this.shape.resizeTop(p[1]);
         this.shape.resizeRight(p[0]);
+        this.shape.resizeTop(p[1]);
         break;
       case Resize.BottomLeft:
-        this.shape.resizeBottom(p[1]);
         this.shape.resizeLeft(p[0]);
+        this.shape.resizeBottom(p[1]);
         break;
       case Resize.BottomRight:
-        this.shape.resizeBottom(p[1]);
         this.shape.resizeRight(p[0]);
+        this.shape.resizeBottom(p[1]);
         break;
     }
   }
