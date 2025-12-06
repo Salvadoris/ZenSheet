@@ -34,28 +34,24 @@ export class SelectedShape {
     this.shape = shape;
   }
 
-  render(
-    ctx: CanvasRenderingContext2D,
-    canvasScale: number,
-    canvasRect: Rect
-  ): void {
-    this.shape.render(ctx, canvasRect);
-    ctx.fillStyle = 'transparent';
+  render(canvasScale: number, canvasRect: Rect): void {
+    this.shape.render(canvasRect);
+    this.shape.ctx.fillStyle = 'transparent';
     this.setHoverLines(canvasScale);
-    ctx.fill(this.topLine);
-    ctx.fill(this.bottomLine);
-    ctx.fill(this.leftLine);
-    ctx.fill(this.rightLine);
-    ctx.fill(this.topLeftCorner);
-    ctx.fill(this.topRightCorner);
-    ctx.fill(this.bottomLeftCorner);
-    ctx.fill(this.bottomRightCorner);
+    this.shape.ctx.fill(this.topLine);
+    this.shape.ctx.fill(this.bottomLine);
+    this.shape.ctx.fill(this.leftLine);
+    this.shape.ctx.fill(this.rightLine);
+    this.shape.ctx.fill(this.topLeftCorner);
+    this.shape.ctx.fill(this.topRightCorner);
+    this.shape.ctx.fill(this.bottomLeftCorner);
+    this.shape.ctx.fill(this.bottomRightCorner);
 
-    ctx.strokeStyle = this.color;
-    ctx.fillStyle = this.color;
-    ctx.lineWidth = this.lineWidth / canvasScale;
-    ctx.lineCap = 'square';
-    ctx.stroke(this.markedLine(ctx.lineWidth));
+    this.shape.ctx.strokeStyle = this.color;
+    this.shape.ctx.fillStyle = this.color;
+    this.shape.ctx.lineWidth = this.lineWidth / canvasScale;
+    this.shape.ctx.lineCap = 'square';
+    this.shape.ctx.stroke(this.markedLine(this.shape.ctx.lineWidth));
   }
 
   moveTo(x: number, y: number): void {

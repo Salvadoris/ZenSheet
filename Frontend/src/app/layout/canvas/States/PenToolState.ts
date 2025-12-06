@@ -64,7 +64,9 @@ export class PenToolState extends CanvasToolState {
             this.canvas.smoothLineFactor
           );
         }
-        this.canvas.shapes.push(this.canvas.currentDrawing.toShape());
+        this.canvas.shapes.push(
+          this.canvas.currentDrawing.toShape(this.canvas.mainCtx)
+        );
         const idx = this.canvas.drawings.indexOf(this.canvas.currentDrawing);
         this.canvas.currentDrawing = null;
         if (idx !== -1) {

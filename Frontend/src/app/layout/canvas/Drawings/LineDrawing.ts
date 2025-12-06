@@ -21,8 +21,8 @@ export class LineDrawing implements Drawing {
     return path;
   }
 
-  toShape(): Shape {
-    return new LineShape(this.points, this.style);
+  toShape(ctx: CanvasRenderingContext2D): Shape {
+    return new LineShape(this.points, this.style, ctx);
   }
 
   update(p: Point): void {

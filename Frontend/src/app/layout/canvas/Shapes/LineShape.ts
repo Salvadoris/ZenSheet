@@ -26,12 +26,16 @@ export class LineShape extends Shape {
   private segments: Segment[] = [];
   declare style: LineStyle;
 
-  constructor(points: LinePoints, style: LineStyle) {
+  constructor(
+    points: LinePoints,
+    style: LineStyle,
+    ctx: CanvasRenderingContext2D
+  ) {
     const originX = minX(points, style[StyleName.LineWidth]);
     const originY = minY(points, style[StyleName.LineWidth]);
     const width = maxX(points, style[StyleName.LineWidth]) - originX;
     const height = maxY(points, style[StyleName.LineWidth]) - originY;
-    super([originX, originY], width, height, style);
+    super([originX, originY], width, height, style, ctx);
 
     const pts: Point[] = points.map(p => [p[0] - originX, p[1] - originY]);
     this.points = pts;
@@ -71,7 +75,7 @@ export class LineShape extends Shape {
     this.style.updateProperty(styleProperty);
   }
 
-  override renderShape(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
+  override renderShape(canvasRect: Rect): void {
     const xMin = (canvasRect[0] - this.originX) / this.scaleX;
     const yMin = (canvasRect[1] - this.originY) / this.scaleY;
     const xMax = (canvasRect[2] - this.originX) / this.scaleX;
@@ -83,16 +87,16 @@ export class LineShape extends Shape {
       Math.max(yMin, yMax),
     ];
 
-    ctx.save();
-    ctx.translate(this.originX, this.originY);
-    ctx.scale(this.scaleX, this.scaleY);
+    this.ctx.save();
+    this.ctx.translate(this.originX, this.originY);
+    this.ctx.scale(this.scaleX, this.scaleY);
 
-    ctx.lineWidth = this.style[StyleName.LineWidth];
-    ctx.lineCap = this.style[StyleName.LineCap];
-    ctx.strokeStyle =
+    this.ctx.lineWidth = this.style[StyleName.LineWidth];
+    this.ctx.lineCap = this.style[StyleName.LineCap];
+    this.ctx.strokeStyle =
       this.style[StyleName.Color] +
       this.style[StyleName.Opacity].toString(16).padStart(2, '0');
-    ctx.lineJoin = 'round';
+    this.ctx.lineJoin = 'round';
 
     for (const chunk of this.chunks) {
       if (rectsOverlap(chunk.rect, localCanvasRect)) {
@@ -102,8 +106,8 @@ export class LineShape extends Shape {
       }
     }
 
-    ctx.stroke(this.path());
-    ctx.restore();
+    this.ctx.stroke(this.path());
+    this.ctx.restore();
   }
 
   override path(): Path2D {
@@ -139,18 +143,14 @@ export class LineShape extends Shape {
     return path;
   }
 
-  override pointInside(
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number
-  ): boolean {
-    ctx.save();
-    ctx.translate(this.originX, this.originY);
-    ctx.scale(this.scaleX, this.scaleY);
-    ctx.lineWidth = this.style[StyleName.LineWidth];
-    ctx.lineCap = this.style[StyleName.LineCap];
-    const inside = ctx.isPointInStroke(this.path(), x, y);
-    ctx.restore();
+  override pointInside(x: number, y: number): boolean {
+    this.ctx.save();
+    this.ctx.translate(this.originX, this.originY);
+    this.ctx.scale(this.scaleX, this.scaleY);
+    this.ctx.lineWidth = this.style[StyleName.LineWidth];
+    this.ctx.lineCap = this.style[StyleName.LineCap];
+    const inside = this.ctx.isPointInStroke(this.path(), x, y);
+    this.ctx.restore();
     return inside;
   }
 }

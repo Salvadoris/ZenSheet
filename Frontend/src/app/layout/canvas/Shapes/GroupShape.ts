@@ -6,13 +6,17 @@ import { Shape } from './Shape';
 
 export class GroupShape extends Shape {
   declare style: GroupShapeStyle;
-  constructor(public shapes: Shape[]) {
+  constructor(
+    public shapes: Shape[],
+    ctx: CanvasRenderingContext2D
+  ) {
     const [originX, originY, width, height] = calcRect(shapes, false, false);
     super(
       [originX, originY],
       width,
       height,
-      new GroupShapeStyle(shapes.map(s => s.style))
+      new GroupShapeStyle(shapes.map(s => s.style)),
+      ctx
     );
     for (const shape of this.shapes) {
       shape.originX -= this.originX;
@@ -30,10 +34,10 @@ export class GroupShape extends Shape {
     }
   }
 
-  override renderShape(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
+  override renderShape(canvasRect: Rect): void {
     for (const shape of this.shapes) {
       this.shapeToGlobal(shape);
-      shape.render(ctx, canvasRect);
+      shape.render(canvasRect);
       this.shapeToLocal(shape);
     }
   }
@@ -46,15 +50,11 @@ export class GroupShape extends Shape {
     return path;
   }
 
-  override pointInside(
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number
-  ): boolean {
+  override pointInside(x: number, y: number): boolean {
     const localX = this.toLocalX(x);
     const localY = this.toLocalY(y);
     for (const shape of this.shapes) {
-      if (shape.pointInside(ctx, localX, localY)) {
+      if (shape.pointInside(localX, localY)) {
         return true;
       }
     }

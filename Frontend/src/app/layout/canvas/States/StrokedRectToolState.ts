@@ -52,7 +52,9 @@ export class StrokedRectToolState extends CanvasToolState {
 
   override onMouseUp(_event: MouseEvent): void {
     if (this.canvas.currentDrawing) {
-      this.canvas.shapes.push(this.canvas.currentDrawing.toShape());
+      this.canvas.shapes.push(
+        this.canvas.currentDrawing.toShape(this.canvas.mainCtx)
+      );
       const idx = this.canvas.drawings.indexOf(this.canvas.currentDrawing);
       this.canvas.currentDrawing = null;
       if (idx !== -1) {

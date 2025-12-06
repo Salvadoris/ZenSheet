@@ -8,21 +8,26 @@ import { Shape } from './Shape';
 export class StrokedRectShape extends Shape {
   declare style: StrokedRectStyle;
 
-  constructor(p0: Point, p1: Point, style: StrokedRectStyle) {
-    super(p0, p1[0] - p0[0], p1[1] - p0[1], style);
+  constructor(
+    p0: Point,
+    p1: Point,
+    style: StrokedRectStyle,
+    ctx: CanvasRenderingContext2D
+  ) {
+    super(p0, p1[0] - p0[0], p1[1] - p0[1], style, ctx);
   }
 
   override setStyleProperty(styleProperty: ShapeStyleProperty): void {
     this.style.updateProperty(styleProperty);
   }
 
-  override renderShape(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
-    ctx.lineWidth = this.style[StyleName.LineWidth];
-    ctx.lineCap = this.style[StyleName.LineCap];
-    ctx.strokeStyle =
+  override renderShape(canvasRect: Rect): void {
+    this.ctx.lineWidth = this.style[StyleName.LineWidth];
+    this.ctx.lineCap = this.style[StyleName.LineCap];
+    this.ctx.strokeStyle =
       this.style[StyleName.Color] +
       this.style[StyleName.Opacity].toString(16).padStart(2, '0');
-    ctx.stroke(this.path());
+    this.ctx.stroke(this.path());
   }
 
   override path(): Path2D {
@@ -43,13 +48,9 @@ export class StrokedRectShape extends Shape {
     return path;
   }
 
-  override pointInside(
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number
-  ): boolean {
-    ctx.lineWidth = this.style[StyleName.LineWidth];
-    ctx.lineCap = this.style[StyleName.LineCap];
-    return ctx.isPointInStroke(this.path(), x, y);
+  override pointInside(x: number, y: number): boolean {
+    this.ctx.lineWidth = this.style[StyleName.LineWidth];
+    this.ctx.lineCap = this.style[StyleName.LineCap];
+    return this.ctx.isPointInStroke(this.path(), x, y);
   }
 }

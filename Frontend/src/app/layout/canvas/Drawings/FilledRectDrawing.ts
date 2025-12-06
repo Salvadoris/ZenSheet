@@ -23,8 +23,8 @@ export class FilledRectDrawing implements Drawing {
     return path;
   }
 
-  toShape(): Shape {
-    return new FilledRectShape(this.p0, this.p1, this.style);
+  toShape(ctx: CanvasRenderingContext2D): Shape {
+    return new FilledRectShape(this.p0, this.p1, this.style, ctx);
   }
 
   update(p: Point): void {

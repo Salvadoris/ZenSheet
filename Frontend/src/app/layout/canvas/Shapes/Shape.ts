@@ -19,12 +19,14 @@ export abstract class Shape {
   horizontalInverted: boolean;
   verticallyInverted: boolean;
   style: NullableShapeStyle;
+  ctx: CanvasRenderingContext2D;
 
   constructor(
     origin: Point,
     width: number,
     height: number,
-    style: NullableShapeStyle
+    style: NullableShapeStyle,
+    ctx: CanvasRenderingContext2D
   ) {
     if (width == 0) {
       throw new Error('Shape width cannot be zero');
@@ -41,25 +43,22 @@ export abstract class Shape {
     this.horizontalInverted = this.width < 0;
     this.verticallyInverted = this.height < 0;
     this.style = style;
+    this.ctx = ctx;
   }
 
-  render(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
+  render(canvasRect: Rect): void {
     this.horizontalInverted = this.width < 0;
     this.verticallyInverted = this.height < 0;
-    this.renderShape(ctx, canvasRect);
+    this.renderShape(canvasRect);
   }
 
-  abstract renderShape(ctx: CanvasRenderingContext2D, canvasRect: Rect): void;
+  abstract renderShape(canvasRect: Rect): void;
 
   abstract path(): Path2D;
 
   abstract setStyleProperty(styleProperty: ShapeStyleProperty): void;
 
-  abstract pointInside(
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number
-  ): boolean;
+  abstract pointInside(x: number, y: number): boolean;
 
   resizeTop(y: number) {
     let newHeight = this.originY + this.height - y;

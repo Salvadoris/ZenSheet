@@ -7,22 +7,18 @@ import { SelectedShape } from './SelectedShape';
 export class SelectedMultiShape extends SelectedShape {
   declare shape: GroupShape;
 
-  constructor(shapes: Shape[]) {
-    const groupShape = new GroupShape(shapes);
+  constructor(shapes: Shape[], ctx: CanvasRenderingContext2D) {
+    const groupShape = new GroupShape(shapes, ctx);
     super(groupShape);
   }
 
-  override render(
-    ctx: CanvasRenderingContext2D,
-    canvasScale: number,
-    canvasRect: Rect
-  ): void {
-    super.render(ctx, canvasScale, canvasRect);
-    ctx.lineWidth = 2 / canvasScale;
-    ctx.lineCap = 'square';
-    ctx.strokeStyle = this.color;
+  override render(canvasScale: number, canvasRect: Rect): void {
+    super.render(canvasScale, canvasRect);
+    this.shape.ctx.lineWidth = 2 / canvasScale;
+    this.shape.ctx.lineCap = 'square';
+    this.shape.ctx.strokeStyle = this.color;
     for (const shape of this.shape.shapes) {
-      ctx.strokeRect(
+      this.shape.ctx.strokeRect(
         this.shape.originX + shape.originX * this.shape.scaleX,
         this.shape.originY + shape.originY * this.shape.scaleY,
         shape.width * this.shape.scaleX,

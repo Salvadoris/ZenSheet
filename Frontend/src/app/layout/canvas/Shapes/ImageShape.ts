@@ -10,8 +10,14 @@ export class ImageShape extends Shape {
   private loaded = false;
   declare style: ImageStyle;
 
-  constructor(src: string, p0: Point, p1: Point, style: ImageStyle) {
-    super(p0, p1[0] - p0[0], p1[1] - p0[1], style);
+  constructor(
+    src: string,
+    p0: Point,
+    p1: Point,
+    style: ImageStyle,
+    ctx: CanvasRenderingContext2D
+  ) {
+    super(p0, p1[0] - p0[0], p1[1] - p0[1], style, ctx);
     this.img.src = src;
   }
 
@@ -19,24 +25,24 @@ export class ImageShape extends Shape {
     this.style.updateProperty(styleProperty);
   }
 
-  override renderShape(ctx: CanvasRenderingContext2D, canvasRect: Rect): void {
+  override renderShape(canvasRect: Rect): void {
     if (this.loaded) {
-      this.renderImage(ctx);
+      this.renderImage();
     } else {
       this.img.onload = () => {
         this.loaded = true;
-        this.renderImage(ctx);
+        this.renderImage();
       };
     }
   }
 
-  private renderImage(ctx: CanvasRenderingContext2D) {
-    ctx.save();
-    ctx.translate(this.originX, this.originY);
-    ctx.scale(this.scaleX, this.scaleY);
-    ctx.globalAlpha = this.style[StyleName.Opacity] / 255;
-    ctx.drawImage(this.img, 0, 0, this.originalWidth, this.originalHeight);
-    ctx.restore();
+  private renderImage() {
+    this.ctx.save();
+    this.ctx.translate(this.originX, this.originY);
+    this.ctx.scale(this.scaleX, this.scaleY);
+    this.ctx.globalAlpha = this.style[StyleName.Opacity] / 255;
+    this.ctx.drawImage(this.img, 0, 0, this.originalWidth, this.originalHeight);
+    this.ctx.restore();
   }
 
   override path(): Path2D {
@@ -45,16 +51,12 @@ export class ImageShape extends Shape {
     return path;
   }
 
-  override pointInside(
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number
-  ): boolean {
-    ctx.save();
-    ctx.translate(this.originX, this.originY);
-    ctx.scale(this.scaleX, this.scaleY);
-    const inside = ctx.isPointInPath(this.path(), x, y);
-    ctx.restore();
+  override pointInside(x: number, y: number): boolean {
+    this.ctx.save();
+    this.ctx.translate(this.originX, this.originY);
+    this.ctx.scale(this.scaleX, this.scaleY);
+    const inside = this.ctx.isPointInPath(this.path(), x, y);
+    this.ctx.restore();
     return inside;
   }
 }

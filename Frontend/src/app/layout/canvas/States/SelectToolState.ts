@@ -33,11 +33,7 @@ export class SelectToolState extends CanvasToolState {
 
   override renderTmp() {
     if (this.#selectedShape) {
-      this.#selectedShape.render(
-        this.canvas.tmpCtx,
-        this.canvas.scale,
-        this.canvas.trueRect
-      );
+      this.#selectedShape.render(this.canvas.scale, this.canvas.trueRect);
     }
     if (this.#selectRect) {
       this.#selectRect.render(this.canvas.tmpCtx, this.canvas.scale);
@@ -132,7 +128,7 @@ export class SelectToolState extends CanvasToolState {
               this.canvas.cursor[1]
             );
             for (const shape of this.#selectedShape.shape.shapes) {
-              if (shape.pointInside(this.canvas.tmpCtx, localX, localY)) {
+              if (shape.pointInside(localX, localY)) {
                 insideShape = true;
                 this.selectSingleShape(shape);
                 this.canvas.renderCanvas(true, true);
@@ -141,7 +137,6 @@ export class SelectToolState extends CanvasToolState {
             }
           } else if (
             this.#selectedShape.shape.pointInside(
-              this.canvas.tmpCtx,
               this.canvas.cursor[0],
               this.canvas.cursor[1]
             )
@@ -311,6 +306,7 @@ export class SelectToolState extends CanvasToolState {
       this.canvas.shapes.splice(idx, 1);
     }
     this.#selectedShape = new SelectedShape(shape);
+    shape.ctx = this.canvas.tmpCtx;
     this.canvas.changeStyle(this.#selectedShape.shape.style);
   }
 
@@ -326,11 +322,15 @@ export class SelectToolState extends CanvasToolState {
       this.#selectedShape.shape.addShape(shape);
     } else if (this.#selectedShape) {
       const firstShape = this.#selectedShape.shape;
-      this.#selectedShape = new SelectedMultiShape([firstShape, shape]);
+      this.#selectedShape = new SelectedMultiShape(
+        [firstShape, shape],
+        this.canvas.tmpCtx
+      );
     } else {
-      this.#selectedShape = new SelectedMultiShape([shape]);
+      this.#selectedShape = new SelectedMultiShape([shape], this.canvas.tmpCtx);
     }
     this.canvas.changeStyle(this.#selectedShape.shape.style);
+    shape.ctx = this.canvas.tmpCtx;
   }
 
   private selectMultipleShapes(shapes: Shape[]) {
@@ -338,10 +338,16 @@ export class SelectToolState extends CanvasToolState {
       if (shapes.length == 1) {
         this.selectSingleShape(shapes[0]);
       } else {
+        for (const shape of shapes) {
+          shape.ctx = this.canvas.tmpCtx;
+        }
         this.canvas.shapes = this.canvas.shapes.filter(
           shape => !shapes.includes(shape)
         );
-        this.#selectedShape = new SelectedMultiShape(shapes);
+        this.#selectedShape = new SelectedMultiShape(
+          shapes,
+          this.canvas.tmpCtx
+        );
         this.canvas.changeStyle(this.#selectedShape.shape.style);
       }
     }
@@ -352,10 +358,12 @@ export class SelectToolState extends CanvasToolState {
       this.canvas.removeCurrentStyle();
       if (this.#selectedShape instanceof SelectedMultiShape) {
         for (const shape of this.#selectedShape.shape.shapes) {
+          shape.ctx = this.canvas.mainCtx;
           this.canvas.shapes.push(shape);
         }
         this.#selectedShape.shape.removeAllShapes();
       } else {
+        this.#selectedShape.shape.ctx = this.canvas.mainCtx;
         this.canvas.shapes.push(this.#selectedShape.shape);
       }
       this.#selectedShape = null;
@@ -453,7 +461,7 @@ export class SelectToolState extends CanvasToolState {
     for (let i = this.canvas.shapes.length - 1; i >= 0; i--) {
       if (
         this.canvas.shapeInside(this.canvas.shapes[i]) &&
-        this.canvas.shapes[i].pointInside(this.canvas.mainCtx, p[0], p[1])
+        this.canvas.shapes[i].pointInside(p[0], p[1])
       ) {
         return this.canvas.shapes[i];
       }

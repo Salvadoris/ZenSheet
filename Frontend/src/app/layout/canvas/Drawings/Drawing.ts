@@ -5,5 +5,5 @@ export interface Drawing {
   update(p: Point): void;
   path(): Path2D;
   render(ctx: CanvasRenderingContext2D): void;
-  toShape(): Shape;
+  toShape(ctx: CanvasRenderingContext2D): Shape;
 }

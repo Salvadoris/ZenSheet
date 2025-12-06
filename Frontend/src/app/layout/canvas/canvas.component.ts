@@ -347,7 +347,7 @@ export class CanvasComponent implements AfterViewInit {
       this.#mainCtx.scale(this.#scale, this.#scale);
       for (const shape of this.#shapes) {
         if (this.shapeInside(shape)) {
-          shape.render(this.#mainCtx, this.#trueRect);
+          shape.render(this.#trueRect);
         }
       }
 

@@ -35,8 +35,8 @@ export class StrokedRectDrawing implements Drawing {
     return path;
   }
 
-  toShape(): Shape {
-    return new StrokedRectShape(this.p0, this.p1, this.style);
+  toShape(ctx: CanvasRenderingContext2D): Shape {
+    return new StrokedRectShape(this.p0, this.p1, this.style, ctx);
   }
 
   update(p: Point): void {
