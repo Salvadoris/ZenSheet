@@ -63,4 +63,7 @@ export class FilledRectToolState extends CanvasToolState {
       this.canvas.renderCanvas(true, true);
     }
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  override onKeyPress(_event: KeyboardEvent): void {}
 }

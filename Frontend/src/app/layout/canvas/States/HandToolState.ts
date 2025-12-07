@@ -44,4 +44,7 @@ export class HandToolState extends CanvasToolState {
       this.canvas.changeCursor('grab');
     }
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  override onKeyPress(_event: KeyboardEvent): void {}
 }

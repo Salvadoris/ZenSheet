@@ -54,6 +54,8 @@ declare global {
       (mousedown)="onMouseDown($event)"
       (mousemove)="onHoveringMouseMove($event)"
       (wheel)="onWheel($event)"
+      (keypress)="onKeyPress($event)"
+      tabindex="0"
       class="absolute top-0 left-0"></canvas>
   </div>`,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -227,6 +229,10 @@ export class CanvasComponent implements AfterViewInit {
         this.#toolState = new StrokedRectToolState(this);
         break;
     }
+  }
+
+  focusCanvas() {
+    this.tmpCanvasRef.nativeElement.focus();
   }
 
   changeStyle(style: NullableShapeStyle) {
@@ -433,6 +439,11 @@ export class CanvasComponent implements AfterViewInit {
     this.panWithWheel(event);
   };
 
+  onKeyPress = (event: KeyboardEvent) => {
+    event.preventDefault();
+    this.#toolState.onKeyPress(event);
+  };
+
   @HostListener('window:gesturestart', ['$event'])
   handleGestureStart(event: GestureEventWithScale) {
     if (!this.#moveEnabled) {
@@ -466,6 +477,7 @@ export class CanvasComponent implements AfterViewInit {
 
   onMouseDown = (event: MouseEvent) => {
     event.preventDefault();
+    this.focusCanvas();
     this.#leftMouseDown = event.button == 0 ? true : false;
     this.changeToMouseDown();
     this.#dragStart[0] = event.clientX - this.#origin[0];
