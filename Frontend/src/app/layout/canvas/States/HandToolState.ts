@@ -47,4 +47,7 @@ export class HandToolState extends CanvasToolState {
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   override onKeyPress(_event: KeyboardEvent): void {}
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  override onKeyDown(_event: KeyboardEvent): void {}
 }
