@@ -14,4 +14,5 @@ export abstract class CanvasToolState {
   abstract onMouseUp(event: MouseEvent): void;
   abstract onKeyPress(event: KeyboardEvent): void;
   abstract onKeyDown(event: KeyboardEvent): void;
+  abstract onDoubleClick(event: MouseEvent): void;
 }

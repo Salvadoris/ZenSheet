@@ -173,6 +173,9 @@ export class SelectToolState extends CanvasToolState {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   override onKeyDown(_event: KeyboardEvent): void {}
 
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  override onDoubleClick(_event: MouseEvent): void {}
+
   private mouseDownSelectedShape(): boolean {
     if (this.#selectedShape) {
       if (

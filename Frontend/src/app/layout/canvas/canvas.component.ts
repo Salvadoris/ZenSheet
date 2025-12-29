@@ -56,6 +56,7 @@ declare global {
       (wheel)="onWheel($event)"
       (keypress)="onKeyPress($event)"
       (keydown)="onKeyDown($event)"
+      (dblclick)="onDoubleClick($event)"
       tabindex="0"
       class="absolute top-0 left-0"></canvas>
   </div>`,
@@ -447,6 +448,10 @@ export class CanvasComponent implements AfterViewInit {
 
   onKeyDown = (event: KeyboardEvent) => {
     this.#toolState.onKeyDown(event);
+  };
+
+  onDoubleClick = (event: MouseEvent) => {
+    this.#toolState.onDoubleClick(event);
   };
 
   @HostListener('window:gesturestart', ['$event'])
