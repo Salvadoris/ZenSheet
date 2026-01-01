@@ -13,19 +13,23 @@ import { Mode } from '../toolbar/toolbar.component';
 import { Drawing } from './Drawings/Drawing';
 import { Point, Rect } from './Geometry';
 import { Shape } from './Shapes/Shape';
+import { TextBoxShape } from './Shapes/TextBoxShape';
 import { CanvasStyle } from './ShapeStyles/CanvasStyle';
+import { LineAlignment } from './ShapeStyles/LineAlignment';
 import {
   NullableShapeStyle,
   ShapeStyle,
   ShapeStyleProperty,
 } from './ShapeStyles/ShapeStyle';
 import { StyleName } from './ShapeStyles/StyleName';
+import { TextBoxStyle } from './ShapeStyles/TextBoxStyle';
 import { CanvasToolState } from './States/CanvasToolState';
 import { FilledRectToolState } from './States/FilledRectToolState';
 import { HandToolState } from './States/HandToolState';
 import { PenToolState } from './States/PenToolState';
 import { SelectToolState } from './States/SelectToolState';
 import { StrokedRectToolState } from './States/StrokedRectToolState';
+import { TextToolState } from './States/TextToolState';
 
 type GestureEventWithScale = Event & {
   scale: number;
@@ -71,6 +75,7 @@ export class CanvasComponent implements AfterViewInit {
   #tmpCtx!: CanvasRenderingContext2D;
 
   #toolState!: CanvasToolState;
+  modeChange = output<Mode>();
 
   #shapes: Shape[] = [];
 
@@ -110,6 +115,12 @@ export class CanvasComponent implements AfterViewInit {
     [StyleName.LineWidth]: 10,
     [StyleName.LineCap]: 'round',
     [StyleName.Opacity]: 255,
+    [StyleName.FontSize]: 40,
+    [StyleName.FontLineSpace]: 1.25,
+    [StyleName.FontName]: 'Times New Roman',
+    [StyleName.FontBold]: false,
+    [StyleName.FontItalic]: false,
+    [StyleName.FontAlignment]: LineAlignment.Left,
   } as Required<ShapeStyle>);
 
   styleChange = output<NullableShapeStyle | null>();
@@ -230,7 +241,17 @@ export class CanvasComponent implements AfterViewInit {
       case Mode.StrokedRect:
         this.#toolState = new StrokedRectToolState(this);
         break;
+      case Mode.Text:
+        this.#toolState = new TextToolState(this);
+        break;
     }
+  }
+
+  changeToEditedTextState(event: MouseEvent) {
+    this.changeMode(Mode.Text);
+    this.onMouseDown(event);
+    this.onMouseUp(event);
+    this.modeChange.emit(Mode.Text);
   }
 
   focusCanvas() {

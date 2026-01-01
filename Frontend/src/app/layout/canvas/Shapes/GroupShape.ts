@@ -3,6 +3,7 @@ import { GroupShapeStyle } from '../ShapeStyles/GroupShapeStyle';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 
 import { Shape } from './Shape';
+import { TextBoxShape } from './TextBoxShape';
 
 export class GroupShape extends Shape {
   declare style: GroupShapeStyle;
@@ -218,6 +219,9 @@ export class GroupShape extends Shape {
   override resizeContent(): void {
     for (const shape of this.shapes) {
       this.shapeToGlobal(shape);
+      if (shape instanceof TextBoxShape) {
+        shape.wrap = true;
+      }
       shape.resizeContent();
       this.shapeToLocal(shape);
     }

@@ -4,6 +4,7 @@ import { SelectedMultiShape } from '../Selected/SelectedMultiShape';
 import { Resize, SelectedShape } from '../Selected/SelectedShape';
 import { SelectRect } from '../Selected/SelectRect';
 import { Shape } from '../Shapes/Shape';
+import { TextBoxShape } from '../Shapes/TextBoxShape';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 
 import { CanvasToolState } from './CanvasToolState';
@@ -173,8 +174,14 @@ export class SelectToolState extends CanvasToolState {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   override onKeyDown(_event: KeyboardEvent): void {}
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  override onDoubleClick(_event: MouseEvent): void {}
+  override onDoubleClick(event: MouseEvent): void {
+    if (
+      this.#selectedShape &&
+      this.#selectedShape.shape instanceof TextBoxShape
+    ) {
+      this.canvas.changeToEditedTextState(event);
+    }
+  }
 
   private mouseDownSelectedShape(): boolean {
     if (this.#selectedShape) {

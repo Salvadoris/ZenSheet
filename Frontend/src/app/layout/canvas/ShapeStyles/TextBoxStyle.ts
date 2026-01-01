@@ -1,11 +1,13 @@
 import { LineAlignment } from './LineAlignment';
 import { ShapeStyle, ShapeStyleProperty } from './ShapeStyle';
-import { StyleName } from './StyleName';
+import { FontStyleName, StyleName } from './StyleName';
 
-export class CanvasStyle implements Required<ShapeStyle> {
+type TextBoxStyleType = Required<
+  Pick<ShapeStyle, StyleName.Color | StyleName.Opacity | FontStyleName>
+>;
+
+export class TextBoxStyle implements TextBoxStyleType {
   [StyleName.Color]: string;
-  [StyleName.LineWidth]: number;
-  [StyleName.LineCap]: CanvasLineCap;
   [StyleName.Opacity]: number;
   [StyleName.FontSize]: number;
   [StyleName.FontLineSpace]: number;
@@ -14,10 +16,8 @@ export class CanvasStyle implements Required<ShapeStyle> {
   [StyleName.FontItalic]: boolean;
   [StyleName.FontAlignment]: LineAlignment;
 
-  constructor(style: Required<ShapeStyle>) {
+  constructor(style: TextBoxStyleType) {
     this[StyleName.Color] = style[StyleName.Color];
-    this[StyleName.LineWidth] = style[StyleName.LineWidth];
-    this[StyleName.LineCap] = style[StyleName.LineCap];
     this[StyleName.Opacity] = style[StyleName.Opacity];
     this[StyleName.FontSize] = style[StyleName.FontSize];
     this[StyleName.FontLineSpace] = style[StyleName.FontLineSpace];
@@ -31,12 +31,6 @@ export class CanvasStyle implements Required<ShapeStyle> {
     switch (styleProperty.name) {
       case StyleName.Color:
         this[StyleName.Color] = styleProperty.value;
-        break;
-      case StyleName.LineWidth:
-        this[StyleName.LineWidth] = styleProperty.value;
-        break;
-      case StyleName.LineCap:
-        this[StyleName.LineCap] = styleProperty.value;
         break;
       case StyleName.Opacity:
         this[StyleName.Opacity] = styleProperty.value;

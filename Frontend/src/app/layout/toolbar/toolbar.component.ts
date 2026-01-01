@@ -14,6 +14,7 @@ export enum Mode {
   Pen,
   FilledRect,
   StrokedRect,
+  Text,
 }
 
 @Component({
@@ -38,5 +39,10 @@ export class ToolbarComponent implements OnInit {
     this.mode = mode;
     this.cdr.markForCheck();
     this.modeChange.emit(mode);
+  }
+
+  setMode(mode: Mode) {
+    this.mode = mode;
+    this.cdr.markForCheck();
   }
 }

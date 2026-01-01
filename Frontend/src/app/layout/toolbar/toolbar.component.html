@@ -44,4 +44,13 @@
     class="aspect-square p-1 hover:bg-gray-600 rounded-lg flex items-center">
     <i class="fa-regular fa-square"></i>
   </button>
+  <button
+    (click)="changeMode(Mode.Text)"
+    [ngClass]="{
+      'bg-gray-600': mode === Mode.Text,
+      'bg-transparent': mode !== Mode.Text,
+    }"
+    class="aspect-square p-1 hover:bg-gray-600 rounded-lg flex items-center">
+    <i class="fa-solid fa-font"></i>
+  </button>
 </div>

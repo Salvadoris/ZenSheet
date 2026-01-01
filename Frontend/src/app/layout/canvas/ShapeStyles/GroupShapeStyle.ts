@@ -1,3 +1,4 @@
+import { LineAlignment } from './LineAlignment';
 import { NullableShapeStyle, ShapeStyleProperty } from './ShapeStyle';
 import { StyleName } from './StyleName';
 
@@ -6,6 +7,12 @@ export class GroupShapeStyle implements NullableShapeStyle {
   [StyleName.LineWidth]?: number | null;
   [StyleName.LineCap]?: CanvasLineCap | null;
   [StyleName.Opacity]?: number | null;
+  [StyleName.FontSize]?: number | null;
+  [StyleName.FontLineSpace]?: number | null;
+  [StyleName.FontName]?: string | null;
+  [StyleName.FontBold]?: boolean | null;
+  [StyleName.FontItalic]?: boolean | null;
+  [StyleName.FontAlignment]?: LineAlignment | null;
 
   constructor(styles: NullableShapeStyle[]) {
     this[StyleName.Color] = this.checkStyleProperty<string>(
@@ -24,6 +31,30 @@ export class GroupShapeStyle implements NullableShapeStyle {
       StyleName.Opacity,
       styles
     );
+    this[StyleName.FontSize] = this.checkStyleProperty<number>(
+      StyleName.FontSize,
+      styles
+    );
+    this[StyleName.FontLineSpace] = this.checkStyleProperty<number>(
+      StyleName.FontLineSpace,
+      styles
+    );
+    this[StyleName.FontName] = this.checkStyleProperty<string>(
+      StyleName.FontName,
+      styles
+    );
+    this[StyleName.FontBold] = this.checkStyleProperty<boolean>(
+      StyleName.FontBold,
+      styles
+    );
+    this[StyleName.FontItalic] = this.checkStyleProperty<boolean>(
+      StyleName.FontItalic,
+      styles
+    );
+    this[StyleName.FontAlignment] = this.checkStyleProperty<LineAlignment>(
+      StyleName.FontAlignment,
+      styles
+    );
   }
 
   updateProperty(styleProperty: ShapeStyleProperty) {
@@ -39,6 +70,24 @@ export class GroupShapeStyle implements NullableShapeStyle {
         break;
       case StyleName.Opacity:
         this[StyleName.Opacity] = styleProperty.value;
+        break;
+      case StyleName.FontSize:
+        this[StyleName.FontSize] = styleProperty.value;
+        break;
+      case StyleName.FontLineSpace:
+        this[StyleName.FontLineSpace] = styleProperty.value;
+        break;
+      case StyleName.FontName:
+        this[StyleName.FontName] = styleProperty.value;
+        break;
+      case StyleName.FontBold:
+        this[StyleName.FontBold] = styleProperty.value;
+        break;
+      case StyleName.FontItalic:
+        this[StyleName.FontItalic] = styleProperty.value;
+        break;
+      case StyleName.FontAlignment:
+        this[StyleName.FontAlignment] = styleProperty.value;
         break;
     }
   }

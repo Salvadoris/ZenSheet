@@ -1,13 +1,15 @@
 <div class="flex h-screen">
   <app-canvas
     #canvas
-    (styleChange)="detailsidebar.setStyle($event)"></app-canvas>
+    (styleChange)="detailsidebar.setStyle($event)"
+    (modeChange)="toolbar.setMode($event)"></app-canvas>
   <app-sidebar
     class="relative m-5"
     (noteSelected)="onNoteSelected($event.note)">
   </app-sidebar>
   <div class="flex w-screen h-screen">
     <app-toolbar
+      #toolbar
       class="absolute top-4 left-1/2 z-1 transform -translate-x-1/2"
       (modeChange)="canvas.changeMode($event)"></app-toolbar>
     <app-detail-sidebar
