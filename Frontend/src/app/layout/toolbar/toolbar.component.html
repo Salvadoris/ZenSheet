@@ -1,15 +1,56 @@
-<!-- eslint-disable @angular-eslint/template/elements-content -->
-<div
-  id="quill-toolbar"
-  class="flex space-x-2 bg-gray-100 p-2 rounded-xl !border-0 w-fit">
-  <select class="ql-color"></select>
-  <select class="ql-background"></select>
-  <button class="ql-bold"></button>
-  <button class="ql-italic"></button>
-  <button class="ql-underline"></button>
-  <select class="ql-header"></select>
-  <button class="ql-list" value="ordered"></button>
-  <button class="ql-list" value="bullet"></button>
-  <button class="ql-link"></button>
-  <button class="ql-image"></button>
+<div class="flex flex-row gap-2 p-1 rounded-lg text-white bg-gray-400">
+  <button
+    (click)="changeMode(Mode.Hand)"
+    [ngClass]="{
+      'bg-gray-600': mode === Mode.Hand,
+      'bg-transparent': mode !== Mode.Hand,
+    }"
+    class="aspect-square p-1 hover:bg-gray-600 rounded-lg flex items-center">
+    <i class="fa-solid fa-hand"></i>
+  </button>
+  <button
+    (click)="changeMode(Mode.Select)"
+    [ngClass]="{
+      'bg-gray-600': mode === Mode.Select,
+      'bg-transparent': mode !== Mode.Select,
+    }"
+    class="aspect-square p-1 hover:bg-gray-600 rounded-lg flex items-center">
+    <i class="fa-solid fa-arrow-pointer"></i>
+  </button>
+  <button
+    (click)="changeMode(Mode.Pen)"
+    [ngClass]="{
+      'bg-gray-600': mode === Mode.Pen,
+      'bg-transparent': mode !== Mode.Pen,
+    }"
+    class="aspect-square p-1 hover:bg-gray-600 rounded-lg flex items-center">
+    <i class="fa-solid fa-pen"></i>
+  </button>
+  <button
+    (click)="changeMode(Mode.FilledRect)"
+    [ngClass]="{
+      'bg-gray-600': mode === Mode.FilledRect,
+      'bg-transparent': mode !== Mode.FilledRect,
+    }"
+    class="aspect-square p-1 hover:bg-gray-600 rounded-lg flex items-center">
+    <i class="fa-solid fa-square"></i>
+  </button>
+  <button
+    (click)="changeMode(Mode.StrokedRect)"
+    [ngClass]="{
+      'bg-gray-600': mode === Mode.StrokedRect,
+      'bg-transparent': mode !== Mode.StrokedRect,
+    }"
+    class="aspect-square p-1 hover:bg-gray-600 rounded-lg flex items-center">
+    <i class="fa-regular fa-square"></i>
+  </button>
+  <button
+    (click)="changeMode(Mode.Text)"
+    [ngClass]="{
+      'bg-gray-600': mode === Mode.Text,
+      'bg-transparent': mode !== Mode.Text,
+    }"
+    class="aspect-square p-1 hover:bg-gray-600 rounded-lg flex items-center">
+    <i class="fa-solid fa-font"></i>
+  </button>
 </div>

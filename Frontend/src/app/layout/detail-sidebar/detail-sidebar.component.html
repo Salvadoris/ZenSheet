@@ -1,0 +1,215 @@
+<div class="bg-gray-100 p-4 flex flex-col rounded-lg gap-2" [hidden]="!visible">
+  @if (style[StyleName.Color] !== undefined) {
+    <div>
+      <div class="text-md pb-0.5">Color</div>
+      <div class="flex flex-row gap-1">
+        @for (color of colors; track $index) {
+          <div
+            (click)="changeStyle({ name: StyleName.Color, value: color })"
+            tabindex="0"
+            [ngClass]="{
+              'border-2 border-gray-100 outline-2 outline-blue-600':
+                color === style[StyleName.Color],
+            }"
+            [style.background-color]="color"
+            class="w-10 h-10 rounded-2xl"></div>
+        }
+      </div>
+    </div>
+  }
+  @if (style[StyleName.LineWidth] !== undefined) {
+    <div>
+      <div class="text-md pb-0.5">Line Width</div>
+      <div class="flex flex-row gap-1 pb-1">
+        @for (lineWidth of lineWidths; track $index) {
+          <div
+            (click)="
+              changeStyle({ name: StyleName.LineWidth, value: lineWidth })
+            "
+            tabindex="0"
+            [ngClass]="{
+              'border-2 border-gray-100 outline-2 outline-blue-600':
+                lineWidth === style[StyleName.LineWidth],
+            }"
+            class="w-10 h-10 rounded-2xl bg-white flex justify-center items-center">
+            <div
+              class="rounded-xl bg-black"
+              [style.width.px]="($index + 1) * 6"
+              [style.height.px]="($index + 1) * 6"></div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+  @if (style[StyleName.LineCap] !== undefined) {
+    <div>
+      <div class="text-md pb-0.5">Line Cap</div>
+      <div class="flex flex-row gap-1 pb-1">
+        @for (lineCap of lineCaps; track $index) {
+          <div
+            (click)="changeStyle({ name: StyleName.LineCap, value: lineCap })"
+            tabindex="0"
+            [ngClass]="{
+              'border-2 border-gray-100 outline-2 outline-blue-600':
+                lineCap === style[StyleName.LineCap],
+            }"
+            class="w-10 h-10 rounded-2xl bg-white flex justify-center items-center">
+            @if (lineCap === 'round') {
+              <div class="rounded-xl bg-black w-4 h-4"></div>
+            } @else if (lineCap === 'square') {
+              <div class="bg-black w-4 h-4"></div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+  @if (style[StyleName.Opacity] !== undefined) {
+    <div>
+      <div class="text-md pb-0.5">Opacity</div>
+      <input
+        #opacityslider
+        type="range"
+        min="0"
+        max="255"
+        [value]="style[StyleName.Opacity]"
+        (input)="
+          changeStyle({ name: StyleName.Opacity, value: +opacityslider.value })
+        " />
+    </div>
+  }
+  @if (style[StyleName.FontAlignment] !== undefined) {
+    <div>
+      <div class="text-md pb-0.5">Line Alignment</div>
+      <div class="flex flex-row gap-1 pb-1">
+        @for (alignment of lineAlignments; track $index) {
+          <div
+            (click)="
+              changeStyle({ name: StyleName.FontAlignment, value: alignment })
+            "
+            tabindex="0"
+            [ngClass]="{
+              'border-2 border-gray-100 outline-2 outline-blue-600':
+                alignment === style[StyleName.FontAlignment],
+            }"
+            class="w-10 h-10 rounded-2xl bg-white flex justify-center items-center">
+            @if (alignment === LineAlignment.Left) {
+              <i class="fa-solid fa-align-left"></i>
+            } @else if (alignment === LineAlignment.Center) {
+              <i class="fa-solid fa-align-center"></i>
+            } @else if (alignment === LineAlignment.Right) {
+              <i class="fa-solid fa-align-right"></i>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+  @if (
+    style[StyleName.FontBold] !== undefined &&
+    style[StyleName.FontItalic] !== undefined
+  ) {
+    <div>
+      <div class="text-md pb-0.5">Font</div>
+      <div class="flex flex-row gap-1 pb-1">
+        <div
+          (click)="
+            changeStyle({
+              name: StyleName.FontBold,
+              value:
+                style[StyleName.FontBold] === null
+                  ? true
+                  : !style[StyleName.FontBold],
+            })
+          "
+          tabindex="0"
+          [ngClass]="{
+            'border-2 border-gray-100 outline-2 outline-blue-600':
+              style[StyleName.FontBold] === true,
+          }"
+          class="w-10 h-10 rounded-2xl bg-white flex justify-center items-center">
+          <i class="fa-solid fa-bold"></i>
+        </div>
+        <div
+          (click)="
+            changeStyle({
+              name: StyleName.FontItalic,
+              value:
+                style[StyleName.FontItalic] === null
+                  ? true
+                  : !style[StyleName.FontItalic],
+            })
+          "
+          tabindex="0"
+          [ngClass]="{
+            'border-2 border-gray-100 outline-2 outline-blue-600':
+              style[StyleName.FontItalic] === true,
+          }"
+          class="w-10 h-10 rounded-2xl bg-white flex justify-center items-center">
+          <i class="fa-solid fa-italic"></i>
+        </div>
+      </div>
+    </div>
+  }
+  @if (style[StyleName.FontSize] !== undefined) {
+    <div>
+      <div class="text-md pb-0.5">Font Size</div>
+      <div class="flex flex-row gap-1 pb-1">
+        @for (size of fontSizes; track $index) {
+          <div
+            (click)="changeStyle({ name: StyleName.FontSize, value: size })"
+            tabindex="0"
+            [ngClass]="{
+              'border-2 border-gray-100 outline-2 outline-blue-600':
+                size === style[StyleName.FontSize],
+            }"
+            class="w-10 h-10 rounded-2xl bg-white flex justify-center items-center select-none">
+            @if (size === fontSizes[0]) {
+              <div class="text-sm">A</div>
+            } @else if (size === fontSizes[1]) {
+              <div class="text-lg">A</div>
+            } @else if (size === fontSizes[2]) {
+              <div class="text-2xl">A</div>
+            } @else if (size === fontSizes[3]) {
+              <div class="text-4xl">A</div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+  @if (style[StyleName.FontName] !== undefined) {
+    <div>
+      <div class="text-md pb-0.5">Font Name</div>
+      <form class="max-w-sm mx-auto">
+        <select class="w-full p-2 bg-white shadow-xs placeholder:text-body">
+          @for (name of fontNames; track $index) {
+            <option
+              [selected]="name === style[StyleName.FontName]"
+              (click)="changeStyle({ name: StyleName.FontName, value: name })">
+              {{ name }}
+            </option>
+          }
+        </select>
+      </form>
+    </div>
+  }
+  @if (style[StyleName.FontLineSpace] !== undefined) {
+    <div>
+      <div class="text-md pb-0.5">Line Space</div>
+      <form class="max-w-sm mx-auto">
+        <select class="w-full p-2 bg-white shadow-xs placeholder:text-body">
+          @for (space of lineSpaces; track $index) {
+            <option
+              [selected]="space === style[StyleName.FontLineSpace]"
+              (click)="
+                changeStyle({ name: StyleName.FontLineSpace, value: space })
+              ">
+              {{ space }}
+            </option>
+          }
+        </select>
+      </form>
+    </div>
+  }
+</div>
