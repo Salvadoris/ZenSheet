@@ -152,9 +152,24 @@ export class TextBoxShape extends Shape {
       }
     }
 
-    const later = this.#lines.slice(oldLastOriginalLineIndex + 1);
+    let firstLineIndex = 0;
+    for (let i = 0; i < this.#lines.length; i++) {
+      if (this.#lines[i].originalLineIndex == firstOriginalLineIndex) {
+        firstLineIndex = i;
+        break;
+      }
+    }
+    let lastLineIndex = this.#lines.length;
+    for (let i = 0; i < this.#lines.length; i++) {
+      if (this.#lines[i].originalLineIndex == oldLastOriginalLineIndex + 1) {
+        lastLineIndex = i;
+        break;
+      }
+    }
+
+    const later = this.#lines.slice(lastLineIndex);
     this.#lines = [
-      ...this.#lines.slice(0, firstOriginalLineIndex),
+      ...this.#lines.slice(0, firstLineIndex),
       ...newLines,
       ...later,
     ];
