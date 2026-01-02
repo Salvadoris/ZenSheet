@@ -171,7 +171,7 @@ export class TextBoxShape extends Shape {
 
     const newHeight = this.#lineHeight * this.#lines.length + this.#padding * 2;
     if (newHeight != this.height) {
-      super.resizeBottom(this.originY + newHeight);
+      super.resizeBottom(this.originY + newHeight, false);
     }
   }
 
@@ -198,7 +198,7 @@ export class TextBoxShape extends Shape {
       Math.max(...this.#lines.map(l => l.maxChunkWidth)) + this.#padding * 2;
     const newHeight = this.#lineHeight * this.#lines.length + this.#padding * 2;
     if (newHeight != this.height) {
-      super.resizeBottom(this.originY + newHeight);
+      super.resizeBottom(this.originY + newHeight, false);
     }
   }
 

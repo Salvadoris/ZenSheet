@@ -60,7 +60,7 @@ export abstract class Shape {
 
   abstract pointInside(x: number, y: number): boolean;
 
-  resizeTop(y: number) {
+  resizeTop(y: number, resizeContent = true) {
     let newHeight = this.originY + this.height - y;
     if (
       !this.invertable &&
@@ -77,11 +77,13 @@ export abstract class Shape {
       this.height = newHeight;
       this.originY = y;
       this.scaleY = this.height / this.originalHeight;
-      this.resizeContent();
+      if (resizeContent) {
+        this.resizeContent();
+      }
     }
   }
 
-  resizeBottom(y: number) {
+  resizeBottom(y: number, resizeContent = true) {
     let newHeight = y - this.originY;
     if (
       !this.invertable &&
@@ -96,11 +98,13 @@ export abstract class Shape {
     ) {
       this.height = newHeight;
       this.scaleY = this.height / this.originalHeight;
-      this.resizeContent();
+      if (resizeContent) {
+        this.resizeContent();
+      }
     }
   }
 
-  resizeLeft(x: number) {
+  resizeLeft(x: number, resizeContent = true) {
     let newWidth = this.originX + this.width - x;
     if (
       !this.invertable &&
@@ -116,11 +120,13 @@ export abstract class Shape {
       this.width = newWidth;
       this.originX = x;
       this.scaleX = this.width / this.originalWidth;
-      this.resizeContent();
+      if (resizeContent) {
+        this.resizeContent();
+      }
     }
   }
 
-  resizeRight(x: number) {
+  resizeRight(x: number, resizeContent = true) {
     let newWidth = x - this.originX;
     if (
       !this.invertable &&
@@ -135,7 +141,9 @@ export abstract class Shape {
     ) {
       this.width = newWidth;
       this.scaleX = this.width / this.originalWidth;
-      this.resizeContent();
+      if (resizeContent) {
+        this.resizeContent();
+      }
     }
   }
 
