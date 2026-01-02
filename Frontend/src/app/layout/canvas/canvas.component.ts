@@ -222,6 +222,20 @@ export class CanvasComponent implements AfterViewInit {
   }
 
   changeMode(mode: Mode) {
+    if (
+      this.#toolState instanceof TextToolState &&
+      mode == Mode.Select &&
+      this.#toolState.currentTextBox
+    ) {
+      const textBox = this.#toolState.currentTextBox;
+      this.#toolState = new SelectToolState(this);
+      if (this.#toolState instanceof SelectToolState) {
+        this.#toolState.selectSingleShape(textBox);
+      }
+      this.renderCanvas(false, true);
+      return;
+    }
+
     if (this.#toolState) {
       this.#toolState.remove();
     }

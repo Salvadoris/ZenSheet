@@ -20,6 +20,10 @@ export class TextToolState extends CanvasToolState {
     }
   }
 
+  get currentTextBox() {
+    return this.#currentTextBox;
+  }
+
   override setStyleProperty(styleProperty: ShapeStyleProperty): void {
     this.canvas.style.updateProperty(styleProperty);
     if (this.#currentTextBox) {

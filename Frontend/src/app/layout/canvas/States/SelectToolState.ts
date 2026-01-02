@@ -315,7 +315,7 @@ export class SelectToolState extends CanvasToolState {
     return shapes;
   }
 
-  private selectSingleShape(shape: Shape) {
+  selectSingleShape(shape: Shape) {
     this.unSelectShape();
     const idx = this.canvas.shapes.indexOf(shape);
     if (idx !== -1) {
