@@ -114,7 +114,7 @@ export abstract class Shape {
       newWidth = this.minWidth;
     }
     if (
-      (!this.invertable && newWidth >= this.minWidth) ||
+      (!this.invertable && newWidth > this.minWidth) ||
       (this.invertable && Math.abs(newWidth) >= this.minWidth)
     ) {
       this.width = newWidth;
