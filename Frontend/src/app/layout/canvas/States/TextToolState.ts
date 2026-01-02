@@ -158,6 +158,8 @@ export class TextToolState extends CanvasToolState {
       this.createTextBox();
     }
     if (this.#currentTextBox) {
+      this.canvas.changeStyle(this.#currentTextBox.style);
+
       const index = this.#currentTextBox.indexFromPosition(
         this.canvas.cursor[0],
         this.canvas.cursor[1]
