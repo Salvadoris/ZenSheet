@@ -3,6 +3,9 @@ import { Point, Rect } from '../Geometry';
 import { SelectedMultiShape } from '../Selected/SelectedMultiShape';
 import { Resize, SelectedShape } from '../Selected/SelectedShape';
 import { SelectRect } from '../Selected/SelectRect';
+import { SerializedShape } from '../Serializer/ShapeSerializer';
+import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
+import { GroupShape } from '../Shapes/GroupShape';
 import { Shape } from '../Shapes/Shape';
 import { TextBoxShape } from '../Shapes/TextBoxShape';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
@@ -171,8 +174,42 @@ export class SelectToolState extends CanvasToolState {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   override onKeyPress(_event: KeyboardEvent): void {}
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  override onKeyDown(_event: KeyboardEvent): void {}
+  override onKeyDown(event: KeyboardEvent): void {
+    switch (event.key) {
+      case 'c':
+        event.preventDefault();
+        if (this.#selectedShape && event.ctrlKey) {
+          navigator.clipboard.writeText(
+            JSON.stringify(
+              this.canvas.shapeSerializer.serialized(this.#selectedShape.shape)
+            )
+          );
+        }
+        break;
+      case 'v':
+        event.preventDefault();
+        if (event.ctrlKey) {
+          navigator.clipboard.readText().then(text => {
+            if (text) {
+              try {
+                this.pasteShape(JSON.parse(text));
+                this.canvas.renderCanvas(true, true);
+              } catch {
+                // do nothing
+              }
+            }
+          });
+        }
+        break;
+      case 'Delete':
+        event.preventDefault();
+        if (this.#selectedShape) {
+          this.#selectedShape = null;
+          this.canvas.renderCanvas(true, true);
+        }
+        break;
+    }
+  }
 
   override onDoubleClick(event: MouseEvent): void {
     if (
@@ -483,5 +520,27 @@ export class SelectToolState extends CanvasToolState {
       }
     }
     return null;
+  }
+
+  private pasteShape(serializedShape: SerializedShape) {
+    serializedShape.properties[ShapePropertyName.originX] =
+      (serializedShape.properties[ShapePropertyName.originX] as number) +
+      20 / this.canvas.scale;
+    serializedShape.properties[ShapePropertyName.originY] =
+      (serializedShape.properties[ShapePropertyName.originY] as number) +
+      20 / this.canvas.scale;
+    const shape = this.canvas.shapeSerializer.deserialized(
+      serializedShape,
+      this.canvas.tmpCtx,
+      true
+    );
+    if (shape instanceof GroupShape) {
+      const shapes = shape.shapes;
+      shape.removeAllShapes();
+      this.unSelectShape();
+      this.selectMultipleShapes(shapes);
+    } else {
+      this.selectSingleShape(shape);
+    }
   }
 }
