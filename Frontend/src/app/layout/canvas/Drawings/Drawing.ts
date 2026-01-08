@@ -1,7 +1,9 @@
+import { DrawingProperties } from '../DrawingProperties/DrawingProperties';
 import { Point } from '../Geometry';
 import { Shape } from '../Shapes/Shape';
 
 export interface Drawing {
+  properties: DrawingProperties;
   update(p: Point): void;
   path(): Path2D;
   render(ctx: CanvasRenderingContext2D): void;

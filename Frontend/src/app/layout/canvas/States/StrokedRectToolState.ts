@@ -1,4 +1,5 @@
 import { CanvasComponent } from '../canvas.component';
+import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { StrokedRectDrawing } from '../Drawings/StrokedRectDrawing';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { StrokedRectStyle } from '../ShapeStyles/StrokedRectStyle';
@@ -32,11 +33,18 @@ export class StrokedRectToolState extends CanvasToolState {
 
   override onPressedMouseMove(_event: MouseEvent): void {
     if (this.canvas.firstMove) {
-      this.canvas.currentDrawing = new StrokedRectDrawing(
-        [this.canvas.startCursor[0], this.canvas.startCursor[1]],
-        [this.canvas.cursor[0], this.canvas.cursor[1]],
-        new StrokedRectStyle(this.canvas.style)
-      );
+      this.canvas.currentDrawing = new StrokedRectDrawing({
+        [DrawingPropertyName.id]: crypto.randomUUID(),
+        [DrawingPropertyName.p0]: [
+          this.canvas.startCursor[0],
+          this.canvas.startCursor[1],
+        ],
+        [DrawingPropertyName.p1]: [
+          this.canvas.cursor[0],
+          this.canvas.cursor[1],
+        ],
+        [DrawingPropertyName.style]: new StrokedRectStyle(this.canvas.style),
+      });
       this.canvas.drawings.push(this.canvas.currentDrawing);
     } else if (this.canvas.currentDrawing) {
       this.canvas.currentDrawing.update([

@@ -1,4 +1,5 @@
 import { CanvasComponent } from '../canvas.component';
+import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { calcLineSpace, TextBoxShape } from '../Shapes/TextBoxShape';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { StyleName } from '../ShapeStyles/StyleName';
@@ -117,14 +118,16 @@ export class TextToolState extends CanvasToolState {
     const style = new TextBoxStyle(this.canvas.style);
     const lineSpace = calcLineSpace(style);
     this.#currentTextBox = new TextBoxShape(
-      '',
-      [
-        this.canvas.cursor[0],
-        this.canvas.cursor[1] - (style[StyleName.FontSize] / 2 - lineSpace),
-      ],
-      style,
-      this.canvas.tmpCtx,
-      false
+      {
+        [ShapePropertyName.id]: crypto.randomUUID(),
+        [ShapePropertyName.text]: '',
+        [ShapePropertyName.style]: new TextBoxStyle(this.canvas.style),
+        [ShapePropertyName.wrap]: false,
+        [ShapePropertyName.originX]: this.canvas.cursor[0],
+        [ShapePropertyName.originY]:
+          this.canvas.cursor[1] - (style[StyleName.FontSize] / 2 - lineSpace),
+      },
+      this.canvas.tmpCtx
     );
   }
 

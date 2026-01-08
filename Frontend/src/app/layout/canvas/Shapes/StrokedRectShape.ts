@@ -1,4 +1,6 @@
 import { Point, Rect } from '../Geometry';
+import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
+import { StrokedRectShapeProperties } from '../ShapeProperties/StrokedRectShapeProperties';
 import { ShapeStyle, ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { StrokedRectStyle } from '../ShapeStyles/StrokedRectStyle';
 import { StyleName } from '../ShapeStyles/StyleName';
@@ -6,15 +8,17 @@ import { StyleName } from '../ShapeStyles/StyleName';
 import { Shape } from './Shape';
 
 export class StrokedRectShape extends Shape {
-  declare style: StrokedRectStyle;
+  declare properties: Required<StrokedRectShapeProperties>;
 
   constructor(
-    p0: Point,
-    p1: Point,
-    style: StrokedRectStyle,
+    properties: StrokedRectShapeProperties,
     ctx: CanvasRenderingContext2D
   ) {
-    super(p0, p1[0] - p0[0], p1[1] - p0[1], style, ctx);
+    super(properties, ctx);
+  }
+
+  override get style(): StrokedRectStyle {
+    return this.properties[ShapePropertyName.style];
   }
 
   override setStyleProperty(styleProperty: ShapeStyleProperty): void {

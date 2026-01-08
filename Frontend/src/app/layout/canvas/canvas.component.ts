@@ -12,6 +12,8 @@ import { Mode } from '../toolbar/toolbar.component';
 
 import { Drawing } from './Drawings/Drawing';
 import { Point, Rect } from './Geometry';
+import { DrawingSerializer } from './Serializer/DrawingSerializer';
+import { ShapeSerializer } from './Serializer/ShapeSerializer';
 import { Shape } from './Shapes/Shape';
 import { TextBoxShape } from './Shapes/TextBoxShape';
 import { CanvasStyle } from './ShapeStyles/CanvasStyle';
@@ -77,6 +79,9 @@ export class CanvasComponent implements AfterViewInit {
   #toolState!: CanvasToolState;
   modeChange = output<Mode>();
 
+  #shapeSerializer!: ShapeSerializer;
+  #drawingSerializer!: DrawingSerializer;
+
   #shapes: Shape[] = [];
 
   #drawings: Drawing[] = [];
@@ -128,6 +133,9 @@ export class CanvasComponent implements AfterViewInit {
   #smoothLineFactor = 4;
 
   ngAfterViewInit() {
+    this.#shapeSerializer = new ShapeSerializer();
+    this.#drawingSerializer = new DrawingSerializer();
+
     const mainCanvas = this.mainCanvasRef.nativeElement;
     this.#mainCtx = mainCanvas.getContext('2d')!;
     const tmpCanvas = this.tmpCanvasRef.nativeElement;
@@ -143,6 +151,14 @@ export class CanvasComponent implements AfterViewInit {
 
   get tmpCtx() {
     return this.#tmpCtx;
+  }
+
+  get shapeSerializer() {
+    return this.#shapeSerializer;
+  }
+
+  get drawingSerializer() {
+    return this.#drawingSerializer;
   }
 
   get shapes() {

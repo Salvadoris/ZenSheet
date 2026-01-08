@@ -1,4 +1,6 @@
 import { Point, Rect } from '../Geometry';
+import { ImageShapeProperties } from '../ShapeProperties/ImageShapeProperties';
+import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { ImageStyle } from '../ShapeStyles/ImageStyle';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { StyleName } from '../ShapeStyles/StyleName';
@@ -6,19 +8,16 @@ import { StyleName } from '../ShapeStyles/StyleName';
 import { Shape } from './Shape';
 
 export class ImageShape extends Shape {
+  declare properties: Required<ImageShapeProperties>;
   private img = new Image();
   private loaded = false;
-  declare style: ImageStyle;
 
-  constructor(
-    src: string,
-    p0: Point,
-    p1: Point,
-    style: ImageStyle,
-    ctx: CanvasRenderingContext2D
-  ) {
-    super(p0, p1[0] - p0[0], p1[1] - p0[1], style, ctx);
-    this.img.src = src;
+  constructor(properties: ImageShapeProperties, ctx: CanvasRenderingContext2D) {
+    super(properties, ctx);
+  }
+
+  override get style(): ImageStyle {
+    return this.properties[ShapePropertyName.style];
   }
 
   override setStyleProperty(styleProperty: ShapeStyleProperty): void {

@@ -1,14 +1,14 @@
 export enum StyleName {
-  Color,
-  LineWidth,
-  LineCap,
-  Opacity,
-  FontSize,
-  FontLineSpace,
-  FontName,
-  FontBold,
-  FontItalic,
-  FontAlignment,
+  Color = 'Color',
+  LineWidth = 'LineWidth',
+  LineCap = 'LineCap',
+  Opacity = 'Opacity',
+  FontSize = 'FontSize',
+  FontLineSpace = 'FontLineSpace',
+  FontName = 'FontName',
+  FontBold = 'FontBold',
+  FontItalic = 'FontItalic',
+  FontAlignment = 'FontAlignment',
 }
 
 export type FontStyleName =

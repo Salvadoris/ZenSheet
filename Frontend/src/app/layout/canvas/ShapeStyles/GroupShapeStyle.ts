@@ -2,6 +2,8 @@ import { LineAlignment } from './LineAlignment';
 import { NullableShapeStyle, ShapeStyleProperty } from './ShapeStyle';
 import { StyleName } from './StyleName';
 
+export type GroupShapeStyleType = NullableShapeStyle;
+
 export class GroupShapeStyle implements NullableShapeStyle {
   [StyleName.Color]?: string | null;
   [StyleName.LineWidth]?: number | null;

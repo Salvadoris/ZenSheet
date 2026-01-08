@@ -1,7 +1,7 @@
 import { ShapeStyle, ShapeStyleProperty } from './ShapeStyle';
 import { StyleName } from './StyleName';
 
-type ImageStyleType = Required<Pick<ShapeStyle, StyleName.Opacity>>;
+export type ImageStyleType = Required<Pick<ShapeStyle, StyleName.Opacity>>;
 
 export class ImageStyle implements ImageStyleType {
   [StyleName.Opacity]: number;

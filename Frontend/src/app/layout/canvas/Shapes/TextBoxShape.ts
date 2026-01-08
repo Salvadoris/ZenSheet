@@ -1,4 +1,11 @@
 import { Point, Rect } from '../Geometry';
+import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
+import {
+  tabSize,
+  TextBoxShapeProperties,
+  TextIndex,
+  TextLine,
+} from '../ShapeProperties/TextBoxShapeProperties';
 import { LineAlignment } from '../ShapeStyles/LineAlignment';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { StyleName } from '../ShapeStyles/StyleName';
@@ -6,58 +13,49 @@ import { TextBoxStyle } from '../ShapeStyles/TextBoxStyle';
 
 import { Shape } from './Shape';
 
-export interface TextIndex {
-  line: number;
-  char: number;
-}
-
-interface TextLine {
-  text: string;
-  tabWidths: number[];
-  maxChunkWidth: number;
-  originalLineIndex: number;
-}
-
-const tabSize = 2;
-
 export class TextBoxShape extends Shape {
-  declare style: TextBoxStyle;
-  #text!: string;
+  declare properties: Required<TextBoxShapeProperties>;
   #lines!: TextLine[];
   #lineSpace: number;
   #lineHeight: number;
-  wrap = false;
   #padding = 10;
 
   constructor(
-    text: string,
-    p0: Point,
-    style: TextBoxStyle,
-    ctx: CanvasRenderingContext2D,
-    wrap: boolean,
-    width: number | undefined = undefined
+    properties: TextBoxShapeProperties,
+    ctx: CanvasRenderingContext2D
   ) {
-    super(p0, 1, 1, style, ctx);
-    if (wrap && !width) {
+    if (
+      properties[ShapePropertyName.wrap] &&
+      properties[ShapePropertyName.originalWidth] === undefined
+    ) {
       throw new Error('Text cannot be wrapped inside TextBox without width');
     }
-    this.wrap = wrap;
-    this.invertable = false;
-    this.#lineSpace = calcLineSpace(style);
-    this.#lineHeight = calcLineHeight(style, this.#lineSpace);
-    this.#text = text;
-    if (width) {
-      this.width = width;
+    if (properties[ShapePropertyName.originalWidth] === undefined) {
+      properties[ShapePropertyName.originalWidth] = 1;
     }
+    if (properties[ShapePropertyName.originalHeight] === undefined) {
+      properties[ShapePropertyName.originalHeight] = 1;
+    }
+    super(properties as Required<TextBoxShapeProperties>, ctx);
+    this.#lineSpace = calcLineSpace(this.style);
+    this.#lineHeight = calcLineHeight(this.style, this.#lineSpace);
     this.resizeContent();
-    this.originalWidth = this.width;
-    this.scaleX = 1;
-    this.originalHeight = this.height;
-    this.scaleY = 1;
   }
 
   get text() {
-    return this.#text;
+    return this.properties[ShapePropertyName.text];
+  }
+
+  get wrap() {
+    return this.properties[ShapePropertyName.wrap];
+  }
+
+  set wrap(wrap: boolean) {
+    this.properties[ShapePropertyName.wrap] = wrap;
+  }
+
+  override get style(): TextBoxStyle {
+    return this.properties[ShapePropertyName.style];
   }
 
   override renderShape(_canvasRect: Rect): void {
@@ -121,19 +119,19 @@ export class TextBoxShape extends Shape {
     const lastIndex = Math.max(startIndex, endIndex);
 
     const removedLinesCount =
-      this.#text.slice(firstIndex, lastIndex).split('\n').length - 1;
+      this.text.slice(firstIndex, lastIndex).split('\n').length - 1;
     const addedLinesCount = text.split('\n').length - 1;
     const changedLinesCount = addedLinesCount - removedLinesCount;
 
     const firstOriginalLineIndex =
-      this.#text.slice(0, firstIndex).split('\n').length - 1;
+      this.text.slice(0, firstIndex).split('\n').length - 1;
     const oldLastOriginalLineIndex =
-      this.#text.slice(0, lastIndex).split('\n').length - 1;
+      this.text.slice(0, lastIndex).split('\n').length - 1;
     const lastOriginalLineIndex = oldLastOriginalLineIndex + changedLinesCount;
 
-    this.#text =
-      this.#text.slice(0, firstIndex) + text + this.#text.slice(lastIndex);
-    const lines = this.#text.split('\n');
+    this.properties[ShapePropertyName.text] =
+      this.text.slice(0, firstIndex) + text + this.text.slice(lastIndex);
+    const lines = this.text.split('\n');
 
     let newLines: TextLine[] = [];
     if (this.wrap) {
@@ -180,7 +178,7 @@ export class TextBoxShape extends Shape {
       }
     }
 
-    this.minWidth =
+    this.properties[ShapePropertyName.minWidth] =
       Math.max(...this.#lines.map(l => l.maxChunkWidth)) + this.#padding * 2;
     this.width = Math.max(this.width, this.minWidth);
 
@@ -193,7 +191,7 @@ export class TextBoxShape extends Shape {
   override resizeContent(): void {
     this.applyFontStyle();
     this.#lines = [];
-    const lines = this.#text.split('\n');
+    const lines = this.text.split('\n');
     if (this.wrap) {
       lines.forEach((line, index) => {
         this.#lines = this.#lines.concat(this.wrappedTextLines(line, index));
@@ -209,7 +207,7 @@ export class TextBoxShape extends Shape {
       this.scaleX = this.width / this.originalWidth;
     }
 
-    this.minWidth =
+    this.properties[ShapePropertyName.minWidth] =
       Math.max(...this.#lines.map(l => l.maxChunkWidth)) + this.#padding * 2;
     const newHeight = this.#lineHeight * this.#lines.length + this.#padding * 2;
     if (newHeight != this.height) {
@@ -232,7 +230,7 @@ export class TextBoxShape extends Shape {
       const firstIndex = Math.max(Math.min(selectedStart, selectedEnd), 0);
       const lastIndex = Math.min(
         Math.max(selectedStart, selectedEnd),
-        this.#text.length
+        this.text.length
       );
       const firstTextIndex = this.globalIndexToTextIndex(firstIndex);
       const lastTextIndex = this.globalIndexToTextIndex(lastIndex);
@@ -268,7 +266,7 @@ export class TextBoxShape extends Shape {
       });
       if (selectedStart !== null) {
         const textIndex = this.globalIndexToTextIndex(
-          Math.min(Math.max(selectedStart, 0), this.#text.length)
+          Math.min(Math.max(selectedStart, 0), this.text.length)
         );
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(
@@ -291,8 +289,8 @@ export class TextBoxShape extends Shape {
   }
 
   deleteChar(index: number): number {
-    if (index > this.#text.length) {
-      return this.#text.length;
+    if (index > this.text.length) {
+      return this.text.length;
     }
     if (index < 0) {
       index = 0;
@@ -360,8 +358,8 @@ export class TextBoxShape extends Shape {
   }
 
   nextWordEndIndex(index: number): number {
-    if (index >= this.#text.length) {
-      return this.#text.length;
+    if (index >= this.text.length) {
+      return this.text.length;
     }
 
     const textIndex = this.globalIndexToTextIndex(index);
@@ -447,7 +445,7 @@ export class TextBoxShape extends Shape {
       (pos[1] - this.originY - this.#padding) / this.#lineHeight
     );
     if (currentLineIndex >= this.#lines.length - 1) {
-      return this.#text.length;
+      return this.text.length;
     }
 
     const newLineIndex = currentLineIndex + 1;
@@ -478,7 +476,7 @@ export class TextBoxShape extends Shape {
       return 0;
     }
     if (lineIndex > this.#lines.length - 1) {
-      return this.#text.length;
+      return this.text.length;
     }
     return this.textIndexToGlobalIndex({
       line: lineIndex,
@@ -490,7 +488,7 @@ export class TextBoxShape extends Shape {
     if (index <= 0) {
       return [this.lineStartX(0), this.originY + this.#padding];
     }
-    if (index >= this.#text.length) {
+    if (index >= this.text.length) {
       return [
         this.xPositonInLine({
           line: this.#lines.length - 1,

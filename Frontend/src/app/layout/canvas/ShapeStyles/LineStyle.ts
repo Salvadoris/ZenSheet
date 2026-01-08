@@ -1,7 +1,7 @@
 import { ShapeStyle, ShapeStyleProperty } from './ShapeStyle';
 import { StyleName } from './StyleName';
 
-type LineStyleType = Required<
+export type LineStyleType = Required<
   Pick<
     ShapeStyle,
     | StyleName.Color

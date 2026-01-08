@@ -8,7 +8,10 @@ export class SelectedMultiShape extends SelectedShape {
   declare shape: GroupShape;
 
   constructor(shapes: Shape[], ctx: CanvasRenderingContext2D) {
-    const groupShape = new GroupShape(shapes, ctx);
+    const groupShape = new GroupShape(
+      { id: crypto.randomUUID(), shapes: shapes },
+      ctx
+    );
     super(groupShape);
   }
 

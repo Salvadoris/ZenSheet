@@ -1,4 +1,7 @@
+import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
+import { StrokedRectDrawingProperties } from '../DrawingProperties/StrokedRectDrawingProperties';
 import { Point } from '../Geometry';
+import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { Shape } from '../Shapes/Shape';
 import { StrokedRectShape } from '../Shapes/StrokedRectShape';
 import { StrokedRectStyle } from '../ShapeStyles/StrokedRectStyle';
@@ -7,11 +10,19 @@ import { StyleName } from '../ShapeStyles/StyleName';
 import { Drawing } from './Drawing';
 
 export class StrokedRectDrawing implements Drawing {
-  constructor(
-    public p0: Point,
-    public p1: Point,
-    public style: StrokedRectStyle
-  ) {}
+  constructor(public properties: StrokedRectDrawingProperties) {}
+
+  get p0() {
+    return this.properties[DrawingPropertyName.p0];
+  }
+
+  get p1() {
+    return this.properties[DrawingPropertyName.p1];
+  }
+
+  get style(): StrokedRectStyle {
+    return this.properties[DrawingPropertyName.style];
+  }
 
   path(): Path2D {
     const horizontalInverted = this.p1[0] < this.p0[0];
@@ -36,7 +47,17 @@ export class StrokedRectDrawing implements Drawing {
   }
 
   toShape(ctx: CanvasRenderingContext2D): Shape {
-    return new StrokedRectShape(this.p0, this.p1, this.style, ctx);
+    return new StrokedRectShape(
+      {
+        [ShapePropertyName.id]: crypto.randomUUID(),
+        [ShapePropertyName.style]: this.style,
+        [ShapePropertyName.originX]: Math.min(this.p0[0], this.p1[0]),
+        [ShapePropertyName.originY]: Math.min(this.p0[1], this.p1[1]),
+        [ShapePropertyName.originalWidth]: Math.abs(this.p1[0] - this.p0[0]),
+        [ShapePropertyName.originalHeight]: Math.abs(this.p1[1] - this.p0[1]),
+      },
+      ctx
+    );
   }
 
   update(p: Point): void {

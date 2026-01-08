@@ -1,53 +1,67 @@
 import { Point, Rect } from '../Geometry';
+import {
+  Chunk,
+  LinePoints,
+  LineShapeProperties,
+  Segment,
+} from '../ShapeProperties/LineShapeProperties';
+import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { LineStyle } from '../ShapeStyles/LineStyle';
 import { ShapeStyle, ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { StyleName } from '../ShapeStyles/StyleName';
 
 import { Shape } from './Shape';
 
-export type LinePoints =
-  | [Point, Point, ...Point[]]
-  | [Point, ...Point[], Point]
-  | [...Point[], Point, Point];
-
-interface Chunk {
-  rect: Rect;
-  visible: boolean;
-}
-
-interface Segment {
-  points: Point[];
-  chunkIndex: number;
-}
-
 export class LineShape extends Shape {
-  public points!: Point[];
+  declare properties: Required<LineShapeProperties>;
   private chunks: Chunk[] = [];
   private segments: Segment[] = [];
-  declare style: LineStyle;
 
-  constructor(
-    points: LinePoints,
-    style: LineStyle,
-    ctx: CanvasRenderingContext2D
-  ) {
-    const originX = minX(points, style[StyleName.LineWidth]);
-    const originY = minY(points, style[StyleName.LineWidth]);
-    const width = maxX(points, style[StyleName.LineWidth]) - originX;
-    const height = maxY(points, style[StyleName.LineWidth]) - originY;
-    super([originX, originY], width, height, style, ctx);
+  constructor(properties: LineShapeProperties, ctx: CanvasRenderingContext2D) {
+    if (
+      properties[ShapePropertyName.originX] === undefined ||
+      properties[ShapePropertyName.originY] === undefined ||
+      properties[ShapePropertyName.originalWidth] === undefined ||
+      properties[ShapePropertyName.originalHeight] === undefined
+    ) {
+      const originX = minX(
+        properties[ShapePropertyName.points],
+        properties[ShapePropertyName.style][StyleName.LineWidth]
+      );
+      const originY = minY(
+        properties[ShapePropertyName.points],
+        properties[ShapePropertyName.style][StyleName.LineWidth]
+      );
+      properties[ShapePropertyName.originX] = originX;
+      properties[ShapePropertyName.originY] = originY;
+      properties[ShapePropertyName.originalWidth] =
+        maxX(
+          properties[ShapePropertyName.points],
+          properties[ShapePropertyName.style][StyleName.LineWidth]
+        ) - properties[ShapePropertyName.originX];
+      properties[ShapePropertyName.originalHeight] =
+        maxY(
+          properties[ShapePropertyName.points],
+          properties[ShapePropertyName.style][StyleName.LineWidth]
+        ) - properties[ShapePropertyName.originY];
+      properties[ShapePropertyName.points] = properties[
+        ShapePropertyName.points
+      ].map(p => [p[0] - originX, p[1] - originY]) as LinePoints;
+    }
+    super(properties as Required<LineShapeProperties>, ctx);
 
-    const pts: Point[] = points.map(p => [p[0] - originX, p[1] - originY]);
-    this.points = pts;
     this.chunks = getLineChunks(
-      { rect: [0, 0, width, height], visible: false },
-      pts,
-      style[StyleName.LineWidth]
+      {
+        rect: [0, 0, this.originalWidth, this.originalHeight],
+        visible: false,
+      },
+      this.points,
+      this.style[StyleName.LineWidth]
     );
 
     let segmentPoints: Point[] = [];
     let prevChunkIdx = -1;
-    for (const p of pts) {
+    for (const p of this.points) {
       let chunkIdx = -1;
       for (let j = 0; j < this.chunks.length; j++) {
         if (pointInsideRect(p, this.chunks[j].rect)) {
@@ -69,6 +83,14 @@ export class LineShape extends Shape {
       prevChunkIdx = chunkIdx;
     }
     this.segments.push({ points: segmentPoints, chunkIndex: prevChunkIdx });
+  }
+
+  override get style(): LineStyle {
+    return this.properties[ShapePropertyName.style];
+  }
+
+  get points() {
+    return this.properties[ShapePropertyName.points];
   }
 
   override setStyleProperty(styleProperty: ShapeStyleProperty): void {

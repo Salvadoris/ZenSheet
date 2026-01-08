@@ -1,4 +1,5 @@
 import { CanvasComponent } from '../canvas.component';
+import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { FilledRectDrawing } from '../Drawings/FilledRectDrawing';
 import { FilledRectStyle } from '../ShapeStyles/FilledRectStyle';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
@@ -32,11 +33,18 @@ export class FilledRectToolState extends CanvasToolState {
 
   override onPressedMouseMove(_event: MouseEvent): void {
     if (this.canvas.firstMove) {
-      this.canvas.currentDrawing = new FilledRectDrawing(
-        [this.canvas.startCursor[0], this.canvas.startCursor[1]],
-        [this.canvas.cursor[0], this.canvas.cursor[1]],
-        new FilledRectStyle(this.canvas.style)
-      );
+      this.canvas.currentDrawing = new FilledRectDrawing({
+        [DrawingPropertyName.id]: crypto.randomUUID(),
+        [DrawingPropertyName.p0]: [
+          this.canvas.startCursor[0],
+          this.canvas.startCursor[1],
+        ],
+        [DrawingPropertyName.p1]: [
+          this.canvas.cursor[0],
+          this.canvas.cursor[1],
+        ],
+        [DrawingPropertyName.style]: new FilledRectStyle(this.canvas.style),
+      });
       this.canvas.drawings.push(this.canvas.currentDrawing);
     } else if (this.canvas.currentDrawing) {
       this.canvas.currentDrawing.update([

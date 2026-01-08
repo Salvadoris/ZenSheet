@@ -1,7 +1,7 @@
 import { ShapeStyle, ShapeStyleProperty } from './ShapeStyle';
 import { StyleName } from './StyleName';
 
-type FilledRectStyleType = Required<
+export type FilledRectStyleType = Required<
   Pick<ShapeStyle, StyleName.Color | StyleName.Opacity>
 >;
 

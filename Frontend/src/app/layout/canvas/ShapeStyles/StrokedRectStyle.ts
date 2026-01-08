@@ -1,7 +1,7 @@
 import { ShapeStyle, ShapeStyleProperty } from './ShapeStyle';
 import { StyleName } from './StyleName';
 
-type StrokedRectStyleType = Required<
+export type StrokedRectStyleType = Required<
   Pick<
     ShapeStyle,
     | StyleName.Color

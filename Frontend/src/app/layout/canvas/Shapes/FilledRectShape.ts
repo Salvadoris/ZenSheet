@@ -1,4 +1,6 @@
 import { Point, Rect } from '../Geometry';
+import { FilledRectShapeProperties } from '../ShapeProperties/FilledRectShapeProperties';
+import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { FilledRectStyle } from '../ShapeStyles/FilledRectStyle';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { StyleName } from '../ShapeStyles/StyleName';
@@ -6,15 +8,17 @@ import { StyleName } from '../ShapeStyles/StyleName';
 import { Shape } from './Shape';
 
 export class FilledRectShape extends Shape {
-  declare style: FilledRectStyle;
+  declare properties: Required<FilledRectShapeProperties>;
 
   constructor(
-    p0: Point,
-    p1: Point,
-    style: FilledRectStyle,
+    properties: FilledRectShapeProperties,
     ctx: CanvasRenderingContext2D
   ) {
-    super(p0, p1[0] - p0[0], p1[1] - p0[1], style, ctx);
+    super(properties, ctx);
+  }
+
+  override get style(): FilledRectStyle {
+    return this.properties[ShapePropertyName.style];
   }
 
   override setStyleProperty(styleProperty: ShapeStyleProperty): void {

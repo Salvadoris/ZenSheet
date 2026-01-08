@@ -1,4 +1,5 @@
 import { CanvasComponent } from '../canvas.component';
+import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { LineDrawing, smoothLine } from '../Drawings/LineDrawing';
 import { LineStyle } from '../ShapeStyles/LineStyle';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
@@ -32,13 +33,14 @@ export class PenToolState extends CanvasToolState {
 
   override onPressedMouseMove(_event: MouseEvent): void {
     if (this.canvas.firstMove) {
-      this.canvas.currentDrawing = new LineDrawing(
-        [
+      this.canvas.currentDrawing = new LineDrawing({
+        [DrawingPropertyName.id]: crypto.randomUUID(),
+        [DrawingPropertyName.points]: [
           [this.canvas.prevCursor[0], this.canvas.prevCursor[1]],
           [this.canvas.cursor[0], this.canvas.cursor[1]],
         ],
-        new LineStyle(this.canvas.style)
-      );
+        [DrawingPropertyName.style]: new LineStyle(this.canvas.style),
+      });
       this.canvas.drawings.push(this.canvas.currentDrawing);
     } else if (this.canvas.currentDrawing) {
       this.canvas.currentDrawing.update([

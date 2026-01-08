@@ -2,7 +2,7 @@ import { LineAlignment } from './LineAlignment';
 import { ShapeStyle, ShapeStyleProperty } from './ShapeStyle';
 import { FontStyleName, StyleName } from './StyleName';
 
-type TextBoxStyleType = Required<
+export type TextBoxStyleType = Required<
   Pick<ShapeStyle, StyleName.Color | StyleName.Opacity | FontStyleName>
 >;
 
