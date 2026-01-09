@@ -7,6 +7,8 @@ import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { CanvasToolState } from './CanvasToolState';
 
 export class FilledRectToolState extends CanvasToolState {
+  #currentDrawing: FilledRectDrawing | null = null;
+
   constructor(canvas: CanvasComponent) {
     super(canvas);
     this.canvas.changeStyle(new FilledRectStyle(this.canvas.style));
@@ -33,7 +35,7 @@ export class FilledRectToolState extends CanvasToolState {
 
   override onPressedMouseMove(_event: MouseEvent): void {
     if (this.canvas.firstMove) {
-      this.canvas.currentDrawing = new FilledRectDrawing({
+      this.#currentDrawing = new FilledRectDrawing({
         [DrawingPropertyName.id]: crypto.randomUUID(),
         [DrawingPropertyName.p0]: [
           this.canvas.startCursor[0],
@@ -45,9 +47,9 @@ export class FilledRectToolState extends CanvasToolState {
         ],
         [DrawingPropertyName.style]: new FilledRectStyle(this.canvas.style),
       });
-      this.canvas.drawings.push(this.canvas.currentDrawing);
-    } else if (this.canvas.currentDrawing) {
-      this.canvas.currentDrawing.update([
+      this.canvas.drawings.push(this.#currentDrawing);
+    } else if (this.#currentDrawing) {
+      this.#currentDrawing.update([
         this.canvas.cursor[0],
         this.canvas.cursor[1],
       ]);
@@ -59,12 +61,12 @@ export class FilledRectToolState extends CanvasToolState {
   override onHoveringMouseMove(_event: MouseEvent): void {}
 
   override onMouseUp(_event: MouseEvent): void {
-    if (this.canvas.currentDrawing) {
+    if (this.#currentDrawing) {
       this.canvas.shapes.push(
-        this.canvas.currentDrawing.toShape(this.canvas.mainCtx)
+        this.#currentDrawing.toShape(this.canvas.mainCtx)
       );
-      const idx = this.canvas.drawings.indexOf(this.canvas.currentDrawing);
-      this.canvas.currentDrawing = null;
+      const idx = this.canvas.drawings.indexOf(this.#currentDrawing);
+      this.#currentDrawing = null;
       if (idx !== -1) {
         this.canvas.drawings.splice(idx, 1);
       }

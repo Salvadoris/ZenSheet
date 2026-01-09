@@ -14,6 +14,7 @@ import { Drawing } from './Drawings/Drawing';
 import { Point, Rect } from './Geometry';
 import { DrawingSerializer } from './Serializer/DrawingSerializer';
 import { ShapeSerializer } from './Serializer/ShapeSerializer';
+import { ShapePropertyName } from './ShapeProperties/ShapePropertyName';
 import { Shape } from './Shapes/Shape';
 import { TextBoxShape } from './Shapes/TextBoxShape';
 import { CanvasStyle } from './ShapeStyles/CanvasStyle';
@@ -83,9 +84,7 @@ export class CanvasComponent implements AfterViewInit {
   #drawingSerializer!: DrawingSerializer;
 
   #shapes: Shape[] = [];
-
   #drawings: Drawing[] = [];
-  #currentDrawing: Drawing | null = null;
 
   #scale = 1;
   #minScale = 0.1;
@@ -171,14 +170,6 @@ export class CanvasComponent implements AfterViewInit {
 
   get drawings() {
     return this.#drawings;
-  }
-
-  get currentDrawing() {
-    return this.#currentDrawing;
-  }
-
-  set currentDrawing(currentDrawing: Drawing | null) {
-    this.#currentDrawing = currentDrawing;
   }
 
   get scale() {
@@ -405,7 +396,10 @@ export class CanvasComponent implements AfterViewInit {
       this.#mainCtx.translate(this.#origin[0], this.#origin[1]);
       this.#mainCtx.scale(this.#scale, this.#scale);
       for (const shape of this.#shapes) {
-        if (this.shapeInside(shape)) {
+        if (
+          !shape.properties[ShapePropertyName.edited] &&
+          this.shapeInside(shape)
+        ) {
           shape.render(this.#trueRect);
         }
       }
@@ -429,6 +423,16 @@ export class CanvasComponent implements AfterViewInit {
 
       this.#tmpCtx.translate(this.#origin[0], this.#origin[1]);
       this.#tmpCtx.scale(this.#scale, this.#scale);
+
+      for (const shape of this.#shapes) {
+        if (
+          shape.properties[ShapePropertyName.edited] &&
+          !shape.properties[ShapePropertyName.selected] &&
+          this.shapeInside(shape)
+        ) {
+          shape.render(this.#trueRect);
+        }
+      }
 
       for (const drawing of this.#drawings) {
         drawing.render(this.#tmpCtx);

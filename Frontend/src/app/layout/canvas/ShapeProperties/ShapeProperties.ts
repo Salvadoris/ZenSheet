@@ -21,6 +21,8 @@ export interface ShapeProperties {
   [ShapePropertyName.invertable]: boolean;
   [ShapePropertyName.horizontalInverted]: boolean;
   [ShapePropertyName.verticallyInverted]: boolean;
+  [ShapePropertyName.edited]: boolean;
+  [ShapePropertyName.selected]: boolean;
   [ShapePropertyName.shapes]?: Shape[];
   [ShapePropertyName.src]?: string;
   [ShapePropertyName.text]?: string;
@@ -37,6 +39,8 @@ export type BaseShapeProperties = Required<
     | ShapePropertyName.originY
     | ShapePropertyName.originalWidth
     | ShapePropertyName.originalHeight
+    | ShapePropertyName.edited
+    | ShapePropertyName.selected
   >
 > &
   Partial<
@@ -68,6 +72,7 @@ export type BaseSerializedShapeProperties = Required<
     | ShapePropertyName.minWidth
     | ShapePropertyName.minHeight
     | ShapePropertyName.invertable
+    | ShapePropertyName.edited
   >
 >;
 

@@ -14,6 +14,8 @@ export enum ShapePropertyName {
   invertable = 'invertable',
   horizontalInverted = 'horizontalInverted',
   verticallyInverted = 'verticallyInverted',
+  edited = 'edited',
+  selected = 'selected',
   shapes = 'shapes',
   src = 'src',
   text = 'text',

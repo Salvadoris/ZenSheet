@@ -41,6 +41,8 @@ export type TextBoxShapeProperties = Partial<
       | ShapePropertyName.wrap
       | ShapePropertyName.originX
       | ShapePropertyName.originY
+      | ShapePropertyName.edited
+      | ShapePropertyName.selected
     >
   >;
 
@@ -52,6 +54,6 @@ export type SerializedTextBoxShapeProperties = Omit<
 } & Required<
     Pick<
       SerializedShapeProperties,
-      ShapePropertyName.text | ShapePropertyName.wrap
+      ShapePropertyName.text | ShapePropertyName.wrap | ShapePropertyName.edited
     >
   >;

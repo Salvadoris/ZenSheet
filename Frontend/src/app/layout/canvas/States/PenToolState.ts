@@ -7,6 +7,8 @@ import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { CanvasToolState } from './CanvasToolState';
 
 export class PenToolState extends CanvasToolState {
+  #currentDrawing: LineDrawing | null = null;
+
   constructor(canvas: CanvasComponent) {
     super(canvas);
     this.canvas.changeStyle(new LineStyle(this.canvas.style));
@@ -33,7 +35,7 @@ export class PenToolState extends CanvasToolState {
 
   override onPressedMouseMove(_event: MouseEvent): void {
     if (this.canvas.firstMove) {
-      this.canvas.currentDrawing = new LineDrawing({
+      this.#currentDrawing = new LineDrawing({
         [DrawingPropertyName.id]: crypto.randomUUID(),
         [DrawingPropertyName.points]: [
           [this.canvas.prevCursor[0], this.canvas.prevCursor[1]],
@@ -41,9 +43,9 @@ export class PenToolState extends CanvasToolState {
         ],
         [DrawingPropertyName.style]: new LineStyle(this.canvas.style),
       });
-      this.canvas.drawings.push(this.canvas.currentDrawing);
-    } else if (this.canvas.currentDrawing) {
-      this.canvas.currentDrawing.update([
+      this.canvas.drawings.push(this.#currentDrawing);
+    } else if (this.#currentDrawing) {
+      this.#currentDrawing.update([
         this.canvas.cursor[0],
         this.canvas.cursor[1],
       ]);
@@ -56,21 +58,21 @@ export class PenToolState extends CanvasToolState {
 
   override onMouseUp(_event: MouseEvent): void {
     if (this.canvas.leftmouseDown) {
-      if (this.canvas.currentDrawing) {
+      if (this.#currentDrawing) {
         if (
           this.canvas.smoothLine &&
-          this.canvas.currentDrawing instanceof LineDrawing
+          this.#currentDrawing instanceof LineDrawing
         ) {
-          this.canvas.currentDrawing.points = smoothLine(
-            this.canvas.currentDrawing.points,
+          this.#currentDrawing.points = smoothLine(
+            this.#currentDrawing.points,
             this.canvas.smoothLineFactor
           );
         }
         this.canvas.shapes.push(
-          this.canvas.currentDrawing.toShape(this.canvas.mainCtx)
+          this.#currentDrawing.toShape(this.canvas.mainCtx)
         );
-        const idx = this.canvas.drawings.indexOf(this.canvas.currentDrawing);
-        this.canvas.currentDrawing = null;
+        const idx = this.canvas.drawings.indexOf(this.#currentDrawing);
+        this.#currentDrawing = null;
         if (idx !== -1) {
           this.canvas.drawings.splice(idx, 1);
         }

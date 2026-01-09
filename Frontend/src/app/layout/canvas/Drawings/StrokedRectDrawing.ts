@@ -55,6 +55,8 @@ export class StrokedRectDrawing implements Drawing {
         [ShapePropertyName.originY]: Math.min(this.p0[1], this.p1[1]),
         [ShapePropertyName.originalWidth]: Math.abs(this.p1[0] - this.p0[0]),
         [ShapePropertyName.originalHeight]: Math.abs(this.p1[1] - this.p0[1]),
+        [ShapePropertyName.edited]: false,
+        [ShapePropertyName.selected]: false,
       },
       ctx
     );

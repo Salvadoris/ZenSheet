@@ -30,8 +30,11 @@ export type LineShapeProperties = Partial<
   >
 > & { [ShapePropertyName.style]: LineStyle } & Required<
     Pick<
-      SerializedShapeProperties,
-      ShapePropertyName.id | ShapePropertyName.points
+      ShapeProperties,
+      | ShapePropertyName.id
+      | ShapePropertyName.points
+      | ShapePropertyName.edited
+      | ShapePropertyName.selected
     >
   >;
 
@@ -40,4 +43,9 @@ export type SerializedLineShapeProperties = Omit<
   ShapePropertyName.style
 > & {
   [ShapePropertyName.style]: LineStyle;
-} & Required<Pick<SerializedShapeProperties, ShapePropertyName.points>>;
+} & Required<
+    Pick<
+      SerializedShapeProperties,
+      ShapePropertyName.points | ShapePropertyName.edited
+    >
+  >;

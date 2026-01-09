@@ -40,6 +40,8 @@ export class LineDrawing implements Drawing {
         [ShapePropertyName.id]: crypto.randomUUID(),
         [ShapePropertyName.style]: this.style,
         [ShapePropertyName.points]: this.points,
+        [ShapePropertyName.edited]: false,
+        [ShapePropertyName.selected]: false,
       },
       ctx
     );

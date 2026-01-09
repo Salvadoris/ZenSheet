@@ -46,7 +46,6 @@ export class SelectedShape {
     this.shape.ctx.fill(this.topRightCorner);
     this.shape.ctx.fill(this.bottomLeftCorner);
     this.shape.ctx.fill(this.bottomRightCorner);
-
     this.shape.ctx.strokeStyle = this.color;
     this.shape.ctx.fillStyle = this.color;
     this.shape.ctx.lineWidth = this.lineWidth / canvasScale;

@@ -54,7 +54,7 @@ export class TextToolState extends CanvasToolState {
         return;
       } else {
         this.#currentTextBox.ctx = this.canvas.mainCtx;
-        this.canvas.shapes.push(this.#currentTextBox);
+        this.#currentTextBox.properties[ShapePropertyName.edited] = false;
       }
       this.#currentTextBox = null;
       this.#selectedStart = null;
@@ -126,21 +126,28 @@ export class TextToolState extends CanvasToolState {
         [ShapePropertyName.originX]: this.canvas.cursor[0],
         [ShapePropertyName.originY]:
           this.canvas.cursor[1] - (style[StyleName.FontSize] / 2 - lineSpace),
+        [ShapePropertyName.edited]: true,
+        [ShapePropertyName.selected]: false,
       },
       this.canvas.tmpCtx
     );
+    this.canvas.shapes.push(this.#currentTextBox);
   }
 
   private setCurrentTextBox(textBox: TextBoxShape) {
-    if (this.#currentTextBox != textBox) {
-      const idx = this.canvas.shapes.indexOf(textBox);
-      if (idx !== -1) {
-        this.canvas.shapes.splice(idx, 1);
+    if (this.#currentTextBox) {
+      if (
+        textBox.properties[ShapePropertyName.id] ===
+        this.#currentTextBox.properties[ShapePropertyName.id]
+      ) {
+        return;
+      } else {
+        this.releaseCurrentTextBox();
       }
-      this.releaseCurrentTextBox();
-      this.#currentTextBox = textBox;
     }
+    this.#currentTextBox = textBox;
     this.#currentTextBox.ctx = this.canvas.tmpCtx;
+    this.#currentTextBox.properties[ShapePropertyName.edited] = true;
   }
 
   private removeSelectedRange() {

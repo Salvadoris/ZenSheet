@@ -11,7 +11,13 @@ export type GroupShapeProperties = Partial<
 > & {
   [ShapePropertyName.style]?: GroupShapeStyle;
 } & Required<
-    Pick<ShapeProperties, ShapePropertyName.id | ShapePropertyName.shapes>
+    Pick<
+      ShapeProperties,
+      | ShapePropertyName.id
+      | ShapePropertyName.shapes
+      | ShapePropertyName.edited
+      | ShapePropertyName.selected
+    >
   >;
 
 export type SerializedGroupShapeProperties = Omit<
@@ -19,4 +25,9 @@ export type SerializedGroupShapeProperties = Omit<
   ShapePropertyName.shapes | ShapePropertyName.style
 > & {
   [ShapePropertyName.style]: GroupShapeStyle;
-} & Required<Pick<SerializedShapeProperties, ShapePropertyName.shapes>>;
+} & Required<
+    Pick<
+      SerializedShapeProperties,
+      ShapePropertyName.shapes | ShapePropertyName.edited
+    >
+  >;
