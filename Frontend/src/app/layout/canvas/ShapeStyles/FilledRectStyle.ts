@@ -14,14 +14,15 @@ export class FilledRectStyle implements FilledRectStyleType {
     this[StyleName.Opacity] = style[StyleName.Opacity];
   }
 
-  updateProperty(styleProperty: ShapeStyleProperty) {
+  updateProperty(styleProperty: ShapeStyleProperty): boolean {
     switch (styleProperty.name) {
       case StyleName.Color:
         this[StyleName.Color] = styleProperty.value;
-        break;
+        return true;
       case StyleName.Opacity:
         this[StyleName.Opacity] = styleProperty.value;
-        break;
+        return true;
     }
+    return false;
   }
 }

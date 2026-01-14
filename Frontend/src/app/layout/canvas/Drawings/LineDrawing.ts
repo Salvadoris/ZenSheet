@@ -1,3 +1,4 @@
+import { ChangableDrawingProperties } from '../DrawingProperties/DrawingProperties';
 import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { LineDrawingProperties } from '../DrawingProperties/LineDrawingProperties';
 import { Point } from '../Geometry';
@@ -47,9 +48,15 @@ export class LineDrawing implements Drawing {
     );
   }
 
-  update(p: Point): void {
+  update(
+    p: Point
+  ): Required<Pick<ChangableDrawingProperties, DrawingPropertyName.points>> {
     this.points.push([p[0], p[1]]);
+    return {
+      [DrawingPropertyName.points]: { lastPoint: [p[0], p[1]] },
+    };
   }
+
   render(ctx: CanvasRenderingContext2D): void {
     ctx.lineWidth = this.style[StyleName.LineWidth];
     ctx.lineCap = this.style[StyleName.LineCap];

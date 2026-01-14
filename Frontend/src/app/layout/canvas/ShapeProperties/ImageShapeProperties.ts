@@ -1,4 +1,4 @@
-import { ImageStyle } from '../ShapeStyles/ImageStyle';
+import { ImageStyle, ImageStyleType } from '../ShapeStyles/ImageStyle';
 
 import {
   BaseSerializedShapeProperties,
@@ -19,5 +19,5 @@ export type SerializedImageShapeProperties = Omit<
   BaseSerializedShapeProperties,
   ShapePropertyName.style
 > & {
-  [ShapePropertyName.style]: ImageStyle;
+  [ShapePropertyName.style]: ImageStyleType;
 } & Required<Pick<SerializedShapeProperties, ShapePropertyName.src>>;

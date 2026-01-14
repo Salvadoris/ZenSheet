@@ -10,11 +10,27 @@ import {
 
 import { Mode } from '../toolbar/toolbar.component';
 
+import { ActionType } from './Actions/ActionType';
+import { AddDrawingsAction } from './Actions/AddDrawingsAction';
+import { AddGroupShapeAction } from './Actions/AddGroupShapeAction';
+import { AddShapesAction } from './Actions/AddShapesAction';
+import { CanvasActionHandler } from './Actions/CanvasActionHandler';
+import { ChangeDrawingsPropertiesAction } from './Actions/ChangeDrawingPropertiesAction';
+import { ChangeShapesPropertiesAction } from './Actions/ChangeShapesPropertiesAction';
+import { DrawingToShapeAction } from './Actions/DrawingToShapeAction';
+import { RemoveDrawingsAction } from './Actions/RemoveDrawingsAction';
+import { RemoveGroupShapeAction } from './Actions/RemoveGroupShapeAction';
+import { RemoveShapesAction } from './Actions/RemoveShapesAction';
+import { ShapeToLocalAction } from './Actions/ShapeToLocal';
+import { ChangableDrawingProperties } from './DrawingProperties/DrawingProperties';
+import { DrawingPropertyName } from './DrawingProperties/DrawingPropertyName';
 import { Drawing } from './Drawings/Drawing';
 import { Point, Rect } from './Geometry';
 import { DrawingSerializer } from './Serializer/DrawingSerializer';
 import { ShapeSerializer } from './Serializer/ShapeSerializer';
+import { ChangableSerializedShapeProperties } from './ShapeProperties/ShapeProperties';
 import { ShapePropertyName } from './ShapeProperties/ShapePropertyName';
+import { GroupShape } from './Shapes/GroupShape';
 import { Shape } from './Shapes/Shape';
 import { TextBoxShape } from './Shapes/TextBoxShape';
 import { CanvasStyle } from './ShapeStyles/CanvasStyle';
@@ -83,6 +99,8 @@ export class CanvasComponent implements AfterViewInit {
   #shapeSerializer!: ShapeSerializer;
   #drawingSerializer!: DrawingSerializer;
 
+  #actionHandler!: CanvasActionHandler;
+
   #shapes: Shape[] = [];
   #drawings: Drawing[] = [];
 
@@ -134,6 +152,7 @@ export class CanvasComponent implements AfterViewInit {
   ngAfterViewInit() {
     this.#shapeSerializer = new ShapeSerializer();
     this.#drawingSerializer = new DrawingSerializer();
+    this.#actionHandler = new CanvasActionHandler(this);
 
     const mainCanvas = this.mainCanvasRef.nativeElement;
     this.#mainCtx = mainCanvas.getContext('2d')!;
@@ -160,6 +179,10 @@ export class CanvasComponent implements AfterViewInit {
     return this.#drawingSerializer;
   }
 
+  get actionHandler() {
+    return this.#actionHandler;
+  }
+
   get shapes() {
     return this.#shapes;
   }
@@ -170,6 +193,10 @@ export class CanvasComponent implements AfterViewInit {
 
   get drawings() {
     return this.#drawings;
+  }
+
+  set drawings(drawings: Drawing[]) {
+    this.#drawings = drawings;
   }
 
   get scale() {
@@ -226,6 +253,212 @@ export class CanvasComponent implements AfterViewInit {
 
   get smoothLineFactor() {
     return this.#smoothLineFactor;
+  }
+
+  addShapes(shapes: Shape[]) {
+    if (shapes.length === 1) {
+      this.shapes.push(shapes[0]);
+    } else {
+      this.shapes = this.shapes.concat(shapes);
+    }
+    const serializedShapes = shapes.map(s =>
+      this.shapeSerializer.serialized(s)
+    );
+
+    this.#actionHandler.receiveAction({
+      type: ActionType.AddShapes,
+      data: {
+        shapes: serializedShapes,
+      },
+    } as AddShapesAction);
+  }
+
+  removeShapes(shapeIdList: string[]) {
+    this.shapes = this.shapes.filter(
+      s => !shapeIdList.includes(s.properties[ShapePropertyName.id])
+    );
+    this.#actionHandler.receiveAction({
+      type: ActionType.RemoveShapes,
+      data: { shapeIdList: shapeIdList },
+    } as RemoveShapesAction);
+  }
+
+  changeShapesProperties(
+    shapeIdList: string[],
+    properties: ChangableSerializedShapeProperties
+  ) {
+    this.#actionHandler.receiveAction({
+      type: ActionType.ChangeShapesProperties,
+      data: {
+        shapeIdList: shapeIdList,
+        properties: properties,
+      },
+    } as ChangeShapesPropertiesAction);
+  }
+
+  addDrawings(drawings: Drawing[]) {
+    if (drawings.length === 1) {
+      this.drawings.push(drawings[0]);
+    } else {
+      this.#drawings = this.drawings.concat(drawings);
+    }
+    const serializedDrawings = drawings.map(d =>
+      this.#drawingSerializer.serialized(d)
+    );
+    this.#actionHandler.receiveAction({
+      type: ActionType.AddDrawings,
+      data: { drawings: serializedDrawings },
+    } as AddDrawingsAction);
+  }
+
+  removeDrawings(drawingIdList: string[]) {
+    this.#drawings = this.drawings.filter(
+      d => !drawingIdList.includes(d.properties[DrawingPropertyName.id])
+    );
+    this.#actionHandler.receiveAction({
+      type: ActionType.RemoveDrawings,
+      data: { drawingIdList: drawingIdList },
+    } as RemoveDrawingsAction);
+  }
+
+  changeDrawingsProperties(
+    drawingIdList: string[],
+    properties: ChangableDrawingProperties
+  ) {
+    this.#actionHandler.receiveAction({
+      type: ActionType.ChangeDrawingProperties,
+      data: {
+        drawingIdList: drawingIdList,
+        properties: properties,
+      },
+    } as ChangeDrawingsPropertiesAction);
+  }
+
+  drawingToShape(drawing: Drawing) {
+    const shape = drawing.toShape(this.mainCtx);
+    this.shapes.push(shape);
+    const serializedShape = this.shapeSerializer.serialized(shape);
+
+    const idx = this.#drawings.indexOf(drawing);
+    if (idx !== -1) {
+      this.drawings.splice(idx, 1);
+    }
+
+    this.#actionHandler.receiveAction({
+      type: ActionType.DrawingToShape,
+      data: {
+        drawingId: drawing.properties[DrawingPropertyName.id],
+        shape: serializedShape,
+      },
+    } as DrawingToShapeAction);
+  }
+
+  addGroupShape(groupShape: GroupShape) {
+    this.shapes.push(groupShape);
+
+    const shapeIdList = groupShape.shapes.map(
+      s => s.properties[ShapePropertyName.id]
+    );
+    this.#shapes = this.shapes.filter(
+      s => !shapeIdList.includes(s.properties[ShapePropertyName.id])
+    );
+
+    this.#actionHandler.receiveAction({
+      type: ActionType.AddGroupShape,
+      data: {
+        groupShape: {
+          [ShapePropertyName.id]: groupShape.properties[ShapePropertyName.id],
+          [ShapePropertyName.style]:
+            groupShape.properties[ShapePropertyName.style],
+          [ShapePropertyName.originX]:
+            groupShape.properties[ShapePropertyName.originX],
+          [ShapePropertyName.originY]:
+            groupShape.properties[ShapePropertyName.originY],
+          [ShapePropertyName.originalWidth]:
+            groupShape.properties[ShapePropertyName.originalWidth],
+          [ShapePropertyName.originalHeight]:
+            groupShape.properties[ShapePropertyName.originalHeight],
+          [ShapePropertyName.width]:
+            groupShape.properties[ShapePropertyName.width],
+          [ShapePropertyName.height]:
+            groupShape.properties[ShapePropertyName.height],
+          [ShapePropertyName.minWidth]:
+            groupShape.properties[ShapePropertyName.minWidth],
+          [ShapePropertyName.minHeight]:
+            groupShape.properties[ShapePropertyName.minHeight],
+          [ShapePropertyName.invertable]:
+            groupShape.properties[ShapePropertyName.invertable],
+          [ShapePropertyName.edited]:
+            groupShape.properties[ShapePropertyName.edited],
+        },
+        shapesProperties: groupShape.shapes.map(s => {
+          return {
+            [ShapePropertyName.id]: s.properties[ShapePropertyName.id],
+            [ShapePropertyName.originX]:
+              s.properties[ShapePropertyName.originX],
+            [ShapePropertyName.originY]:
+              s.properties[ShapePropertyName.originY],
+            [ShapePropertyName.width]: s.properties[ShapePropertyName.width],
+            [ShapePropertyName.height]: s.properties[ShapePropertyName.height],
+          };
+        }),
+      },
+    } as AddGroupShapeAction);
+  }
+
+  removeGroupShape(groupShape: GroupShape) {
+    const idx = this.shapes.indexOf(groupShape);
+    if (idx !== -1) {
+      this.shapes.splice(idx, 1);
+    }
+    this.shapes = this.shapes.concat(groupShape.shapes);
+
+    this.#actionHandler.receiveAction({
+      type: ActionType.RemoveGroupShape,
+      data: {
+        groupShapeId: groupShape.properties[ShapePropertyName.id],
+        shapesProperties: groupShape.shapes.map(s => {
+          return {
+            [ShapePropertyName.id]: s.properties[ShapePropertyName.id],
+            [ShapePropertyName.originX]:
+              s.properties[ShapePropertyName.originX],
+            [ShapePropertyName.originY]:
+              s.properties[ShapePropertyName.originY],
+            [ShapePropertyName.width]: s.properties[ShapePropertyName.width],
+            [ShapePropertyName.height]: s.properties[ShapePropertyName.height],
+          };
+        }),
+      },
+    } as RemoveGroupShapeAction);
+  }
+
+  shapeToLocal(groupShape: GroupShape, shape: Shape) {
+    this.#actionHandler.receiveAction({
+      type: ActionType.ShapeToLocal,
+      data: {
+        groupShape: {
+          [ShapePropertyName.id]: groupShape.properties[ShapePropertyName.id],
+          [ShapePropertyName.originX]:
+            groupShape.properties[ShapePropertyName.originX],
+          [ShapePropertyName.originY]:
+            groupShape.properties[ShapePropertyName.originY],
+          [ShapePropertyName.width]:
+            groupShape.properties[ShapePropertyName.width],
+          [ShapePropertyName.height]:
+            groupShape.properties[ShapePropertyName.height],
+        },
+        shapeProperties: {
+          [ShapePropertyName.id]: shape.properties[ShapePropertyName.id],
+          [ShapePropertyName.originX]:
+            shape.properties[ShapePropertyName.originX],
+          [ShapePropertyName.originY]:
+            shape.properties[ShapePropertyName.originY],
+          [ShapePropertyName.width]: shape.properties[ShapePropertyName.width],
+          [ShapePropertyName.height]:
+            shape.properties[ShapePropertyName.height],
+        },
+      },
+    } as ShapeToLocalAction);
   }
 
   changeMode(mode: Mode) {

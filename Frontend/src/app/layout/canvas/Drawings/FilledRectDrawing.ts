@@ -1,3 +1,4 @@
+import { ChangableDrawingProperties } from '../DrawingProperties/DrawingProperties';
 import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { FilledRectDrawingProperties } from '../DrawingProperties/FilledRectDrawingProperties';
 import { Point } from '../Geometry';
@@ -51,9 +52,14 @@ export class FilledRectDrawing implements Drawing {
     );
   }
 
-  update(p: Point): void {
+  update(
+    p: Point
+  ): Required<Pick<ChangableDrawingProperties, DrawingPropertyName.p1>> {
     this.p1[0] = p[0];
     this.p1[1] = p[1];
+    return {
+      [DrawingPropertyName.p1]: [this.p1[0], this.p1[1]],
+    };
   }
 
   render(ctx: CanvasRenderingContext2D): void {

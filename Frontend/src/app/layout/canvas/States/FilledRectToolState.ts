@@ -47,12 +47,16 @@ export class FilledRectToolState extends CanvasToolState {
         ],
         [DrawingPropertyName.style]: new FilledRectStyle(this.canvas.style),
       });
-      this.canvas.drawings.push(this.#currentDrawing);
+      this.canvas.addDrawings([this.#currentDrawing]);
     } else if (this.#currentDrawing) {
-      this.#currentDrawing.update([
+      const changeProperties = this.#currentDrawing.update([
         this.canvas.cursor[0],
         this.canvas.cursor[1],
       ]);
+      this.canvas.changeDrawingsProperties(
+        [this.#currentDrawing.properties[DrawingPropertyName.id]],
+        changeProperties
+      );
     }
     this.canvas.renderCanvas(false, true);
   }
@@ -62,14 +66,8 @@ export class FilledRectToolState extends CanvasToolState {
 
   override onMouseUp(_event: MouseEvent): void {
     if (this.#currentDrawing) {
-      this.canvas.shapes.push(
-        this.#currentDrawing.toShape(this.canvas.mainCtx)
-      );
-      const idx = this.canvas.drawings.indexOf(this.#currentDrawing);
+      this.canvas.drawingToShape(this.#currentDrawing);
       this.#currentDrawing = null;
-      if (idx !== -1) {
-        this.canvas.drawings.splice(idx, 1);
-      }
       this.canvas.renderCanvas(true, true);
     }
   }

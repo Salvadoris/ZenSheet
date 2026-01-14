@@ -1,4 +1,4 @@
-import { TextBoxStyle } from '../ShapeStyles/TextBoxStyle';
+import { TextBoxStyle, TextBoxStyleType } from '../ShapeStyles/TextBoxStyle';
 
 import {
   BaseSerializedShapeProperties,
@@ -50,7 +50,7 @@ export type SerializedTextBoxShapeProperties = Omit<
   BaseSerializedShapeProperties,
   ShapePropertyName.style
 > & {
-  [ShapePropertyName.style]: TextBoxStyle;
+  [ShapePropertyName.style]: TextBoxStyleType;
 } & Required<
     Pick<
       SerializedShapeProperties,

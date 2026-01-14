@@ -36,6 +36,10 @@ export class ShapeSerializer {
     this.#propertiesSerializer = new ShapePropertiesSerializer(this);
   }
 
+  get propertiesSerializer() {
+    return this.#propertiesSerializer;
+  }
+
   serialized(shape: Shape): SerializedShape {
     if (shape instanceof FilledRectShape) {
       return {

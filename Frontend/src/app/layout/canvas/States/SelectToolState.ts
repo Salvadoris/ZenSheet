@@ -27,7 +27,12 @@ export class SelectToolState extends CanvasToolState {
 
   override setStyleProperty(styleProperty: ShapeStyleProperty): void {
     if (this.#selectedShape) {
-      this.#selectedShape.shape.setStyleProperty(styleProperty);
+      const properties =
+        this.#selectedShape.shape.setStyleProperty(styleProperty);
+      this.canvas.changeShapesProperties(
+        [this.#selectedShape.shape.properties[ShapePropertyName.id]],
+        properties
+      );
       this.canvas.renderCanvas(true, true);
     }
   }
@@ -83,15 +88,26 @@ export class SelectToolState extends CanvasToolState {
 
   override onPressedMouseMove(_event: MouseEvent): void {
     if (this.#selectedShape && this.#selectedShape.dragged) {
-      this.#selectedShape.moveTo(this.canvas.cursor[0], this.canvas.cursor[1]);
+      const moveProperties = this.#selectedShape.moveTo(
+        this.canvas.cursor[0],
+        this.canvas.cursor[1]
+      );
+      this.canvas.changeShapesProperties(
+        [this.#selectedShape.shape.properties[ShapePropertyName.id]],
+        moveProperties
+      );
     } else if (
       this.#selectedShape &&
       this.#selectedShape.resized != Resize.None
     ) {
-      this.#selectedShape.resize([
+      const resizeProperties = this.#selectedShape.resize([
         this.canvas.cursor[0],
         this.canvas.cursor[1],
       ]);
+      this.canvas.changeShapesProperties(
+        [this.#selectedShape.shape.properties[ShapePropertyName.id]],
+        resizeProperties
+      );
     } else if (this.canvas.firstMove) {
       this.#selectRect = new SelectRect(
         [this.canvas.startCursor[0], this.canvas.startCursor[1]],
@@ -204,6 +220,9 @@ export class SelectToolState extends CanvasToolState {
       case 'Delete':
         event.preventDefault();
         if (this.#selectedShape) {
+          this.canvas.removeShapes([
+            this.#selectedShape.shape.properties[ShapePropertyName.id],
+          ]);
           this.#selectedShape = null;
           this.canvas.renderCanvas(true, true);
         }
@@ -358,6 +377,10 @@ export class SelectToolState extends CanvasToolState {
     shape.ctx = this.canvas.tmpCtx;
     shape.properties[ShapePropertyName.edited] = true;
     shape.properties[ShapePropertyName.selected] = true;
+    this.canvas.changeShapesProperties(
+      [shape.properties[ShapePropertyName.id]],
+      { [ShapePropertyName.edited]: true }
+    );
     this.canvas.changeStyle(this.#selectedShape.shape.style);
   }
 
@@ -366,10 +389,7 @@ export class SelectToolState extends CanvasToolState {
       this.#selectedShape &&
       this.#selectedShape instanceof SelectedMultiShape
     ) {
-      const idx = this.canvas.shapes.indexOf(shape);
-      if (idx !== -1) {
-        this.canvas.shapes.splice(idx, 1);
-      }
+      this.canvas.shapeToLocal(this.#selectedShape.shape, shape);
       this.#selectedShape.shape.addShape(shape);
       this.canvas.changeStyle(this.#selectedShape.shape.style);
       shape.ctx = this.canvas.tmpCtx;
@@ -390,17 +410,23 @@ export class SelectToolState extends CanvasToolState {
         for (const shape of shapes) {
           shape.ctx = this.canvas.tmpCtx;
         }
-        this.canvas.shapes = this.canvas.shapes.filter(
-          shape => !shapes.includes(shape)
-        );
         this.#selectedShape = new SelectedMultiShape(
           shapes,
           this.canvas.tmpCtx
         );
-        this.canvas.shapes.push(this.#selectedShape.shape);
+        this.canvas.addGroupShape(this.#selectedShape.shape as GroupShape);
         this.canvas.changeStyle(this.#selectedShape.shape.style);
       }
     }
+  }
+
+  private selectMultipleNewShapes(shapes: Shape[]) {
+    for (const shape of shapes) {
+      shape.ctx = this.canvas.tmpCtx;
+    }
+    this.#selectedShape = new SelectedMultiShape(shapes, this.canvas.tmpCtx);
+    this.canvas.addShapes([this.#selectedShape.shape]);
+    this.canvas.changeStyle(this.#selectedShape.shape.style);
   }
 
   private unSelectShape() {
@@ -409,19 +435,19 @@ export class SelectToolState extends CanvasToolState {
       if (this.#selectedShape instanceof SelectedMultiShape) {
         for (const shape of this.#selectedShape.shape.shapes) {
           shape.ctx = this.canvas.mainCtx;
-          this.canvas.shapes.push(shape);
         }
-        this.#selectedShape.shape.removeAllShapes();
-        const idx = this.canvas.shapes.indexOf(this.#selectedShape.shape);
-        if (idx !== -1) {
-          this.canvas.shapes.splice(idx, 1);
-        }
+        this.#selectedShape.shape.shapesToGlobal();
+        this.canvas.removeGroupShape(this.#selectedShape.shape);
+        this.#selectedShape.shape.clearShapes();
       } else {
         this.#selectedShape.shape.ctx = this.canvas.mainCtx;
         this.#selectedShape.shape.properties[ShapePropertyName.edited] = false;
         this.#selectedShape.shape.properties[ShapePropertyName.selected] =
           false;
-        this.canvas.shapes.push(this.#selectedShape.shape);
+        this.canvas.changeShapesProperties(
+          [this.#selectedShape.shape.properties[ShapePropertyName.id]],
+          { [ShapePropertyName.edited]: false }
+        );
       }
       this.#selectedShape = null;
     }
@@ -539,11 +565,12 @@ export class SelectToolState extends CanvasToolState {
       true
     );
     if (shape instanceof GroupShape) {
-      const shapes = shape.shapes;
-      shape.removeAllShapes();
+      shape.shapesToGlobal();
       this.unSelectShape();
-      this.selectMultipleShapes(shapes);
+      this.selectMultipleNewShapes(shape.shapes);
+      shape.clearShapes();
     } else {
+      this.canvas.addShapes([shape]);
       this.selectSingleShape(shape);
     }
   }

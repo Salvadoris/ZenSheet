@@ -1,5 +1,5 @@
 import { Point, Rect } from '../Geometry';
-import { LineStyle } from '../ShapeStyles/LineStyle';
+import { LineStyle, LineStyleType } from '../ShapeStyles/LineStyle';
 
 import {
   BaseSerializedShapeProperties,
@@ -42,7 +42,7 @@ export type SerializedLineShapeProperties = Omit<
   BaseSerializedShapeProperties,
   ShapePropertyName.style
 > & {
-  [ShapePropertyName.style]: LineStyle;
+  [ShapePropertyName.style]: LineStyleType;
 } & Required<
     Pick<
       SerializedShapeProperties,

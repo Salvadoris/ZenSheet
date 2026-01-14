@@ -58,6 +58,22 @@ export type BaseShapeProperties = Required<
     >
   >;
 
+export type ChangableShapeProperties = Partial<
+  Pick<
+    ShapeProperties,
+    | ShapePropertyName.style
+    | ShapePropertyName.originX
+    | ShapePropertyName.originY
+    | ShapePropertyName.width
+    | ShapePropertyName.height
+    | ShapePropertyName.shapes
+    | ShapePropertyName.src
+    | ShapePropertyName.text
+    | ShapePropertyName.wrap
+    | ShapePropertyName.points
+  >
+>;
+
 export type BaseSerializedShapeProperties = Required<
   Pick<
     ShapeProperties,
@@ -87,3 +103,46 @@ export type SerializedShapeProperties = BaseSerializedShapeProperties & {
       | ShapePropertyName.points
     >
   >;
+
+export type RelocateSerializedShapeProperties = Required<
+  Pick<
+    SerializedShapeProperties,
+    | ShapePropertyName.id
+    | ShapePropertyName.originX
+    | ShapePropertyName.originY
+    | ShapePropertyName.width
+    | ShapePropertyName.height
+  >
+>;
+
+export type ChangableBaseSerializedShapeProperties = Partial<
+  Pick<
+    SerializedShapeProperties,
+    | ShapePropertyName.style
+    | ShapePropertyName.originX
+    | ShapePropertyName.originY
+    | ShapePropertyName.width
+    | ShapePropertyName.height
+    | ShapePropertyName.minWidth
+    | ShapePropertyName.edited
+  >
+>;
+
+export type ChangableSerializedShapeProperties =
+  ChangableBaseSerializedShapeProperties &
+    Partial<
+      Pick<
+        SerializedShapeProperties,
+        ShapePropertyName.src | ShapePropertyName.wrap
+      >
+    > & {
+      [ShapePropertyName.text]?: {
+        startIndex: number;
+        endIndex: number;
+        text: string;
+      };
+      [ShapePropertyName.shapes]?: {
+        [ShapePropertyName.id]: string;
+        properties: ChangableSerializedShapeProperties;
+      }[];
+    };

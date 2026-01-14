@@ -27,6 +27,7 @@ import {
   SerializedTextBoxShapeProperties,
   TextBoxShapeProperties,
 } from '../ShapeProperties/TextBoxShapeProperties';
+import { Shape } from '../Shapes/Shape';
 import {
   FilledRectStyle,
   FilledRectStyleType,
@@ -54,18 +55,49 @@ export class ShapePropertiesSerializer {
   ): SerializedShapeProperties {
     switch (type) {
       case ShapeType.FilledRect:
-        return properties as FilledRectShapeProperties as SerializedFilledRectShapeProperties;
+        return {
+          ...(properties as FilledRectShapeProperties),
+          [ShapePropertyName.style]: {
+            ...properties[ShapePropertyName.style],
+          },
+        } as SerializedFilledRectShapeProperties;
       case ShapeType.StrokedRect:
-        return properties as StrokedRectShapeProperties as SerializedStrokedRectShapeProperties;
+        return {
+          ...(properties as StrokedRectShapeProperties),
+          [ShapePropertyName.style]: {
+            ...properties[ShapePropertyName.style],
+          },
+        } as SerializedStrokedRectShapeProperties;
       case ShapeType.Line:
-        return properties as LineShapeProperties as SerializedLineShapeProperties;
+        return {
+          ...(properties as LineShapeProperties),
+          [ShapePropertyName.style]: {
+            ...properties[ShapePropertyName.style],
+          },
+          [ShapePropertyName.points]: [
+            ...(properties as LineShapeProperties)[ShapePropertyName.points],
+          ],
+        } as SerializedLineShapeProperties;
       case ShapeType.Image:
-        return properties as ImageShapeProperties as SerializedImageShapeProperties;
+        return {
+          ...(properties as ImageShapeProperties),
+          [ShapePropertyName.style]: {
+            ...properties[ShapePropertyName.style],
+          },
+        } as SerializedImageShapeProperties;
       case ShapeType.Text:
-        return properties as TextBoxShapeProperties as SerializedTextBoxShapeProperties;
+        return {
+          ...(properties as TextBoxShapeProperties),
+          [ShapePropertyName.style]: {
+            ...properties[ShapePropertyName.style],
+          },
+        } as SerializedTextBoxShapeProperties;
       case ShapeType.Group: {
         return {
           ...(properties as GroupShapeProperties),
+          [ShapePropertyName.style]: {
+            ...properties[ShapePropertyName.style],
+          },
           [ShapePropertyName.shapes]: (properties as GroupShapeProperties)[
             ShapePropertyName.shapes
           ].map(s => this.shapeSerializer.serialized(s)),
@@ -152,24 +184,41 @@ export class ShapePropertiesSerializer {
             ? crypto.randomUUID()
             : serializedProperties[ShapePropertyName.id],
         } as Required<TextBoxShapeProperties>;
-      case ShapeType.Group:
-        return {
-          ...(serializedProperties as SerializedGroupShapeProperties),
-          ...properties,
-          [ShapePropertyName.style]: new GroupShapeStyle([
-            serializedProperties[
-              ShapePropertyName.style
-            ] as GroupShapeStyleType,
-          ]),
-          [ShapePropertyName.id]: copy
-            ? crypto.randomUUID()
-            : serializedProperties[ShapePropertyName.id],
-          [ShapePropertyName.shapes]: (
+      case ShapeType.Group: {
+        const style = new GroupShapeStyle([
+          serializedProperties[ShapePropertyName.style] as GroupShapeStyleType,
+        ]);
+        const nonNullStyle = Object.fromEntries(
+          Object.entries(style).filter(([, value]) => value != null)
+        );
+        let shapes: Shape[] = [];
+        if (
+          (serializedProperties as SerializedGroupShapeProperties)[
+            ShapePropertyName.shapes
+          ] !== undefined
+        ) {
+          shapes = (
             (serializedProperties as SerializedGroupShapeProperties)[
               ShapePropertyName.shapes
             ] as SerializedShape[]
-          ).map(s => this.shapeSerializer.deserialized(s, ctx, copy)),
+          ).map(s => this.shapeSerializer.deserialized(s, ctx, copy));
+          shapes.forEach(s => {
+            s.properties[ShapePropertyName.style] = {
+              ...s.properties[ShapePropertyName.style],
+              ...nonNullStyle,
+            };
+          });
+        }
+        return {
+          ...(serializedProperties as SerializedGroupShapeProperties),
+          ...properties,
+          [ShapePropertyName.style]: style,
+          [ShapePropertyName.id]: copy
+            ? crypto.randomUUID()
+            : serializedProperties[ShapePropertyName.id],
+          [ShapePropertyName.shapes]: shapes,
         } as Required<GroupShapeProperties>;
+      }
       default:
         throw new Error(`Unknown shape type: ${type}`);
     }

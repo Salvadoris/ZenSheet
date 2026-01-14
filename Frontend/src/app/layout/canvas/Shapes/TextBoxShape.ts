@@ -1,4 +1,8 @@
 import { Point, Rect } from '../Geometry';
+import {
+  ChangableSerializedShapeProperties,
+  ChangableShapeProperties,
+} from '../ShapeProperties/ShapeProperties';
 import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import {
   tabSize,
@@ -13,8 +17,13 @@ import { TextBoxStyle } from '../ShapeStyles/TextBoxStyle';
 
 import { Shape } from './Shape';
 
+interface EditProperties {
+  selectedStart: number;
+  properties: ChangableSerializedShapeProperties;
+}
+
 export class TextBoxShape extends Shape {
-  declare properties: Required<TextBoxShapeProperties>;
+  declare protected _properties: Required<TextBoxShapeProperties>;
   #lines!: TextLine[];
   #lineSpace: number;
   #lineHeight: number;
@@ -40,6 +49,15 @@ export class TextBoxShape extends Shape {
     this.#lineSpace = calcLineSpace(this.style);
     this.#lineHeight = calcLineHeight(this.style, this.#lineSpace);
     this.resizeContent();
+  }
+
+  override set properties(properties: Required<TextBoxShapeProperties>) {
+    this._properties = properties;
+    this.resizeContent();
+  }
+
+  override get properties(): Required<TextBoxShapeProperties> {
+    return this._properties;
   }
 
   get text() {
@@ -68,16 +86,37 @@ export class TextBoxShape extends Shape {
     return path;
   }
 
-  override setStyleProperty(styleProperty: ShapeStyleProperty): void {
-    this.style.updateProperty(styleProperty);
-    if (
-      styleProperty.name == StyleName.FontSize ||
-      styleProperty.name == StyleName.FontLineSpace
-    ) {
-      this.#lineSpace = calcLineSpace(this.style);
-      this.#lineHeight = calcLineHeight(this.style, this.#lineSpace);
+  override setStyleProperty(
+    styleProperty: ShapeStyleProperty
+  ): ChangableSerializedShapeProperties {
+    const updated = this.style.updateProperty(styleProperty);
+    if (updated) {
+      if (
+        styleProperty.name == StyleName.FontSize ||
+        styleProperty.name == StyleName.FontLineSpace
+      ) {
+        this.#lineSpace = calcLineSpace(this.style);
+        this.#lineHeight = calcLineHeight(this.style, this.#lineSpace);
+      }
+      return {
+        ...this.resizeContent(),
+        [ShapePropertyName.style]: {
+          [styleProperty.name]: styleProperty.value,
+        },
+      };
     }
-    this.resizeContent();
+    return {};
+  }
+
+  override updateProperties(properties: ChangableShapeProperties) {
+    super.updateProperties(properties);
+    if (
+      (properties[ShapePropertyName.width] !== undefined && this.wrap) ||
+      properties[ShapePropertyName.text] !== undefined ||
+      properties[ShapePropertyName.wrap] !== undefined
+    ) {
+      this.resizeContent();
+    }
   }
 
   private applyFontStyle() {
@@ -96,23 +135,43 @@ export class TextBoxShape extends Shape {
     return this.ctx.isPointInPath(this.path(), x, y);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  override resizeTop(_y: number): void {}
-
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  override resizeBottom(_y: number): void {}
-
-  override resizeLeft(x: number): void {
-    this.wrap = true;
-    super.resizeLeft(x);
+  override resizeTop(_y: number): ChangableSerializedShapeProperties {
+    return {};
   }
 
-  override resizeRight(x: number): void {
-    this.wrap = true;
-    super.resizeRight(x);
+  override resizeBottom(_y: number): ChangableSerializedShapeProperties {
+    return {};
   }
 
-  private changeText(startIndex: number, endIndex: number, text: string) {
+  override resizeLeft(x: number): ChangableSerializedShapeProperties {
+    if (!this.wrap) {
+      this.wrap = true;
+      return {
+        ...super.resizeLeft(x),
+        [ShapePropertyName.wrap]: true,
+      };
+    } else {
+      return super.resizeLeft(x);
+    }
+  }
+
+  override resizeRight(x: number): ChangableSerializedShapeProperties {
+    if (!this.wrap) {
+      this.wrap = true;
+      return {
+        ...super.resizeRight(x),
+        [ShapePropertyName.wrap]: true,
+      };
+    } else {
+      return super.resizeRight(x);
+    }
+  }
+
+  private changeText(
+    startIndex: number,
+    endIndex: number,
+    text: string
+  ): ChangableSerializedShapeProperties {
     this.applyFontStyle();
 
     const firstIndex = Math.min(startIndex, endIndex);
@@ -129,8 +188,14 @@ export class TextBoxShape extends Shape {
       this.text.slice(0, lastIndex).split('\n').length - 1;
     const lastOriginalLineIndex = oldLastOriginalLineIndex + changedLinesCount;
 
+    let properties: ChangableSerializedShapeProperties = {};
     this.properties[ShapePropertyName.text] =
       this.text.slice(0, firstIndex) + text + this.text.slice(lastIndex);
+    properties[ShapePropertyName.text] = {
+      startIndex: startIndex,
+      endIndex: endIndex,
+      text: text,
+    };
     const lines = this.text.split('\n');
 
     let newLines: TextLine[] = [];
@@ -142,11 +207,15 @@ export class TextBoxShape extends Shape {
       for (let i = firstOriginalLineIndex; i <= lastOriginalLineIndex; i++) {
         const line = this.textLine(lines[i], i);
         newLines.push(line);
-        this.width = Math.max(
+        const newWidth = Math.max(
           this.width,
           this.lineWidth(line) + this.#padding * 2
         );
-        this.scaleX = this.width / this.originalWidth;
+        if (newWidth !== this.width) {
+          this.width = newWidth;
+          this.scaleX = this.width / this.originalWidth;
+          properties[ShapePropertyName.width] = newWidth;
+        }
       }
     }
 
@@ -178,20 +247,29 @@ export class TextBoxShape extends Shape {
       }
     }
 
+    const minWidth = this.minWidth;
     this.properties[ShapePropertyName.minWidth] =
       Math.max(...this.#lines.map(l => l.maxChunkWidth)) + this.#padding * 2;
     this.width = Math.max(this.width, this.minWidth);
+    if (minWidth !== this.minWidth) {
+      properties[ShapePropertyName.minWidth] = this.minWidth;
+    }
 
     const newHeight = this.#lineHeight * this.#lines.length + this.#padding * 2;
     if (newHeight != this.height) {
-      super.resizeBottom(this.originY + newHeight, false);
+      properties = {
+        ...properties,
+        ...super.resizeBottom(this.originY + newHeight, false),
+      };
     }
+    return properties;
   }
 
-  override resizeContent(): void {
+  override resizeContent(): ChangableSerializedShapeProperties {
     this.applyFontStyle();
     this.#lines = [];
     const lines = this.text.split('\n');
+    const properties: ChangableSerializedShapeProperties = {};
     if (this.wrap) {
       lines.forEach((line, index) => {
         this.#lines = this.#lines.concat(this.wrappedTextLines(line, index));
@@ -204,15 +282,18 @@ export class TextBoxShape extends Shape {
         Math.max(...this.#lines.map(line => this.lineWidth(line))) +
           this.#padding * 2
       );
+      properties[ShapePropertyName.width] = this.width;
       this.scaleX = this.width / this.originalWidth;
     }
 
-    this.properties[ShapePropertyName.minWidth] =
-      Math.max(...this.#lines.map(l => l.maxChunkWidth)) + this.#padding * 2;
     const newHeight = this.#lineHeight * this.#lines.length + this.#padding * 2;
     if (newHeight != this.height) {
-      super.resizeBottom(this.originY + newHeight, false);
+      return {
+        ...properties,
+        ...super.resizeBottom(this.originY + newHeight, false),
+      };
     }
+    return properties;
   }
 
   renderEditedShape(
@@ -283,25 +364,31 @@ export class TextBoxShape extends Shape {
     this.ctx.restore();
   }
 
-  insertText(text: string, index: number): number {
-    this.changeText(index, index, text);
-    return index + text.length;
+  insertText(text: string, index: number): EditProperties {
+    return {
+      selectedStart: index + text.length,
+      properties: this.changeText(index, index, text),
+    };
   }
 
-  deleteChar(index: number): number {
+  deleteChar(index: number): EditProperties {
     if (index > this.text.length) {
-      return this.text.length;
+      return { selectedStart: this.text.length, properties: {} };
     }
     if (index < 0) {
       index = 0;
     }
-    this.changeText(index - 1, index, '');
-    return index - 1;
+    return {
+      selectedStart: index - 1,
+      properties: this.changeText(index - 1, index, ''),
+    };
   }
 
-  deleteRange(start: number, end: number): number {
-    this.changeText(start, end, '');
-    return Math.min(start, end);
+  deleteRange(start: number, end: number): EditProperties {
+    return {
+      selectedStart: Math.min(start, end),
+      properties: this.changeText(start, end, ''),
+    };
   }
 
   lineChunkRangeAtIndex(index: number): [number, number] {

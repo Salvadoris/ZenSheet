@@ -5,6 +5,7 @@ import {
   LineShapeProperties,
   Segment,
 } from '../ShapeProperties/LineShapeProperties';
+import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
 import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { LineStyle } from '../ShapeStyles/LineStyle';
 import { ShapeStyle, ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
@@ -13,7 +14,7 @@ import { StyleName } from '../ShapeStyles/StyleName';
 import { Shape } from './Shape';
 
 export class LineShape extends Shape {
-  declare properties: Required<LineShapeProperties>;
+  declare protected _properties: Required<LineShapeProperties>;
   private chunks: Chunk[] = [];
   private segments: Segment[] = [];
 
@@ -85,6 +86,14 @@ export class LineShape extends Shape {
     this.segments.push({ points: segmentPoints, chunkIndex: prevChunkIdx });
   }
 
+  override set properties(properties: Required<LineShapeProperties>) {
+    this._properties = properties;
+  }
+
+  override get properties(): Required<LineShapeProperties> {
+    return this._properties;
+  }
+
   override get style(): LineStyle {
     return this.properties[ShapePropertyName.style];
   }
@@ -93,8 +102,18 @@ export class LineShape extends Shape {
     return this.properties[ShapePropertyName.points];
   }
 
-  override setStyleProperty(styleProperty: ShapeStyleProperty): void {
-    this.style.updateProperty(styleProperty);
+  override setStyleProperty(
+    styleProperty: ShapeStyleProperty
+  ): ChangableSerializedShapeProperties {
+    const updated = this.style.updateProperty(styleProperty);
+    if (updated) {
+      return {
+        [ShapePropertyName.style]: {
+          [styleProperty.name]: styleProperty.value,
+        },
+      };
+    }
+    return {};
   }
 
   override renderShape(canvasRect: Rect): void {
@@ -176,8 +195,9 @@ export class LineShape extends Shape {
     return inside;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  override resizeContent(): void {}
+  override resizeContent(): ChangableSerializedShapeProperties {
+    return {};
+  }
 }
 
 function getLineChunks(

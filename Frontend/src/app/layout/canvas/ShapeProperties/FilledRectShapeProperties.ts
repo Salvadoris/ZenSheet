@@ -1,4 +1,7 @@
-import { FilledRectStyle } from '../ShapeStyles/FilledRectStyle';
+import {
+  FilledRectStyle,
+  FilledRectStyleType,
+} from '../ShapeStyles/FilledRectStyle';
 
 import {
   BaseSerializedShapeProperties,
@@ -17,5 +20,5 @@ export type SerializedFilledRectShapeProperties = Omit<
   BaseSerializedShapeProperties,
   ShapePropertyName.style
 > & {
-  [ShapePropertyName.style]: FilledRectStyle;
+  [ShapePropertyName.style]: FilledRectStyleType;
 };

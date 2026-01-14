@@ -17,13 +17,13 @@ import {
   StrokedRectStyleType,
 } from '../ShapeStyles/StrokedRectStyle';
 
-enum DrawingType {
+export enum DrawingType {
   FilledRect = 'FilledRect',
   StrokedRect = 'StrokedRect',
   Line = 'Line',
 }
 
-interface SerializedDrawing {
+export interface SerializedDrawing {
   type: DrawingType;
   properties: DrawingProperties;
 }
@@ -33,17 +33,43 @@ export class DrawingSerializer {
     if (drawing instanceof FilledRectDrawing) {
       return {
         type: DrawingType.FilledRect,
-        properties: drawing.properties,
+        properties: {
+          ...drawing.properties,
+          [DrawingPropertyName.style]: {
+            ...drawing.properties[DrawingPropertyName.style],
+          },
+          [DrawingPropertyName.p1]: [
+            drawing.properties[DrawingPropertyName.p1][0],
+            drawing.properties[DrawingPropertyName.p1][1],
+          ],
+        },
       };
     } else if (drawing instanceof StrokedRectDrawing) {
       return {
         type: DrawingType.StrokedRect,
-        properties: drawing.properties,
+        properties: {
+          ...drawing.properties,
+          [DrawingPropertyName.style]: {
+            ...drawing.properties[DrawingPropertyName.style],
+          },
+          [DrawingPropertyName.p1]: [
+            drawing.properties[DrawingPropertyName.p1][0],
+            drawing.properties[DrawingPropertyName.p1][1],
+          ],
+        },
       };
     } else if (drawing instanceof LineDrawing) {
       return {
         type: DrawingType.Line,
-        properties: drawing.properties,
+        properties: {
+          ...drawing.properties,
+          [DrawingPropertyName.style]: {
+            ...drawing.properties[DrawingPropertyName.style],
+          },
+          [DrawingPropertyName.points]: [
+            ...drawing.properties[DrawingPropertyName.points],
+          ],
+        },
       };
     }
     throw new Error(`Unknown drawing: ${drawing}`);

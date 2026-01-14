@@ -1,5 +1,6 @@
 import { Rect } from '../Geometry';
 import { GroupShapeProperties } from '../ShapeProperties/GroupShapeProperties';
+import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
 import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { GroupShapeStyle } from '../ShapeStyles/GroupShapeStyle';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
@@ -8,7 +9,7 @@ import { Shape } from './Shape';
 import { TextBoxShape } from './TextBoxShape';
 
 export class GroupShape extends Shape {
-  declare properties: Required<GroupShapeProperties>;
+  declare protected _properties: Required<GroupShapeProperties>;
 
   constructor(properties: GroupShapeProperties, ctx: CanvasRenderingContext2D) {
     if (
@@ -38,8 +39,19 @@ export class GroupShape extends Shape {
       ].some(s => !s.invertable);
     }
     super(properties as Required<GroupShapeProperties>, ctx);
-    this.properties[ShapePropertyName.minWidth] = this.calcMinWidth();
-    this.properties[ShapePropertyName.minHeight] = this.calcMinHeight();
+    if (this.shapes.length !== 0) {
+      this.properties[ShapePropertyName.minWidth] = this.calcMinWidth();
+      this.properties[ShapePropertyName.minHeight] = this.calcMinHeight();
+    }
+  }
+
+  override set properties(properties: Required<GroupShapeProperties>) {
+    this._properties = properties;
+    this.resizeContent();
+  }
+
+  override get properties(): Required<GroupShapeProperties> {
+    return this._properties;
   }
 
   override get style(): GroupShapeStyle {
@@ -50,11 +62,25 @@ export class GroupShape extends Shape {
     return this.properties[ShapePropertyName.shapes];
   }
 
-  override setStyleProperty(styleProperty: ShapeStyleProperty): void {
-    this.style.updateProperty(styleProperty);
-    for (const shape of this.shapes) {
-      shape.setStyleProperty(styleProperty);
+  override setStyleProperty(
+    styleProperty: ShapeStyleProperty
+  ): ChangableSerializedShapeProperties {
+    const updated = this.style.updateProperty(styleProperty);
+    if (updated) {
+      const shapesProperties = this.shapes.map(s => {
+        return {
+          [ShapePropertyName.id]: s.properties[ShapePropertyName.id],
+          properties: s.setStyleProperty(styleProperty),
+        };
+      });
+      return {
+        [ShapePropertyName.style]: {
+          [styleProperty.name]: styleProperty.value,
+        },
+        [ShapePropertyName.shapes]: shapesProperties,
+      };
     }
+    return {};
   }
 
   override renderShape(canvasRect: Rect): void {
@@ -92,7 +118,7 @@ export class GroupShape extends Shape {
     return (globalY - this.originY) / this.scaleY;
   }
 
-  private shapeToLocal(globalShape: Shape) {
+  public shapeToLocal(globalShape: Shape) {
     globalShape.originX = (globalShape.originX - this.originX) / this.scaleX;
     globalShape.width /= this.scaleX;
     globalShape.scaleX = globalShape.width / globalShape.originalWidth;
@@ -173,10 +199,13 @@ export class GroupShape extends Shape {
     this.properties[ShapePropertyName.minHeight] = this.calcMinHeight();
   }
 
-  removeAllShapes() {
+  shapesToGlobal() {
     for (const shape of this.shapes) {
       this.shapeToGlobal(shape);
     }
+  }
+
+  clearShapes() {
     this.properties[ShapePropertyName.shapes] = [];
   }
 
@@ -247,15 +276,33 @@ export class GroupShape extends Shape {
     );
   }
 
-  override resizeContent(): void {
+  override resizeContent(): ChangableSerializedShapeProperties {
+    const properties: ChangableSerializedShapeProperties = {};
     for (const shape of this.shapes) {
       this.shapeToGlobal(shape);
-      if (shape instanceof TextBoxShape) {
+      let shapeProperties: ChangableSerializedShapeProperties = {};
+      if (shape instanceof TextBoxShape && !shape.wrap) {
         shape.wrap = true;
+        shapeProperties[ShapePropertyName.wrap] = true;
       }
-      shape.resizeContent();
+      shapeProperties = {
+        ...shapeProperties,
+        ...shape.resizeContent(),
+      };
+      if (Object.keys(shapeProperties).length !== 0) {
+        const serialized = {
+          id: shape.properties[ShapePropertyName.id],
+          properties: shapeProperties,
+        };
+        if (properties.shapes) {
+          properties.shapes.push(serialized);
+        } else {
+          properties.shapes = [serialized];
+        }
+      }
       this.shapeToLocal(shape);
     }
+    return properties;
   }
 }
 

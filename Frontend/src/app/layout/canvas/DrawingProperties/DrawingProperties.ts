@@ -15,3 +15,7 @@ export interface DrawingProperties {
 export type BaseDrawingProperties = Required<
   Pick<DrawingProperties, DrawingPropertyName.id | DrawingPropertyName.style>
 >;
+
+export type ChangableDrawingProperties = Partial<
+  Pick<DrawingProperties, DrawingPropertyName.p1>
+> & { [DrawingPropertyName.points]?: { lastPoint: Point } };

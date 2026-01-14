@@ -10,11 +10,12 @@ export class ImageStyle implements ImageStyleType {
     this[StyleName.Opacity] = style[StyleName.Opacity];
   }
 
-  updateProperty(styleProperty: ShapeStyleProperty) {
+  updateProperty(styleProperty: ShapeStyleProperty): boolean {
     switch (styleProperty.name) {
       case StyleName.Opacity:
         this[StyleName.Opacity] = styleProperty.value;
-        break;
+        return true;
     }
+    return false;
   }
 }

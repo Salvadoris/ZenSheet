@@ -1,4 +1,7 @@
-import { StrokedRectStyle } from '../ShapeStyles/StrokedRectStyle';
+import {
+  StrokedRectStyle,
+  StrokedRectStyleType,
+} from '../ShapeStyles/StrokedRectStyle';
 
 import {
   BaseSerializedShapeProperties,
@@ -17,5 +20,5 @@ export type SerializedStrokedRectShapeProperties = Omit<
   BaseSerializedShapeProperties,
   ShapePropertyName.style
 > & {
-  [ShapePropertyName.style]: StrokedRectStyle;
+  [ShapePropertyName.style]: StrokedRectStyleType;
 };

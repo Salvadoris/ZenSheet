@@ -1,33 +1,37 @@
-import { GroupShapeStyle } from '../ShapeStyles/GroupShapeStyle';
+import {
+  GroupShapeStyle,
+  GroupShapeStyleType,
+} from '../ShapeStyles/GroupShapeStyle';
 
-import { SerializedShapeProperties, ShapeProperties } from './ShapeProperties';
+import {
+  BaseSerializedShapeProperties,
+  BaseShapeProperties,
+  SerializedShapeProperties,
+  ShapeProperties,
+} from './ShapeProperties';
 import { ShapePropertyName } from './ShapePropertyName';
 
-export type GroupShapeProperties = Partial<
-  Omit<
+export type GroupShapeProperties = Required<
+  Pick<
     ShapeProperties,
-    ShapePropertyName.id | ShapePropertyName.shapes | ShapePropertyName.style
+    | ShapePropertyName.id
+    | ShapePropertyName.shapes
+    | ShapePropertyName.edited
+    | ShapePropertyName.selected
   >
-> & {
-  [ShapePropertyName.style]?: GroupShapeStyle;
-} & Required<
-    Pick<
-      ShapeProperties,
+> & { [ShapePropertyName.style]?: GroupShapeStyle } & Partial<
+    Omit<
+      BaseShapeProperties,
       | ShapePropertyName.id
-      | ShapePropertyName.shapes
+      | ShapePropertyName.style
       | ShapePropertyName.edited
       | ShapePropertyName.selected
     >
   >;
 
 export type SerializedGroupShapeProperties = Omit<
-  SerializedShapeProperties,
-  ShapePropertyName.shapes | ShapePropertyName.style
-> & {
-  [ShapePropertyName.style]: GroupShapeStyle;
-} & Required<
-    Pick<
-      SerializedShapeProperties,
-      ShapePropertyName.shapes | ShapePropertyName.edited
-    >
+  BaseSerializedShapeProperties,
+  ShapePropertyName.style
+> & { [ShapePropertyName.style]: GroupShapeStyleType } & Required<
+    Pick<SerializedShapeProperties, ShapePropertyName.shapes>
   >;

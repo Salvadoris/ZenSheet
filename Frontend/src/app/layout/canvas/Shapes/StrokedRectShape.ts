@@ -1,4 +1,5 @@
 import { Point, Rect } from '../Geometry';
+import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
 import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { StrokedRectShapeProperties } from '../ShapeProperties/StrokedRectShapeProperties';
 import { ShapeStyle, ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
@@ -8,7 +9,7 @@ import { StyleName } from '../ShapeStyles/StyleName';
 import { Shape } from './Shape';
 
 export class StrokedRectShape extends Shape {
-  declare properties: Required<StrokedRectShapeProperties>;
+  declare protected _properties: Required<StrokedRectShapeProperties>;
 
   constructor(
     properties: StrokedRectShapeProperties,
@@ -17,12 +18,30 @@ export class StrokedRectShape extends Shape {
     super(properties, ctx);
   }
 
+  override set properties(properties: Required<StrokedRectShapeProperties>) {
+    this._properties = properties;
+  }
+
+  override get properties(): Required<StrokedRectShapeProperties> {
+    return this._properties;
+  }
+
   override get style(): StrokedRectStyle {
     return this.properties[ShapePropertyName.style];
   }
 
-  override setStyleProperty(styleProperty: ShapeStyleProperty): void {
-    this.style.updateProperty(styleProperty);
+  override setStyleProperty(
+    styleProperty: ShapeStyleProperty
+  ): ChangableSerializedShapeProperties {
+    const updated = this.style.updateProperty(styleProperty);
+    if (updated) {
+      return {
+        [ShapePropertyName.style]: {
+          [styleProperty.name]: styleProperty.value,
+        },
+      };
+    }
+    return {};
   }
 
   override renderShape(canvasRect: Rect): void {
@@ -58,6 +77,7 @@ export class StrokedRectShape extends Shape {
     return this.ctx.isPointInStroke(this.path(), x, y);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  override resizeContent(): void {}
+  override resizeContent(): ChangableSerializedShapeProperties {
+    return {};
+  }
 }

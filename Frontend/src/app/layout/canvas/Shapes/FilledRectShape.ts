@@ -1,5 +1,6 @@
 import { Point, Rect } from '../Geometry';
 import { FilledRectShapeProperties } from '../ShapeProperties/FilledRectShapeProperties';
+import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
 import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { FilledRectStyle } from '../ShapeStyles/FilledRectStyle';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
@@ -8,7 +9,7 @@ import { StyleName } from '../ShapeStyles/StyleName';
 import { Shape } from './Shape';
 
 export class FilledRectShape extends Shape {
-  declare properties: Required<FilledRectShapeProperties>;
+  declare protected _properties: Required<FilledRectShapeProperties>;
 
   constructor(
     properties: FilledRectShapeProperties,
@@ -17,12 +18,30 @@ export class FilledRectShape extends Shape {
     super(properties, ctx);
   }
 
+  override set properties(properties: Required<FilledRectShapeProperties>) {
+    this._properties = properties;
+  }
+
+  override get properties(): Required<FilledRectShapeProperties> {
+    return this._properties;
+  }
+
   override get style(): FilledRectStyle {
     return this.properties[ShapePropertyName.style];
   }
 
-  override setStyleProperty(styleProperty: ShapeStyleProperty): void {
-    this.style.updateProperty(styleProperty);
+  override setStyleProperty(
+    styleProperty: ShapeStyleProperty
+  ): ChangableSerializedShapeProperties {
+    const updated = this.style.updateProperty(styleProperty);
+    if (updated) {
+      return {
+        [ShapePropertyName.style]: {
+          [styleProperty.name]: styleProperty.value,
+        },
+      };
+    }
+    return {};
   }
 
   override renderShape(canvasRect: Rect): void {
@@ -51,6 +70,7 @@ export class FilledRectShape extends Shape {
     return inside;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  override resizeContent(): void {}
+  override resizeContent(): ChangableSerializedShapeProperties {
+    return {};
+  }
 }
