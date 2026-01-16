@@ -1,95 +1,93 @@
-import { Injectable } from '@angular/core';
-import { Delta } from 'quill';
+import { Injectable, inject } from '@angular/core';
 
-import { Folder, Note } from '../interfaces/note.model';
+import { Folder, Note } from '../models/note.model';
+
+import { StorageService } from './storage.service';
+
 
 @Injectable({
   providedIn: 'root',
 })
 export class NotesService {
+  #storageService = inject(StorageService);
+  
   #storageKey = 'folders';
 
-  getFolders(): Folder[] {
-    const folders = localStorage.getItem(this.#storageKey);
+  async getFolders(): Promise<Folder[]> {
+    const folders = await this.#storageService.load<Folder[]>(this.#storageKey);
     if (!folders) return [];
 
-    const parsedFolders = JSON.parse(folders);
-
-    return parsedFolders.map((folder: Folder) => ({
+    return folders.map((folder: Folder) => ({
       ...folder,
-      notes: folder.notes.map((note: Note) => ({
-        ...note,
-        content: note.content ? new Delta(note.content) : null,
-        updatedAt: new Date(note.updatedAt),
-      })),
+      notes: folder.notes.map((note: Note) => new Note(note)),
     }));
   }
 
-  saveFolders(folders: Folder[]) {
+  async saveFolders(folders: Folder[]): Promise<void> {
     const serializedFolders = folders.map(folder => ({
       ...folder,
       notes: folder.notes.map(note => ({
         ...note,
-        content: note.content ? note.content.ops : null,
         updatedAt: note.updatedAt.toISOString(),
       })),
     }));
 
-    localStorage.setItem(this.#storageKey, JSON.stringify(serializedFolders));
+    await this.#storageService.save(this.#storageKey, serializedFolders);
   }
 
-  createFolder(name: string): Folder {
+  async createFolder(name: string): Promise<Folder> {
     const folder: Folder = { id: crypto.randomUUID(), name, notes: [] };
-    const folders = this.getFolders();
+    const folders = await this.getFolders();
     folders.push(folder);
-    this.saveFolders(folders);
+    await this.saveFolders(folders);
     return folder;
   }
 
-  createNote(folderId: string, title: string): Note {
-    const note: Note = {
-      id: crypto.randomUUID(),
+  async createNote(folderId: string, title: string): Promise<Note> {
+    const note = new Note({
       parentFolderId: folderId,
       title: title,
-      content: new Delta(),
-      updatedAt: new Date(),
-    };
-    const folders = this.getFolders().map(f =>
+    });
+
+    const folders = (await this.getFolders()).map(f =>
       f.id === folderId ? { ...f, notes: [note, ...f.notes] } : f
     );
-    this.saveFolders(folders);
+    await this.saveFolders(folders);
     return note;
   }
 
-  deleteNote(folderId: string, noteId: string) {
-    const folders = this.getFolders().map(f =>
+  async deleteNote(folderId: string, noteId: string): Promise<void> {
+    const folders = (await this.getFolders()).map(f =>
       f.id === folderId
         ? { ...f, notes: f.notes.filter(n => n.id !== noteId) }
         : f
     );
-    this.saveFolders(folders);
+    await this.saveFolders(folders);
   }
 
-  updateNoteContent(folderId: string, noteId: string, content: Delta) {
-    console.log('updateNoteContent', folderId, noteId, content);
-    const folders = this.getFolders().map(f => {
-      if (f.id === folderId) {
+  async updateNoteContent(note: Note): Promise<void> {
+    const folders = (await this.getFolders()).map(f => {
+      if (f.id === note.parentFolderId) {
         return {
           ...f,
           notes: f.notes.map(n =>
-            n.id === noteId
-              ? { ...n, content: content, updatedAt: new Date() }
+            n.id === note.id
+              ? { ...n, content: note.content, updatedAt: new Date() }
               : n
           ),
         };
       }
       return f;
     });
-    this.saveFolders(folders);
+    await this.saveFolders(folders);
   }
 
-  updateNoteTitle(folderId: string, noteId: string, title: string) {
-    const folders = this.getFolders().map(f => {
+  async updateNoteTitle(
+    folderId: string,
+    noteId: string,
+    title: string
+  ): Promise<void> {
+    const folders = (await this.getFolders()).map(f => {
       if (f.id === folderId) {
         return {
           ...f,
@@ -100,35 +98,35 @@ export class NotesService {
       }
       return f;
     });
-    this.saveFolders(folders);
+    await this.saveFolders(folders);
   }
 
-  deleteFolder(folderId: string) {
-    const folders = this.getFolders().filter(f => f.id !== folderId);
-    this.saveFolders(folders);
+  async deleteFolder(folderId: string): Promise<void> {
+    const folders = (await this.getFolders()).filter(f => f.id !== folderId);
+    await this.saveFolders(folders);
   }
 
-  renameFolder(folderId: string, name: string) {
-    const folders = this.getFolders().map(f =>
+  async renameFolder(folderId: string, name: string): Promise<void> {
+    const folders = (await this.getFolders()).map(f =>
       f.id === folderId ? { ...f, name } : f
     );
-    this.saveFolders(folders);
+    await this.saveFolders(folders);
   }
 
-  renameNote(noteId: string, name: string) {
-    const folders = this.getFolders().map(f => ({
+  async renameNote(noteId: string, name: string): Promise<void> {
+    const folders = (await this.getFolders()).map(f => ({
       ...f,
       notes: f.notes.map(n =>
         n.id === noteId ? { ...n, title: name, updatedAt: new Date() } : n
       ),
     }));
-    this.saveFolders(folders);
+    await this.saveFolders(folders);
   }
 
-  updateFolderColor(folderId: string, color: string) {
-    const folders = this.getFolders().map(f =>
+  async updateFolderColor(folderId: string, color: string): Promise<void> {
+    const folders = (await this.getFolders()).map(f =>
       f.id === folderId ? { ...f, color } : f
     );
-    this.saveFolders(folders);
+    await this.saveFolders(folders);
   }
 }

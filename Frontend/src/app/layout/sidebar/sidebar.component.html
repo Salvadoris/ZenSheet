@@ -22,15 +22,21 @@
       [buttons]="getFolderHeaderButtons()" />
     <hr class="border-t border-gray-300 my-3" />
 
-    @for (folder of folders(); track folder.id) {
-      <app-list-item
-        [itemData]="getFolderListItemData(folder)"
-        [menuItems]="getFolderMenuItems(folder)"
-        (itemClicked)="selectFolder(folder)" />
-    } @empty {
-      <app-empty-state
-        message="Looks like you haven't created any folders yet. Make one now!"
-        icon="fa-folder" />
+    @if (loading()) {
+      <div class="flex items-center justify-center py-6">
+        <span class="loading loading-dots loading-xl text-primary"></span>
+      </div>
+    } @else {
+      @for (folder of folders(); track folder.id) {
+        <app-list-item
+          [itemData]="getFolderListItemData(folder)"
+          [menuItems]="getFolderMenuItems(folder)"
+          (itemClicked)="selectFolder(folder)" />
+      } @empty {
+        <app-empty-state
+          message="Looks like you haven't created any folders yet. Make one now!"
+          icon="fa-folder" />
+      }
     }
   } @else if (view === SidebarView.Notes) {
     <app-sidebar-header
@@ -45,7 +51,8 @@
       <app-list-item
         [itemData]="getNoteListItemData(note)"
         [menuItems]="getNoteMenuItems(note)"
-        (itemClicked)="selectNote(note)" />
+        (itemClicked)="selectNote(note)" 
+        />
     } @empty {
       <app-empty-state
         message="No notes yet. Create your first one!"

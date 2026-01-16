@@ -46,18 +46,19 @@
           }
         </div>
       </div>
-    </form>
-  </div>
-  <div mat-dialog-actions class="flex justify-between gap-3 mt-5">
-    <button type="button" class="btn btn-ghost" (click)="dialogRef.close(null)">
-      Cancel
-    </button>
 
-    <button type="submit" class="btn btn-primary" [disabled]="!isFormValid">
-      @if (data.submitButton.icon) {
-        <i class="fas mr-2" [class]="data.submitButton.icon"></i>
-      }
-      {{ data.submitButton.text }}
-    </button>
+      <div mat-dialog-actions class="flex justify-between gap-3 !p-0 ">
+        <button type="button" class="btn btn-ghost" (click)="dialogRef.close(null)">
+          Cancel
+        </button>
+
+        <button type="submit" class="btn btn-primary" [disabled]="!isFormValid">
+          @if (data.submitButton.icon) {
+            <i class="fas mr-2" [class]="data.submitButton.icon"></i>
+          }
+          {{ data.submitButton.text }}
+        </button>
+      </div>
+    </form>
   </div>
 </div>

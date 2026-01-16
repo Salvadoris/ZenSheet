@@ -8,6 +8,7 @@ import {
   output,
 } from '@angular/core';
 
+import { NoteContent } from '../../models/note.model';
 import { Mode } from '../toolbar/toolbar.component';
 
 import { ActionType } from './Actions/ActionType';
@@ -26,13 +27,15 @@ import { ChangableDrawingProperties } from './DrawingProperties/DrawingPropertie
 import { DrawingPropertyName } from './DrawingProperties/DrawingPropertyName';
 import { Drawing } from './Drawings/Drawing';
 import { Point, Rect } from './Geometry';
-import { DrawingSerializer } from './Serializer/DrawingSerializer';
-import { ShapeSerializer } from './Serializer/ShapeSerializer';
+import {
+  DrawingSerializer,
+  SerializedDrawing,
+} from './Serializer/DrawingSerializer';
+import { SerializedShape, ShapeSerializer } from './Serializer/ShapeSerializer';
 import { ChangableSerializedShapeProperties } from './ShapeProperties/ShapeProperties';
 import { ShapePropertyName } from './ShapeProperties/ShapePropertyName';
 import { GroupShape } from './Shapes/GroupShape';
 import { Shape } from './Shapes/Shape';
-import { TextBoxShape } from './Shapes/TextBoxShape';
 import { CanvasStyle } from './ShapeStyles/CanvasStyle';
 import { LineAlignment } from './ShapeStyles/LineAlignment';
 import {
@@ -41,7 +44,6 @@ import {
   ShapeStyleProperty,
 } from './ShapeStyles/ShapeStyle';
 import { StyleName } from './ShapeStyles/StyleName';
-import { TextBoxStyle } from './ShapeStyles/TextBoxStyle';
 import { CanvasToolState } from './States/CanvasToolState';
 import { FilledRectToolState } from './States/FilledRectToolState';
 import { HandToolState } from './States/HandToolState';
@@ -95,6 +97,7 @@ export class CanvasComponent implements AfterViewInit {
 
   #toolState!: CanvasToolState;
   modeChange = output<Mode>();
+  canvasChanged = output<void>();
 
   #shapeSerializer!: ShapeSerializer;
   #drawingSerializer!: DrawingSerializer;
@@ -104,11 +107,11 @@ export class CanvasComponent implements AfterViewInit {
   #shapes: Shape[] = [];
   #drawings: Drawing[] = [];
 
-  #scale = 1;
+  #scale = 1; 
   #minScale = 0.1;
   #maxScale = 5;
 
-  #origin: Point = [0, 0];
+  #origin: Point = [0, 0]; 
 
   #cursor: Point = [0, 0];
 
@@ -255,6 +258,10 @@ export class CanvasComponent implements AfterViewInit {
     return this.#smoothLineFactor;
   }
 
+  get toolstate() {
+    return this.#toolState;
+  }
+
   addShapes(shapes: Shape[]) {
     if (shapes.length === 1) {
       this.shapes.push(shapes[0]);
@@ -271,6 +278,7 @@ export class CanvasComponent implements AfterViewInit {
         shapes: serializedShapes,
       },
     } as AddShapesAction);
+    this.canvasChanged.emit();
   }
 
   removeShapes(shapeIdList: string[]) {
@@ -281,6 +289,7 @@ export class CanvasComponent implements AfterViewInit {
       type: ActionType.RemoveShapes,
       data: { shapeIdList: shapeIdList },
     } as RemoveShapesAction);
+    this.canvasChanged.emit();
   }
 
   changeShapesProperties(
@@ -294,6 +303,7 @@ export class CanvasComponent implements AfterViewInit {
         properties: properties,
       },
     } as ChangeShapesPropertiesAction);
+    this.canvasChanged.emit();
   }
 
   addDrawings(drawings: Drawing[]) {
@@ -309,6 +319,7 @@ export class CanvasComponent implements AfterViewInit {
       type: ActionType.AddDrawings,
       data: { drawings: serializedDrawings },
     } as AddDrawingsAction);
+    this.canvasChanged.emit();
   }
 
   removeDrawings(drawingIdList: string[]) {
@@ -319,6 +330,7 @@ export class CanvasComponent implements AfterViewInit {
       type: ActionType.RemoveDrawings,
       data: { drawingIdList: drawingIdList },
     } as RemoveDrawingsAction);
+    this.canvasChanged.emit();
   }
 
   changeDrawingsProperties(
@@ -332,6 +344,7 @@ export class CanvasComponent implements AfterViewInit {
         properties: properties,
       },
     } as ChangeDrawingsPropertiesAction);
+    this.canvasChanged.emit();
   }
 
   drawingToShape(drawing: Drawing) {
@@ -351,6 +364,7 @@ export class CanvasComponent implements AfterViewInit {
         shape: serializedShape,
       },
     } as DrawingToShapeAction);
+    this.canvasChanged.emit();
   }
 
   addGroupShape(groupShape: GroupShape) {
@@ -362,7 +376,6 @@ export class CanvasComponent implements AfterViewInit {
     this.#shapes = this.shapes.filter(
       s => !shapeIdList.includes(s.properties[ShapePropertyName.id])
     );
-
     this.#actionHandler.receiveAction({
       type: ActionType.AddGroupShape,
       data: {
@@ -404,6 +417,7 @@ export class CanvasComponent implements AfterViewInit {
         }),
       },
     } as AddGroupShapeAction);
+    this.canvasChanged.emit();
   }
 
   removeGroupShape(groupShape: GroupShape) {
@@ -430,6 +444,7 @@ export class CanvasComponent implements AfterViewInit {
         }),
       },
     } as RemoveGroupShapeAction);
+    this.canvasChanged.emit();
   }
 
   shapeToLocal(groupShape: GroupShape, shape: Shape) {
@@ -459,6 +474,7 @@ export class CanvasComponent implements AfterViewInit {
         },
       },
     } as ShapeToLocalAction);
+    this.canvasChanged.emit();
   }
 
   changeMode(mode: Mode) {
@@ -838,5 +854,37 @@ export class CanvasComponent implements AfterViewInit {
     if (a[2] < b[0] || b[2] < a[0]) return false;
     if (a[3] < b[1] || b[3] < a[1]) return false;
     return true;
+  }
+
+  async loadCanvasData(
+    shapes: SerializedShape[] = [],
+    drawings: SerializedDrawing[] = [],
+    origin: Point = [0, 0],
+    scale = 1 
+  ): Promise<void> {
+    this.#origin = origin;
+    this.#scale = scale;
+
+    this.#shapes = shapes.map(s =>
+      this.#shapeSerializer.deserialized(s, this.mainCtx)
+    );
+
+    this.#drawings = drawings.map(d => 
+      this.#drawingSerializer.deserialized(d));
+
+    this.renderCanvas(true, true);
+  }
+
+  getCanvasData(): NoteContent {
+    return new NoteContent({
+      shapes: this.#shapes.map(shape =>
+        this.#shapeSerializer.serialized(shape)
+      ),
+      drawings: this.#drawings.map(drawing =>
+        this.#drawingSerializer.serialized(drawing)
+      ),
+      origin: this.#origin,
+      scale: this.#scale
+    });
   }
 }

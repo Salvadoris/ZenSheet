@@ -79,13 +79,13 @@ export class DialogService {
     });
   }
 
-  openCreateNoteDialog(initialValue?: string) {
+  openCreateNoteDialog() {
     return this.openInputDialog({
       title: 'Create New Note',
       icon: 'fa-file-circle-plus text-yellow-500',
       label: 'Note name',
       inputPlaceholder: 'Enter note name...',
-      initialValue: initialValue,
+      initialValue: undefined,
       submitButton: {
         text: 'Create note',
         icon: 'fa-file-circle-plus',

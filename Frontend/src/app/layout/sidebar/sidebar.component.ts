@@ -8,9 +8,10 @@ import {
   signal,
 } from '@angular/core';
 
-import { Folder, Note } from '../../interfaces/note.model';
+import { Folder, Note } from '../../models/note.model';
 import { DialogService } from '../../services/dialog.service';
 import { NotesService } from '../../services/notes.service';
+import { getContrastingTextColor } from '../../utils/color-utils';
 
 import { DropdownMenuItem } from './dropdown-menu.component';
 import { EmptyStateComponent } from './empty-state.component';
@@ -21,8 +22,8 @@ import {
 } from './sidebar-header.component';
 
 export enum SidebarMode {
-  Folders = 0,
-  Notes = 1,
+  Folders,
+  Notes,
 }
 
 @Component({
@@ -41,24 +42,34 @@ export class SidebarComponent implements OnInit {
   readonly SidebarView = SidebarMode;
   view: SidebarMode = SidebarMode.Folders;
   folders = signal<Folder[]>([]);
+  loading = signal<boolean>(false);
   selectedFolder = signal<Folder | null>(null);
   selectedNoteId: string | null = null;
   isSidebarHidden = false;
 
-  readonly noteSelected = output<{
-    folderId: string;
-    note: Note;
-  }>();
+  readonly noteSelected = output<Note>();
 
-  private readonly notesService = inject(NotesService);
-  private readonly dialogService = inject(DialogService);
+  readonly #notesService = inject(NotesService);
+  readonly #dialogService = inject(DialogService);
 
-  ngOnInit() {
-    this.loadFolders();
+  async ngOnInit() {
+    await this.loadFolders();
   }
 
-  private loadFolders() {
-    this.folders.set(this.notesService.getFolders());
+  async loadFolders() {
+    this.loading.set(true);
+    const start = Date.now();
+
+    const folders = await this.#notesService.getFolders();
+    this.folders.set(folders);
+
+    const elapsed = Date.now() - start;
+    const remaining = Math.max(0, 200 - elapsed);
+    if (remaining > 0) {
+      await new Promise(resolve => setTimeout(resolve, remaining));
+    }
+
+    this.loading.set(false);
   }
 
   selectFolder(folder: Folder) {
@@ -73,24 +84,24 @@ export class SidebarComponent implements OnInit {
   }
 
   addFolder() {
-    this.dialogService.openCreateFolderDialog().subscribe(result => {
-      if (result) {
-        this.notesService.createFolder(result.name);
-        this.loadFolders();
+    this.#dialogService.openCreateFolderDialog().subscribe(async result => {
+      if (result?.name) {
+        await this.#notesService.createFolder(result.name);
+        await this.loadFolders();
       }
     });
   }
 
-  addNote() {
-    if (!this.selectedFolder) return;
-
-    this.dialogService.openCreateNoteDialog().subscribe(result => {
-      if (result) {
-        const note = this.notesService.createNote(
+  async addNote() {
+    if (!this.selectedFolder()) return;
+    this.#dialogService.openCreateNoteDialog().subscribe(async result => {
+      if (result?.name) {
+        const note = await this.#notesService.createNote(
           this.selectedFolder()!.id,
           result.name
         );
-        this.loadFolders();
+        await this.loadFolders();
+        
         this.selectedFolder.set(
           this.folders().find(f => f.id === this.selectedFolder()!.id) || null
         );
@@ -101,7 +112,7 @@ export class SidebarComponent implements OnInit {
 
   selectNote(note: Note) {
     this.selectedNoteId = note.id;
-    this.noteSelected.emit({ folderId: this.selectedFolder()!.id, note });
+    this.noteSelected.emit(note);
   }
 
   onDeleteNote(noteId: string, event: Event) {
@@ -111,30 +122,26 @@ export class SidebarComponent implements OnInit {
     const note = this.selectedFolder()!.notes.find(n => n.id === noteId);
     if (!note) return;
 
-    this.dialogService.openDeleteNoteDialog(note.title).subscribe(confirmed => {
-      if (confirmed) {
-        this.notesService.deleteNote(this.selectedFolder()!.id, noteId);
+    this.#dialogService
+      .openDeleteNoteDialog(note.title)
+      .subscribe(async confirmed => {
+        if (confirmed) {
+          await this.#notesService.deleteNote(
+            this.selectedFolder()!.id,
+            noteId
+          );
 
-        this.loadFolders();
-        this.selectedFolder.set(
-          this.folders().find(f => f.id === this.selectedFolder()!.id) || null
-        );
+          await this.loadFolders();
+          this.selectedFolder.set(
+            this.folders().find(f => f.id === this.selectedFolder()!.id) || null
+          );
 
-        if (this.selectedNoteId === noteId) {
-          this.selectedNoteId = null;
-          this.noteSelected.emit({
-            folderId: '',
-            note: {
-              id: '',
-              parentFolderId: '',
-              title: '',
-              content: null,
-              updatedAt: new Date(),
-            },
-          });
+          if (this.selectedNoteId === noteId) {
+            this.selectedNoteId = null;
+            this.noteSelected.emit(new Note());
+          }
         }
-      }
-    });
+      });
   }
 
   toggleSidebar() {
@@ -145,12 +152,18 @@ export class SidebarComponent implements OnInit {
     const folder = this.folders().find(f => f.id === folderId);
     if (!folder) return;
 
-    const wasSelected = this.selectedFolder()?.id === folderId;
-
-    this.dialogService.openFolderColorDialog(folder.color).subscribe(color => {
+    this.#dialogService.openFolderColorDialog(folder.color).subscribe(color => {
       if (!color) return;
-      this.notesService.updateFolderColor(folderId, color);
-      this.loadFolders();
+      this.#notesService.updateFolderColor(folderId, color).then(async () => {
+        await this.loadFolders();
+        if (this.selectedFolder()?.id === folderId) {
+          this.selectedFolder.set(
+            this.folders().find(f => f.id === folderId) || null
+          );
+        }
+      });
+
+      const wasSelected = this.selectedFolder()?.id === folderId;
       if (wasSelected) {
         this.selectedFolder.set(
           this.folders().find(f => f.id === folderId) || null
@@ -163,12 +176,12 @@ export class SidebarComponent implements OnInit {
     const folder = this.folders().find(f => f.id === folderId);
     if (!folder) return;
 
-    this.dialogService
+    this.#dialogService
       .openDeleteFolderDialog(folder.name)
-      .subscribe(confirmed => {
+      .subscribe(async confirmed => {
         if (confirmed) {
-          this.notesService.deleteFolder(folderId);
-          this.loadFolders();
+          await this.#notesService.deleteFolder(folderId);
+          await this.loadFolders();
           if (this.selectedFolder()?.id === folderId) {
             this.goBack();
           }
@@ -178,21 +191,22 @@ export class SidebarComponent implements OnInit {
 
   renameFolder(folderId: string) {
     const currentFolder = this.folders().find(f => f.id === folderId);
-    this.dialogService
+    this.#dialogService
       .openRenameFolderDialog(currentFolder?.name)
       .subscribe(result => {
         if (result) {
-          this.notesService.renameFolder(folderId, result.name);
-          this.loadFolders();
+          this.#notesService
+            .renameFolder(folderId, result.name)
+            .then(() => this.loadFolders());
         }
       });
-    this.loadFolders();
   }
 
   getFolderListItemData(folder: Folder): ListItemData {
     return {
       id: folder.id,
       name: folder.name,
+      active: false,
       color: folder.color,
       icon: 'fa-folder',
     };
@@ -202,6 +216,7 @@ export class SidebarComponent implements OnInit {
     return {
       id: note.id,
       name: note.title,
+      active: this.selectedNoteId === note.id,
       icon: 'fa-file',
     };
   }
@@ -220,7 +235,7 @@ export class SidebarComponent implements OnInit {
         label: 'Delete',
         action: () => this.deleteFolder(folder.id),
         isDestructive: true,
-      },
+      }
     ];
   }
 
@@ -234,7 +249,7 @@ export class SidebarComponent implements OnInit {
         label: 'Delete',
         action: () => this.onDeleteNote(note.id, new Event('click')),
         isDestructive: true,
-      },
+      }
     ];
   }
 
@@ -245,7 +260,7 @@ export class SidebarComponent implements OnInit {
         action: () => this.addFolder(),
         title: 'New Folder',
         variant: 'primary',
-      },
+      }
     ];
   }
 
@@ -256,7 +271,7 @@ export class SidebarComponent implements OnInit {
         action: () => this.addNote(),
         title: 'New Note',
         variant: 'primary',
-      },
+      }
     ];
   }
 
@@ -265,11 +280,11 @@ export class SidebarComponent implements OnInit {
     if (!currentFolder) return;
 
     const currentNote = currentFolder.notes.find(n => n.id === noteId);
-    this.dialogService
+    this.#dialogService
       .openRenameNoteDialog(currentNote?.title)
       .subscribe(result => {
         if (result) {
-          this.notesService.renameNote(noteId, result.name);
+          this.#notesService.renameNote(noteId, result.name);
           this.loadFolders();
           this.selectedFolder.set(
             this.folders().find(f => f.id === currentFolder.id) || null
@@ -278,53 +293,19 @@ export class SidebarComponent implements OnInit {
       });
   }
 
-  getContrastingTextColor(background?: string): string {
-    if (!background) return 'inherit';
-    const hex = background.trim();
-    // Supports #rgb, #rrggbb, rgb(), and named colors via a fallback canvas if needed
-    let r = 0,
-      g = 0,
-      b = 0;
-    const isHex = /^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/.test(hex);
-    if (isHex) {
-      const clean = hex.substring(1);
-      const full =
-        clean.length === 3
-          ? clean
-              .split('')
-              .map(ch => ch + ch)
-              .join('')
-          : clean;
-      r = parseInt(full.substring(0, 2), 16);
-      g = parseInt(full.substring(2, 4), 16);
-      b = parseInt(full.substring(4, 6), 16);
-    } else if (hex.startsWith('rgb')) {
-      const m = hex.match(/rgb[a]?\(([^)]+)\)/);
-      if (m) {
-        const parts = m[1].split(',').map(v => parseFloat(v.trim()));
-        [r, g, b] = parts;
-      }
-    } else {
-      // Fallback: try to resolve computed color in the browser
-      try {
-        const ctxCanvas = document.createElement('canvas');
-        const ctx = ctxCanvas.getContext('2d');
-        if (ctx) {
-          ctx.fillStyle = hex as unknown as string;
-          const resolved = ctx.fillStyle as unknown as string;
-          if (typeof resolved === 'string' && resolved.startsWith('#')) {
-            const clean = resolved.substring(1);
-            r = parseInt(clean.substring(0, 2), 16);
-            g = parseInt(clean.substring(2, 4), 16);
-            b = parseInt(clean.substring(4, 6), 16);
-          }
-        }
-      } catch {
-        return 'inherit';
-      }
+  async openFolderAndSelectNote(folderId: string, note: Note) {
+    if (this.folders().length === 0) {
+      await this.loadFolders();
     }
 
-    const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-    return yiq >= 128 ? '#000000' : '#ffffff';
+    const folder = this.folders().find(f => f.id === folderId);
+    if (!folder) return;
+
+    this.selectFolder(folder);
+    this.selectNote(note);
+  }
+
+  getContrastingTextColor(background?: string): string {
+    return getContrastingTextColor(background);
   }
 }
