@@ -3,7 +3,7 @@ import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProp
 import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { StraightLineShapeProperties } from '../ShapeProperties/StraightLineShapeProperties';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
-import { StrokedRectStyle } from '../ShapeStyles/StrokedRectStyle';
+import { StraightLineStyle } from '../ShapeStyles/StraightLineStyle';
 import { StyleName } from '../ShapeStyles/StyleName';
 
 import { Shape } from './Shape';
@@ -26,7 +26,7 @@ export class StraightLineShape extends Shape {
     return this._properties;
   }
 
-  override get style(): StrokedRectStyle {
+  override get style(): StraightLineStyle {
     return this.properties[ShapePropertyName.style];
   }
 
