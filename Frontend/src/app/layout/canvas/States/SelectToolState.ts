@@ -87,36 +87,38 @@ export class SelectToolState extends CanvasToolState {
   }
 
   override onPressedMouseMove(_event: MouseEvent): void {
-    if (this.#selectedShape && this.#selectedShape.dragged) {
-      const moveProperties = this.#selectedShape.moveTo(
-        this.canvas.cursor[0],
-        this.canvas.cursor[1]
-      );
-      this.canvas.changeShapesProperties(
-        [this.#selectedShape.shape.properties[ShapePropertyName.id]],
-        moveProperties
-      );
-    } else if (
-      this.#selectedShape &&
-      this.#selectedShape.resized != Resize.None
-    ) {
-      const resizeProperties = this.#selectedShape.resize([
-        this.canvas.cursor[0],
-        this.canvas.cursor[1],
-      ]);
-      this.canvas.changeShapesProperties(
-        [this.#selectedShape.shape.properties[ShapePropertyName.id]],
-        resizeProperties
-      );
-    } else if (this.canvas.firstMove) {
-      this.#selectRect = new SelectRect(
-        [this.canvas.startCursor[0], this.canvas.startCursor[1]],
-        [this.canvas.cursor[0], this.canvas.cursor[1]]
-      );
-    } else if (this.#selectRect) {
-      this.#selectRect.update(this.canvas.cursor[0], this.canvas.cursor[1]);
+    if (this.canvas.leftmouseDown) {
+      if (this.#selectedShape && this.#selectedShape.dragged) {
+        const moveProperties = this.#selectedShape.moveTo(
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        );
+        this.canvas.changeShapesProperties(
+          [this.#selectedShape.shape.properties[ShapePropertyName.id]],
+          moveProperties
+        );
+      } else if (
+        this.#selectedShape &&
+        this.#selectedShape.resized != Resize.None
+      ) {
+        const resizeProperties = this.#selectedShape.resize([
+          this.canvas.cursor[0],
+          this.canvas.cursor[1],
+        ]);
+        this.canvas.changeShapesProperties(
+          [this.#selectedShape.shape.properties[ShapePropertyName.id]],
+          resizeProperties
+        );
+      } else if (this.canvas.firstMove) {
+        this.#selectRect = new SelectRect(
+          [this.canvas.startCursor[0], this.canvas.startCursor[1]],
+          [this.canvas.cursor[0], this.canvas.cursor[1]]
+        );
+      } else if (this.#selectRect) {
+        this.#selectRect.update(this.canvas.cursor[0], this.canvas.cursor[1]);
+      }
+      this.canvas.renderCanvas(false, true);
     }
-    this.canvas.renderCanvas(false, true);
   }
 
   override onHoveringMouseMove(_event: MouseEvent): void {
@@ -183,8 +185,8 @@ export class SelectToolState extends CanvasToolState {
         this.selectFromRect();
         this.canvas.renderCanvas(false, true);
       }
+      this.#selectedAction = false;
     }
-    this.#selectedAction = false;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function

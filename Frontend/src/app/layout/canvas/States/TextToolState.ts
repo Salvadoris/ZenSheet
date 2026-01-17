@@ -189,30 +189,36 @@ export class TextToolState extends CanvasToolState {
   }
 
   override onMouseDown(event: MouseEvent): void {
-    const textBox = this.findTextBoxOnCursor();
-    if (textBox) {
-      this.setCurrentTextBox(textBox);
-    } else {
-      this.createTextBox();
-    }
-    if (this.#currentTextBox) {
-      this.canvas.changeStyle(this.#currentTextBox.style);
-
-      const index = this.#currentTextBox.indexFromPosition(
-        this.canvas.cursor[0],
-        this.canvas.cursor[1]
-      );
-      if (event.shiftKey && this.#selectedStart !== null) {
-        this.#selectedEnd = index;
+    if (this.canvas.leftmouseDown) {
+      const textBox = this.findTextBoxOnCursor();
+      if (textBox) {
+        this.setCurrentTextBox(textBox);
       } else {
-        this.#selectedStart = index;
-        this.#selectedEnd = null;
+        this.createTextBox();
+      }
+      if (this.#currentTextBox) {
+        this.canvas.changeStyle(this.#currentTextBox.style);
+
+        const index = this.#currentTextBox.indexFromPosition(
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        );
+        if (event.shiftKey && this.#selectedStart !== null) {
+          this.#selectedEnd = index;
+        } else {
+          this.#selectedStart = index;
+          this.#selectedEnd = null;
+        }
       }
     }
   }
 
   override onPressedMouseMove(_event: MouseEvent): void {
-    if (this.#currentTextBox && this.#selectedStart !== null) {
+    if (
+      this.canvas.leftmouseDown &&
+      this.#currentTextBox &&
+      this.#selectedStart !== null
+    ) {
       this.setSelectedEnd(
         this.#currentTextBox.indexFromPosition(
           this.canvas.cursor[0],

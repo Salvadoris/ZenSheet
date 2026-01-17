@@ -34,27 +34,29 @@ export class PenToolState extends CanvasToolState {
   override onMouseDown(_event: MouseEvent): void {}
 
   override onPressedMouseMove(_event: MouseEvent): void {
-    if (this.canvas.firstMove) {
-      this.#currentDrawing = new LineDrawing({
-        [DrawingPropertyName.id]: crypto.randomUUID(),
-        [DrawingPropertyName.points]: [
-          [this.canvas.prevCursor[0], this.canvas.prevCursor[1]],
-          [this.canvas.cursor[0], this.canvas.cursor[1]],
-        ],
-        [DrawingPropertyName.style]: new LineStyle(this.canvas.style),
-      });
-      this.canvas.addDrawings([this.#currentDrawing]);
-    } else if (this.#currentDrawing) {
-      const changeProperties = this.#currentDrawing.update([
-        this.canvas.cursor[0],
-        this.canvas.cursor[1],
-      ]);
-      this.canvas.changeDrawingsProperties(
-        [this.#currentDrawing.properties[DrawingPropertyName.id]],
-        changeProperties
-      );
+    if (this.canvas.leftmouseDown) {
+      if (this.canvas.firstMove) {
+        this.#currentDrawing = new LineDrawing({
+          [DrawingPropertyName.id]: crypto.randomUUID(),
+          [DrawingPropertyName.points]: [
+            [this.canvas.prevCursor[0], this.canvas.prevCursor[1]],
+            [this.canvas.cursor[0], this.canvas.cursor[1]],
+          ],
+          [DrawingPropertyName.style]: new LineStyle(this.canvas.style),
+        });
+        this.canvas.addDrawings([this.#currentDrawing]);
+      } else if (this.#currentDrawing) {
+        const changeProperties = this.#currentDrawing.update([
+          this.canvas.cursor[0],
+          this.canvas.cursor[1],
+        ]);
+        this.canvas.changeDrawingsProperties(
+          [this.#currentDrawing.properties[DrawingPropertyName.id]],
+          changeProperties
+        );
+      }
+      this.canvas.renderCanvas(false, true);
     }
-    this.canvas.renderCanvas(false, true);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function

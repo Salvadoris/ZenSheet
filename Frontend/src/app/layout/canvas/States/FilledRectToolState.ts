@@ -34,38 +34,40 @@ export class FilledRectToolState extends CanvasToolState {
   override onMouseDown(_event: MouseEvent): void {}
 
   override onPressedMouseMove(_event: MouseEvent): void {
-    if (this.canvas.firstMove) {
-      this.#currentDrawing = new FilledRectDrawing({
-        [DrawingPropertyName.id]: crypto.randomUUID(),
-        [DrawingPropertyName.p0]: [
-          this.canvas.startCursor[0],
-          this.canvas.startCursor[1],
-        ],
-        [DrawingPropertyName.p1]: [
+    if (this.canvas.leftmouseDown) {
+      if (this.canvas.firstMove) {
+        this.#currentDrawing = new FilledRectDrawing({
+          [DrawingPropertyName.id]: crypto.randomUUID(),
+          [DrawingPropertyName.p0]: [
+            this.canvas.startCursor[0],
+            this.canvas.startCursor[1],
+          ],
+          [DrawingPropertyName.p1]: [
+            this.canvas.cursor[0],
+            this.canvas.cursor[1],
+          ],
+          [DrawingPropertyName.style]: new FilledRectStyle(this.canvas.style),
+        });
+        this.canvas.addDrawings([this.#currentDrawing]);
+      } else if (this.#currentDrawing) {
+        const changeProperties = this.#currentDrawing.update([
           this.canvas.cursor[0],
           this.canvas.cursor[1],
-        ],
-        [DrawingPropertyName.style]: new FilledRectStyle(this.canvas.style),
-      });
-      this.canvas.addDrawings([this.#currentDrawing]);
-    } else if (this.#currentDrawing) {
-      const changeProperties = this.#currentDrawing.update([
-        this.canvas.cursor[0],
-        this.canvas.cursor[1],
-      ]);
-      this.canvas.changeDrawingsProperties(
-        [this.#currentDrawing.properties[DrawingPropertyName.id]],
-        changeProperties
-      );
+        ]);
+        this.canvas.changeDrawingsProperties(
+          [this.#currentDrawing.properties[DrawingPropertyName.id]],
+          changeProperties
+        );
+      }
+      this.canvas.renderCanvas(false, true);
     }
-    this.canvas.renderCanvas(false, true);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   override onHoveringMouseMove(_event: MouseEvent): void {}
 
   override onMouseUp(_event: MouseEvent): void {
-    if (this.#currentDrawing) {
+    if (this.canvas.leftmouseDown && this.#currentDrawing) {
       this.canvas.drawingToShape(this.#currentDrawing);
       this.#currentDrawing = null;
       this.canvas.renderCanvas(true, true);
