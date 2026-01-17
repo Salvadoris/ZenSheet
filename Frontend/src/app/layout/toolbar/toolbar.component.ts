@@ -14,8 +14,6 @@ export enum Mode {
   Pen = 'Pen',
   StraightLine = 'StraightLine',
   Rectangle = 'Rectangle',
-  FilledRect = 'FilledRect',
-  StrokedRect = 'StrokedRect',
   Text = 'Text',
 }
 

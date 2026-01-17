@@ -5,12 +5,10 @@ import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { GroupShape } from '../Shapes/GroupShape';
 import { Shape } from '../Shapes/Shape';
 import { TextBoxShape } from '../Shapes/TextBoxShape';
-import { FilledRectStyle } from '../ShapeStyles/FilledRectStyle';
 import { GroupShapeStyle } from '../ShapeStyles/GroupShapeStyle';
 import { ImageStyle } from '../ShapeStyles/ImageStyle';
 import { LineStyle } from '../ShapeStyles/LineStyle';
 import { NullableShapeStyle, ShapeStyle } from '../ShapeStyles/ShapeStyle';
-import { StrokedRectStyle } from '../ShapeStyles/StrokedRectStyle';
 import { TextBoxStyle } from '../ShapeStyles/TextBoxStyle';
 
 import { ActionType } from './ActionType';
@@ -193,17 +191,7 @@ export class CanvasActionHandler {
     originalStyle: NullableShapeStyle,
     newStyle: NullableShapeStyle
   ): NullableShapeStyle {
-    if (originalStyle instanceof FilledRectStyle) {
-      return new FilledRectStyle({
-        ...originalStyle,
-        ...(newStyle as ShapeStyle),
-      });
-    } else if (originalStyle instanceof StrokedRectStyle) {
-      return new StrokedRectStyle({
-        ...originalStyle,
-        ...(newStyle as ShapeStyle),
-      });
-    } else if (originalStyle instanceof LineStyle) {
+    if (originalStyle instanceof LineStyle) {
       return new LineStyle({ ...originalStyle, ...(newStyle as ShapeStyle) });
     } else if (originalStyle instanceof ImageStyle) {
       return new ImageStyle({ ...originalStyle, ...(newStyle as ShapeStyle) });

@@ -1,8 +1,4 @@
 import {
-  FilledRectShapeProperties,
-  SerializedFilledRectShapeProperties,
-} from '../ShapeProperties/FilledRectShapeProperties';
-import {
   GroupShapeProperties,
   SerializedGroupShapeProperties,
 } from '../ShapeProperties/GroupShapeProperties';
@@ -28,18 +24,10 @@ import {
   StraightLineShapeProperties,
 } from '../ShapeProperties/StraightLineShapeProperties';
 import {
-  SerializedStrokedRectShapeProperties,
-  StrokedRectShapeProperties,
-} from '../ShapeProperties/StrokedRectShapeProperties';
-import {
   SerializedTextBoxShapeProperties,
   TextBoxShapeProperties,
 } from '../ShapeProperties/TextBoxShapeProperties';
 import { Shape } from '../Shapes/Shape';
-import {
-  FilledRectStyle,
-  FilledRectStyleType,
-} from '../ShapeStyles/FilledRectStyle';
 import {
   GroupShapeStyle,
   GroupShapeStyleType,
@@ -54,10 +42,6 @@ import {
   StraightLineStyle,
   StraightLineStyleType,
 } from '../ShapeStyles/StraightLineStyle';
-import {
-  StrokedRectStyle,
-  StrokedRectStyleType,
-} from '../ShapeStyles/StrokedRectStyle';
 import { TextBoxStyle, TextBoxStyleType } from '../ShapeStyles/TextBoxStyle';
 
 import { SerializedShape, ShapeSerializer, ShapeType } from './ShapeSerializer';
@@ -70,20 +54,6 @@ export class ShapePropertiesSerializer {
     properties: ShapeProperties
   ): SerializedShapeProperties {
     switch (type) {
-      case ShapeType.FilledRect:
-        return {
-          ...(properties as FilledRectShapeProperties),
-          [ShapePropertyName.style]: {
-            ...properties[ShapePropertyName.style],
-          },
-        } as SerializedFilledRectShapeProperties;
-      case ShapeType.StrokedRect:
-        return {
-          ...(properties as StrokedRectShapeProperties),
-          [ShapePropertyName.style]: {
-            ...properties[ShapePropertyName.style],
-          },
-        } as SerializedStrokedRectShapeProperties;
       case ShapeType.Line:
         return {
           ...(properties as LineShapeProperties),
@@ -157,30 +127,6 @@ export class ShapePropertiesSerializer {
         serializedProperties[ShapePropertyName.height] < 0,
     };
     switch (type) {
-      case ShapeType.FilledRect:
-        return {
-          ...(serializedProperties as SerializedFilledRectShapeProperties),
-          ...properties,
-          [ShapePropertyName.style]: new FilledRectStyle(
-            serializedProperties[ShapePropertyName.style] as FilledRectStyleType
-          ),
-          [ShapePropertyName.id]: copy
-            ? crypto.randomUUID()
-            : serializedProperties[ShapePropertyName.id],
-        } as Required<FilledRectShapeProperties>;
-      case ShapeType.StrokedRect:
-        return {
-          ...(serializedProperties as SerializedStrokedRectShapeProperties),
-          ...properties,
-          [ShapePropertyName.style]: new StrokedRectStyle(
-            serializedProperties[
-              ShapePropertyName.style
-            ] as StrokedRectStyleType
-          ),
-          [ShapePropertyName.id]: copy
-            ? crypto.randomUUID()
-            : serializedProperties[ShapePropertyName.id],
-        } as Required<StrokedRectShapeProperties>;
       case ShapeType.Line:
         return {
           ...(serializedProperties as SerializedLineShapeProperties),

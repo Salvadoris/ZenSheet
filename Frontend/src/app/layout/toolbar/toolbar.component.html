@@ -41,22 +41,6 @@
     <i class="fa-regular fa-square"></i>
   </button>
   <button
-    (click)="changeMode(Mode.FilledRect)"
-    [ngClass]="{
-      'tool-button-selected': mode === Mode.FilledRect,
-    }"
-    class="tool-button">
-    <i class="fa-solid fa-square"></i>
-  </button>
-  <button
-    (click)="changeMode(Mode.StrokedRect)"
-    [ngClass]="{
-      'tool-button-selected': mode === Mode.StrokedRect,
-    }"
-    class="tool-button">
-    <i class="fa-regular fa-square"></i>
-  </button>
-  <button
     (click)="changeMode(Mode.Text)"
     [ngClass]="{
       'tool-button-selected': mode === Mode.Text,

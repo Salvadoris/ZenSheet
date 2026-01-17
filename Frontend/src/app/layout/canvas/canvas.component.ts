@@ -45,13 +45,11 @@ import {
 } from './ShapeStyles/ShapeStyle';
 import { StyleName } from './ShapeStyles/StyleName';
 import { CanvasToolState } from './States/CanvasToolState';
-import { FilledRectToolState } from './States/FilledRectToolState';
 import { HandToolState } from './States/HandToolState';
 import { PenToolState } from './States/PenToolState';
 import { RectangleToolState } from './States/RectangleToolState';
 import { SelectToolState } from './States/SelectToolState';
 import { StraightLineToolState } from './States/StraightLineToolState';
-import { StrokedRectToolState } from './States/StrokedRectToolState';
 import { TextToolState } from './States/TextToolState';
 
 type GestureEventWithScale = Event & {
@@ -533,12 +531,6 @@ export class CanvasComponent implements AfterViewInit {
         break;
       case Mode.Rectangle:
         this.#toolState = new RectangleToolState(this);
-        break;
-      case Mode.FilledRect:
-        this.#toolState = new FilledRectToolState(this);
-        break;
-      case Mode.StrokedRect:
-        this.#toolState = new StrokedRectToolState(this);
         break;
       case Mode.Text:
         this.#toolState = new TextToolState(this);
