@@ -41,6 +41,14 @@
     <i class="fa-regular fa-square"></i>
   </button>
   <button
+    (click)="changeMode(Mode.Ellipse)"
+    [ngClass]="{
+      'tool-button-selected': mode === Mode.Ellipse,
+    }"
+    class="tool-button">
+    <i class="fa-regular fa-circle"></i>
+  </button>
+  <button
     (click)="changeMode(Mode.Text)"
     [ngClass]="{
       'tool-button-selected': mode === Mode.Text,

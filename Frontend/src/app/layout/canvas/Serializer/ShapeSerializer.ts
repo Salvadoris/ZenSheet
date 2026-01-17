@@ -1,3 +1,4 @@
+import { EllipseShapeProperties } from '../ShapeProperties/EllipseShapeProperties';
 import { GroupShapeProperties } from '../ShapeProperties/GroupShapeProperties';
 import { ImageShapeProperties } from '../ShapeProperties/ImageShapeProperties';
 import { LineShapeProperties } from '../ShapeProperties/LineShapeProperties';
@@ -5,6 +6,7 @@ import { RectangleShapeProperties } from '../ShapeProperties/RectangleShapePrope
 import { SerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
 import { StraightLineShapeProperties } from '../ShapeProperties/StraightLineShapeProperties';
 import { TextBoxShapeProperties } from '../ShapeProperties/TextBoxShapeProperties';
+import { EllipseShape } from '../Shapes/EllipseShape';
 import { GroupShape } from '../Shapes/GroupShape';
 import { ImageShape } from '../Shapes/ImageShape';
 import { LineShape } from '../Shapes/LineShape';
@@ -19,6 +21,7 @@ export enum ShapeType {
   Line = 'Line',
   StraightLine = 'StraightLine',
   Rectangle = 'Rectangle',
+  Ellipse = 'Ellipse',
   Image = 'Image',
   Text = 'Text',
   Group = 'Group',
@@ -62,6 +65,14 @@ export class ShapeSerializer {
         type: ShapeType.Rectangle,
         properties: this.#propertiesSerializer.serialized(
           ShapeType.Rectangle,
+          shape.properties
+        ),
+      };
+    } else if (shape instanceof EllipseShape) {
+      return {
+        type: ShapeType.Ellipse,
+        properties: this.#propertiesSerializer.serialized(
+          ShapeType.Ellipse,
           shape.properties
         ),
       };
@@ -115,6 +126,11 @@ export class ShapeSerializer {
       case ShapeType.Rectangle:
         return new RectangleShape(
           properties as Required<RectangleShapeProperties>,
+          ctx
+        );
+      case ShapeType.Ellipse:
+        return new EllipseShape(
+          properties as Required<EllipseShapeProperties>,
           ctx
         );
       case ShapeType.Image:

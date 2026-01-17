@@ -14,6 +14,7 @@ export enum Mode {
   Pen = 'Pen',
   StraightLine = 'StraightLine',
   Rectangle = 'Rectangle',
+  Ellipse = 'Ellipse',
   Text = 'Text',
 }
 

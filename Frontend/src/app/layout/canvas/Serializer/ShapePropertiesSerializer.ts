@@ -1,4 +1,8 @@
 import {
+  EllipseShapeProperties,
+  SerializedEllipseShapeProperties,
+} from '../ShapeProperties/EllipseShapeProperties';
+import {
   GroupShapeProperties,
   SerializedGroupShapeProperties,
 } from '../ShapeProperties/GroupShapeProperties';
@@ -28,6 +32,7 @@ import {
   TextBoxShapeProperties,
 } from '../ShapeProperties/TextBoxShapeProperties';
 import { Shape } from '../Shapes/Shape';
+import { EllipseStyle, EllipseStyleType } from '../ShapeStyles/EllipseStyle';
 import {
   GroupShapeStyle,
   GroupShapeStyleType,
@@ -78,6 +83,13 @@ export class ShapePropertiesSerializer {
             ...properties[ShapePropertyName.style],
           },
         } as SerializedRectangleShapeProperties;
+      case ShapeType.Ellipse:
+        return {
+          ...(properties as EllipseShapeProperties),
+          [ShapePropertyName.style]: {
+            ...properties[ShapePropertyName.style],
+          },
+        } as SerializedEllipseShapeProperties;
       case ShapeType.Image:
         return {
           ...(properties as ImageShapeProperties),
@@ -162,6 +174,17 @@ export class ShapePropertiesSerializer {
             ? crypto.randomUUID()
             : serializedProperties[ShapePropertyName.id],
         } as Required<RectangleShapeProperties>;
+      case ShapeType.Ellipse:
+        return {
+          ...(serializedProperties as SerializedEllipseShapeProperties),
+          ...properties,
+          [ShapePropertyName.style]: new EllipseStyle(
+            serializedProperties[ShapePropertyName.style] as EllipseStyleType
+          ),
+          [ShapePropertyName.id]: copy
+            ? crypto.randomUUID()
+            : serializedProperties[ShapePropertyName.id],
+        } as Required<EllipseShapeProperties>;
       case ShapeType.Image:
         return {
           ...(serializedProperties as SerializedImageShapeProperties),

@@ -1,12 +1,15 @@
 import { DrawingProperties } from '../DrawingProperties/DrawingProperties';
 import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
+import { EllipseDrawingProperties } from '../DrawingProperties/EllipseDrawingProperties';
 import { LineDrawingProperties } from '../DrawingProperties/LineDrawingProperties';
 import { RectangleDrawingProperties } from '../DrawingProperties/RectangleDrawingProperties';
 import { StraightLineDrawingProperties } from '../DrawingProperties/StraightLineDrawingProperties';
 import { Drawing } from '../Drawings/Drawing';
+import { EllipseDrawing } from '../Drawings/EllipseDrawing';
 import { LineDrawing } from '../Drawings/LineDrawing';
 import { RectangleDrawing } from '../Drawings/RectangleDrawing';
 import { StraightLineDrawing } from '../Drawings/StraightLineDrawing';
+import { EllipseStyle, EllipseStyleType } from '../ShapeStyles/EllipseStyle';
 import { LineStyle, LineStyleType } from '../ShapeStyles/LineStyle';
 import {
   RectangleStyle,
@@ -21,6 +24,7 @@ export enum DrawingType {
   Line = 'Line',
   StraightLine = 'StraightLine',
   Rectangle = 'Rectangle',
+  Ellipse = 'Ellipse',
 }
 
 export interface SerializedDrawing {
@@ -71,6 +75,20 @@ export class DrawingSerializer {
           ],
         },
       };
+    } else if (drawing instanceof EllipseDrawing) {
+      return {
+        type: DrawingType.Ellipse,
+        properties: {
+          ...drawing.properties,
+          [DrawingPropertyName.style]: {
+            ...drawing.properties[DrawingPropertyName.style],
+          },
+          [DrawingPropertyName.p1]: [
+            drawing.properties[DrawingPropertyName.p1][0],
+            drawing.properties[DrawingPropertyName.p1][1],
+          ],
+        },
+      };
     }
     throw new Error(`Unknown drawing: ${drawing}`);
   }
@@ -104,6 +122,15 @@ export class DrawingSerializer {
             ] as RectangleStyleType
           ),
         } as RectangleDrawingProperties);
+      case DrawingType.Ellipse:
+        return new RectangleDrawing({
+          ...serializedDrawing.properties,
+          [DrawingPropertyName.style]: new EllipseStyle(
+            serializedDrawing.properties[
+              DrawingPropertyName.style
+            ] as EllipseStyleType
+          ),
+        } as EllipseDrawingProperties);
       default:
         throw new Error(`Unknown drawing type: ${serializedDrawing.type}`);
     }

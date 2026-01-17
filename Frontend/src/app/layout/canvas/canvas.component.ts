@@ -45,6 +45,7 @@ import {
 } from './ShapeStyles/ShapeStyle';
 import { StyleName } from './ShapeStyles/StyleName';
 import { CanvasToolState } from './States/CanvasToolState';
+import { EllipseToolState } from './States/EllipseToolState';
 import { HandToolState } from './States/HandToolState';
 import { PenToolState } from './States/PenToolState';
 import { RectangleToolState } from './States/RectangleToolState';
@@ -531,6 +532,9 @@ export class CanvasComponent implements AfterViewInit {
         break;
       case Mode.Rectangle:
         this.#toolState = new RectangleToolState(this);
+        break;
+      case Mode.Ellipse:
+        this.#toolState = new EllipseToolState(this);
         break;
       case Mode.Text:
         this.#toolState = new TextToolState(this);
