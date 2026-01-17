@@ -375,6 +375,9 @@ export class SelectToolState extends CanvasToolState {
 
   selectSingleShape(shape: Shape) {
     this.unSelectShape();
+    this.canvas.shapes.push(
+      this.canvas.shapes.splice(this.canvas.shapes.indexOf(shape), 1)[0]
+    );
     this.#selectedShape = new SelectedShape(shape);
     shape.ctx = this.canvas.tmpCtx;
     shape.properties[ShapePropertyName.edited] = true;
@@ -391,6 +394,9 @@ export class SelectToolState extends CanvasToolState {
       this.#selectedShape &&
       this.#selectedShape instanceof SelectedMultiShape
     ) {
+      this.canvas.shapes.push(
+        this.canvas.shapes.splice(this.canvas.shapes.indexOf(shape), 1)[0]
+      );
       this.canvas.shapeToLocal(this.#selectedShape.shape, shape);
       this.#selectedShape.shape.addShape(shape);
       this.canvas.changeStyle(this.#selectedShape.shape.style);
@@ -409,6 +415,11 @@ export class SelectToolState extends CanvasToolState {
       if (shapes.length == 1) {
         this.selectSingleShape(shapes[0]);
       } else {
+        this.canvas.shapes = this.canvas.shapes.filter(
+          s => !shapes.includes(s)
+        );
+        this.canvas.shapes = this.canvas.shapes.concat(shapes);
+
         for (const shape of shapes) {
           shape.ctx = this.canvas.tmpCtx;
         }
@@ -423,6 +434,8 @@ export class SelectToolState extends CanvasToolState {
   }
 
   private selectMultipleNewShapes(shapes: Shape[]) {
+    this.canvas.shapes = this.canvas.shapes.filter(s => !shapes.includes(s));
+    this.canvas.shapes = this.canvas.shapes.concat(shapes);
     for (const shape of shapes) {
       shape.ctx = this.canvas.tmpCtx;
     }
