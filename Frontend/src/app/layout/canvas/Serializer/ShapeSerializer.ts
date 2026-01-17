@@ -3,6 +3,7 @@ import { GroupShapeProperties } from '../ShapeProperties/GroupShapeProperties';
 import { ImageShapeProperties } from '../ShapeProperties/ImageShapeProperties';
 import { LineShapeProperties } from '../ShapeProperties/LineShapeProperties';
 import { SerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
+import { StraightLineShapeProperties } from '../ShapeProperties/StraightLineShapeProperties';
 import { StrokedRectShapeProperties } from '../ShapeProperties/StrokedRectShapeProperties';
 import { TextBoxShapeProperties } from '../ShapeProperties/TextBoxShapeProperties';
 import { FilledRectShape } from '../Shapes/FilledRectShape';
@@ -10,6 +11,7 @@ import { GroupShape } from '../Shapes/GroupShape';
 import { ImageShape } from '../Shapes/ImageShape';
 import { LineShape } from '../Shapes/LineShape';
 import { Shape } from '../Shapes/Shape';
+import { StraightLineShape } from '../Shapes/StraightLineShape';
 import { StrokedRectShape } from '../Shapes/StrokedRectShape';
 import { TextBoxShape } from '../Shapes/TextBoxShape';
 
@@ -19,6 +21,7 @@ export enum ShapeType {
   FilledRect = 'FilledRect',
   StrokedRect = 'StrokedRect',
   Line = 'Line',
+  StraightLine = 'StraightLine',
   Image = 'Image',
   Text = 'Text',
   Group = 'Group',
@@ -62,6 +65,14 @@ export class ShapeSerializer {
         type: ShapeType.Line,
         properties: this.#propertiesSerializer.serialized(
           ShapeType.Line,
+          shape.properties
+        ),
+      };
+    } else if (shape instanceof StraightLineShape) {
+      return {
+        type: ShapeType.StraightLine,
+        properties: this.#propertiesSerializer.serialized(
+          ShapeType.StraightLine,
           shape.properties
         ),
       };
@@ -117,6 +128,11 @@ export class ShapeSerializer {
         );
       case ShapeType.Line:
         return new LineShape(properties as Required<LineShapeProperties>, ctx);
+      case ShapeType.StraightLine:
+        return new StraightLineShape(
+          properties as Required<StraightLineShapeProperties>,
+          ctx
+        );
       case ShapeType.Image:
         return new ImageShape(
           properties as Required<ImageShapeProperties>,

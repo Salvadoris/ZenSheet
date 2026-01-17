@@ -25,6 +25,14 @@
     <i class="fa-solid fa-pen"></i>
   </button>
   <button
+    (click)="changeMode(Mode.StraightLine)"
+    [ngClass]="{
+      'tool-button-selected': mode === Mode.StraightLine,
+    }"
+    class="tool-button">
+    <i class="fa-solid fa-minus"></i>
+  </button>
+  <button
     (click)="changeMode(Mode.FilledRect)"
     [ngClass]="{
       'tool-button-selected': mode === Mode.FilledRect,

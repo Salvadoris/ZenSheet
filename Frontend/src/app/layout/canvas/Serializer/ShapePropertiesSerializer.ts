@@ -20,6 +20,10 @@ import {
 } from '../ShapeProperties/ShapeProperties';
 import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import {
+  SerializedStraightLineShapeProperties,
+  StraightLineShapeProperties,
+} from '../ShapeProperties/StraightLineShapeProperties';
+import {
   SerializedStrokedRectShapeProperties,
   StrokedRectShapeProperties,
 } from '../ShapeProperties/StrokedRectShapeProperties';
@@ -38,6 +42,10 @@ import {
 } from '../ShapeStyles/GroupShapeStyle';
 import { ImageStyle, ImageStyleType } from '../ShapeStyles/ImageStyle';
 import { LineStyle, LineStyleType } from '../ShapeStyles/LineStyle';
+import {
+  StraightLineStyle,
+  StraightLineStyleType,
+} from '../ShapeStyles/StraightLineStyle';
 import {
   StrokedRectStyle,
   StrokedRectStyleType,
@@ -78,6 +86,13 @@ export class ShapePropertiesSerializer {
             ...(properties as LineShapeProperties)[ShapePropertyName.points],
           ],
         } as SerializedLineShapeProperties;
+      case ShapeType.StraightLine:
+        return {
+          ...(properties as StraightLineShapeProperties),
+          [ShapePropertyName.style]: {
+            ...properties[ShapePropertyName.style],
+          },
+        } as SerializedStraightLineShapeProperties;
       case ShapeType.Image:
         return {
           ...(properties as ImageShapeProperties),
@@ -162,6 +177,19 @@ export class ShapePropertiesSerializer {
             ? crypto.randomUUID()
             : serializedProperties[ShapePropertyName.id],
         } as Required<LineShapeProperties>;
+      case ShapeType.StraightLine:
+        return {
+          ...(serializedProperties as SerializedStraightLineShapeProperties),
+          ...properties,
+          [ShapePropertyName.style]: new StraightLineStyle(
+            serializedProperties[
+              ShapePropertyName.style
+            ] as StraightLineStyleType
+          ),
+          [ShapePropertyName.id]: copy
+            ? crypto.randomUUID()
+            : serializedProperties[ShapePropertyName.id],
+        } as Required<StraightLineShapeProperties>;
       case ShapeType.Image:
         return {
           ...(serializedProperties as SerializedImageShapeProperties),

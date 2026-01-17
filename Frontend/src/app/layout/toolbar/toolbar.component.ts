@@ -12,6 +12,7 @@ export enum Mode {
   Hand = 'Hand',
   Select = 'Select',
   Pen = 'Pen',
+  StraightLine = 'StraightLine',
   FilledRect = 'FilledRect',
   StrokedRect = 'StrokedRect',
   Text = 'Text',
