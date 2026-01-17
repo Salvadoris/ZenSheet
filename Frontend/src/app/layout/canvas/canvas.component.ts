@@ -48,6 +48,7 @@ import { CanvasToolState } from './States/CanvasToolState';
 import { FilledRectToolState } from './States/FilledRectToolState';
 import { HandToolState } from './States/HandToolState';
 import { PenToolState } from './States/PenToolState';
+import { RectangleToolState } from './States/RectangleToolState';
 import { SelectToolState } from './States/SelectToolState';
 import { StraightLineToolState } from './States/StraightLineToolState';
 import { StrokedRectToolState } from './States/StrokedRectToolState';
@@ -529,6 +530,9 @@ export class CanvasComponent implements AfterViewInit {
         break;
       case Mode.StraightLine:
         this.#toolState = new StraightLineToolState(this);
+        break;
+      case Mode.Rectangle:
+        this.#toolState = new RectangleToolState(this);
         break;
       case Mode.FilledRect:
         this.#toolState = new FilledRectToolState(this);

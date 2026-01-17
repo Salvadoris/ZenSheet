@@ -2,11 +2,13 @@ import { DrawingProperties } from '../DrawingProperties/DrawingProperties';
 import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { FilledRectDrawingProperties } from '../DrawingProperties/FilledRectDrawingProperties';
 import { LineDrawingProperties } from '../DrawingProperties/LineDrawingProperties';
+import { RectangleDrawingProperties } from '../DrawingProperties/RectangleDrawingProperties';
 import { StraightLineDrawingProperties } from '../DrawingProperties/StraightLineDrawingProperties';
 import { StrokedRectDrawingProperties } from '../DrawingProperties/StrokedRectDrawingProperties';
 import { Drawing } from '../Drawings/Drawing';
 import { FilledRectDrawing } from '../Drawings/FilledRectDrawing';
 import { LineDrawing } from '../Drawings/LineDrawing';
+import { RectangleDrawing } from '../Drawings/RectangleDrawing';
 import { StraightLineDrawing } from '../Drawings/StraightLineDrawing';
 import { StrokedRectDrawing } from '../Drawings/StrokedRectDrawing';
 import {
@@ -14,6 +16,10 @@ import {
   FilledRectStyleType,
 } from '../ShapeStyles/FilledRectStyle';
 import { LineStyle, LineStyleType } from '../ShapeStyles/LineStyle';
+import {
+  RectangleStyle,
+  RectangleStyleType,
+} from '../ShapeStyles/RectangleStyle';
 import { StraightLineStyleType } from '../ShapeStyles/StraightLineStyle';
 import {
   StrokedRectStyle,
@@ -25,6 +31,7 @@ export enum DrawingType {
   StrokedRect = 'StrokedRect',
   Line = 'Line',
   StraightLine = 'StraightLine',
+  Rectangle = 'Rectangle',
 }
 
 export interface SerializedDrawing {
@@ -89,6 +96,20 @@ export class DrawingSerializer {
           ],
         },
       };
+    } else if (drawing instanceof RectangleDrawing) {
+      return {
+        type: DrawingType.Rectangle,
+        properties: {
+          ...drawing.properties,
+          [DrawingPropertyName.style]: {
+            ...drawing.properties[DrawingPropertyName.style],
+          },
+          [DrawingPropertyName.p1]: [
+            drawing.properties[DrawingPropertyName.p1][0],
+            drawing.properties[DrawingPropertyName.p1][1],
+          ],
+        },
+      };
     }
     throw new Error(`Unknown drawing: ${drawing}`);
   }
@@ -131,6 +152,15 @@ export class DrawingSerializer {
             ] as StraightLineStyleType
           ),
         } as StraightLineDrawingProperties);
+      case DrawingType.Rectangle:
+        return new RectangleDrawing({
+          ...serializedDrawing.properties,
+          [DrawingPropertyName.style]: new RectangleStyle(
+            serializedDrawing.properties[
+              DrawingPropertyName.style
+            ] as RectangleStyleType
+          ),
+        } as RectangleDrawingProperties);
       default:
         throw new Error(`Unknown drawing type: ${serializedDrawing.type}`);
     }

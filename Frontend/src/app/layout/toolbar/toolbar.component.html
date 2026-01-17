@@ -33,6 +33,14 @@
     <i class="fa-solid fa-minus"></i>
   </button>
   <button
+    (click)="changeMode(Mode.Rectangle)"
+    [ngClass]="{
+      'tool-button-selected': mode === Mode.Rectangle,
+    }"
+    class="tool-button">
+    <i class="fa-regular fa-square"></i>
+  </button>
+  <button
     (click)="changeMode(Mode.FilledRect)"
     [ngClass]="{
       'tool-button-selected': mode === Mode.FilledRect,

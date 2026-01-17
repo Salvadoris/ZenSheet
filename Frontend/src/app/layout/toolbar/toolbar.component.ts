@@ -13,6 +13,7 @@ export enum Mode {
   Select = 'Select',
   Pen = 'Pen',
   StraightLine = 'StraightLine',
+  Rectangle = 'Rectangle',
   FilledRect = 'FilledRect',
   StrokedRect = 'StrokedRect',
   Text = 'Text',

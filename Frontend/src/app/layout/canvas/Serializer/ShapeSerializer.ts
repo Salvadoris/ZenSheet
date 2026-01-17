@@ -2,6 +2,7 @@ import { FilledRectShapeProperties } from '../ShapeProperties/FilledRectShapePro
 import { GroupShapeProperties } from '../ShapeProperties/GroupShapeProperties';
 import { ImageShapeProperties } from '../ShapeProperties/ImageShapeProperties';
 import { LineShapeProperties } from '../ShapeProperties/LineShapeProperties';
+import { RectangleShapeProperties } from '../ShapeProperties/RectangleShapeProperties';
 import { SerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
 import { StraightLineShapeProperties } from '../ShapeProperties/StraightLineShapeProperties';
 import { StrokedRectShapeProperties } from '../ShapeProperties/StrokedRectShapeProperties';
@@ -10,6 +11,7 @@ import { FilledRectShape } from '../Shapes/FilledRectShape';
 import { GroupShape } from '../Shapes/GroupShape';
 import { ImageShape } from '../Shapes/ImageShape';
 import { LineShape } from '../Shapes/LineShape';
+import { RectangleShape } from '../Shapes/RectangleShape';
 import { Shape } from '../Shapes/Shape';
 import { StraightLineShape } from '../Shapes/StraightLineShape';
 import { StrokedRectShape } from '../Shapes/StrokedRectShape';
@@ -22,6 +24,7 @@ export enum ShapeType {
   StrokedRect = 'StrokedRect',
   Line = 'Line',
   StraightLine = 'StraightLine',
+  Rectangle = 'Rectangle',
   Image = 'Image',
   Text = 'Text',
   Group = 'Group',
@@ -73,6 +76,14 @@ export class ShapeSerializer {
         type: ShapeType.StraightLine,
         properties: this.#propertiesSerializer.serialized(
           ShapeType.StraightLine,
+          shape.properties
+        ),
+      };
+    } else if (shape instanceof RectangleShape) {
+      return {
+        type: ShapeType.Rectangle,
+        properties: this.#propertiesSerializer.serialized(
+          ShapeType.Rectangle,
           shape.properties
         ),
       };
@@ -131,6 +142,11 @@ export class ShapeSerializer {
       case ShapeType.StraightLine:
         return new StraightLineShape(
           properties as Required<StraightLineShapeProperties>,
+          ctx
+        );
+      case ShapeType.Rectangle:
+        return new RectangleShape(
+          properties as Required<RectangleShapeProperties>,
           ctx
         );
       case ShapeType.Image:

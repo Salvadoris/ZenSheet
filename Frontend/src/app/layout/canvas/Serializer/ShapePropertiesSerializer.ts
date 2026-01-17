@@ -15,6 +15,10 @@ import {
   SerializedLineShapeProperties,
 } from '../ShapeProperties/LineShapeProperties';
 import {
+  RectangleShapeProperties,
+  SerializedRectangleShapeProperties,
+} from '../ShapeProperties/RectangleShapeProperties';
+import {
   SerializedShapeProperties,
   ShapeProperties,
 } from '../ShapeProperties/ShapeProperties';
@@ -42,6 +46,10 @@ import {
 } from '../ShapeStyles/GroupShapeStyle';
 import { ImageStyle, ImageStyleType } from '../ShapeStyles/ImageStyle';
 import { LineStyle, LineStyleType } from '../ShapeStyles/LineStyle';
+import {
+  RectangleStyle,
+  RectangleStyleType,
+} from '../ShapeStyles/RectangleStyle';
 import {
   StraightLineStyle,
   StraightLineStyleType,
@@ -93,6 +101,13 @@ export class ShapePropertiesSerializer {
             ...properties[ShapePropertyName.style],
           },
         } as SerializedStraightLineShapeProperties;
+      case ShapeType.Rectangle:
+        return {
+          ...(properties as RectangleShapeProperties),
+          [ShapePropertyName.style]: {
+            ...properties[ShapePropertyName.style],
+          },
+        } as SerializedRectangleShapeProperties;
       case ShapeType.Image:
         return {
           ...(properties as ImageShapeProperties),
@@ -190,6 +205,17 @@ export class ShapePropertiesSerializer {
             ? crypto.randomUUID()
             : serializedProperties[ShapePropertyName.id],
         } as Required<StraightLineShapeProperties>;
+      case ShapeType.Rectangle:
+        return {
+          ...(serializedProperties as SerializedRectangleShapeProperties),
+          ...properties,
+          [ShapePropertyName.style]: new RectangleStyle(
+            serializedProperties[ShapePropertyName.style] as RectangleStyleType
+          ),
+          [ShapePropertyName.id]: copy
+            ? crypto.randomUUID()
+            : serializedProperties[ShapePropertyName.id],
+        } as Required<RectangleShapeProperties>;
       case ShapeType.Image:
         return {
           ...(serializedProperties as SerializedImageShapeProperties),
