@@ -65,6 +65,9 @@ export class DetailSidebar {
       case StyleName.Color:
         this.style[StyleName.Color] = styleProperty.value;
         break;
+      case StyleName.BackgroundColor:
+        this.style[StyleName.BackgroundColor] = styleProperty.value;
+        break;
       case StyleName.LineWidth:
         this.style[StyleName.LineWidth] = styleProperty.value;
         break;

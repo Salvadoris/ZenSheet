@@ -1,5 +1,6 @@
 export enum StyleName {
   Color = 'Color',
+  BackgroundColor = 'BackgroundColor',
   LineWidth = 'LineWidth',
   LineCap = 'LineCap',
   Opacity = 'Opacity',

@@ -36,6 +36,45 @@
       </div>
     </div>
   }
+  @if (style[StyleName.BackgroundColor] !== undefined) {
+    <div>
+      <div class="text-md pb-0.5">Background Color</div>
+      <div class="flex flex-row gap-3">
+        <div
+          tabindex="0"
+          class="tile m-px"
+          [style.background-color]="style[StyleName.BackgroundColor]">
+          <input
+            #colorpicker
+            type="color"
+            class="opacity-0"
+            [value]="style[StyleName.BackgroundColor]"
+            (change)="
+              changeStyle({
+                name: StyleName.BackgroundColor,
+                value: colorpicker.value,
+              })
+            " />
+        </div>
+        <hr class="m-0.5 h-8 w-0.5 bg-gray-400 border-none" />
+        <div class="flex flex-row gap-2">
+          @for (color of colors; track $index) {
+            <div
+              (click)="
+                changeStyle({ name: StyleName.BackgroundColor, value: color })
+              "
+              tabindex="0"
+              [ngClass]="{
+                'tile-selected': color === style[StyleName.BackgroundColor],
+              }"
+              class="tile">
+              <div class="tile-content" [style.background-color]="color"></div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
   @if (style[StyleName.LineWidth] !== undefined) {
     <div>
       <div class="text-md pb-0.5">Line Width</div>
