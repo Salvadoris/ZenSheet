@@ -1,26 +1,32 @@
 <div class="flex h-screen relative overflow-hidden">
   @if (!selectedNote() && !isLoadingNote() && !lastActiveNote()) {
-    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 animate-in fade-in duration-700">
-       <div class="absolute left-[300px] top-18 flex flex-col items-start gap-3 text-white animate-in slide-in-from-left duration-1000">
-          <div class="flex items-center gap-6">
-            @if (!hasNotes()) {
-            <div class="flex items-center justify-center w-12 h-12 bg-white/10 backdrop-blur-md rounded-full border border-white/20 animate-bounce-x">
+    <div
+      class="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 animate-in fade-in duration-700">
+      <div
+        class="absolute left-[300px] top-18 flex flex-col items-start gap-3 text-white animate-in slide-in-from-left duration-1000">
+        <div class="flex items-center gap-6">
+          @if (!hasNotes()) {
+            <div
+              class="flex items-center justify-center w-12 h-12 bg-white/10 backdrop-blur-md rounded-full border border-white/20 animate-bounce-x">
               <i class="fas fa-arrow-left text-xl"></i>
             </div>
-              <h2 class="text-4xl font-light tracking-tight drop-shadow-lg">Create your first note</h2>
-            }
-          </div>
-          <p class="text-slate-200 text-lg ml-20 opacity-90 drop-shadow-md">
-            {{ !hasNotes() ? 'Click the plus icon to get started' : '' }}
-          </p>
-       </div>
+            <h2 class="text-4xl font-light tracking-tight drop-shadow-lg">
+              Create your first note
+            </h2>
+          }
+        </div>
+        <p class="text-slate-200 text-lg ml-20 opacity-90 drop-shadow-md">
+          {{ !hasNotes() ? 'Click the plus icon to get started' : '' }}
+        </p>
+      </div>
     </div>
   }
-  
+
   <app-canvas
     #canvas
     (styleChange)="detailsidebar.setStyle($event)"
     (modeChange)="toolbar.setMode($event)"
+    (scaleChanged)="zoomindicator.setZoom($event)"
     (canvasChanged)="onCanvasChanged()">
   </app-canvas>
 
@@ -32,7 +38,7 @@
     (folderSelected)="onFolderSelected($event)"
     (itemsChanged)="updateGlobalNoteStatus()">
   </app-sidebar>
-  
+
   <div class="flex w-screen h-screen">
     <app-toolbar
       #toolbar
@@ -44,14 +50,22 @@
       (stylePropertyChange)="canvas.setStyleProperty($event)"
       class="absolute right-4 top-20 z-1">
     </app-detail-sidebar>
+    <app-zoom-indicator
+      #zoomindicator
+      (zoomChanged)="canvas.zoomInCenter($event)"
+      class="absolute left-4 bottom-4 z-1"></app-zoom-indicator>
 
     @if (isLoadingNote()) {
-    <div class="absolute inset-0 bg-white/40 backdrop-blur-md flex justify-center items-center z-1000 transition-opacity duration-300">
-      <div class="flex flex-col items-center gap-4">
-        <div class="w-[50px] h-[50px] border-4 border-black/10 border-l-blue-500 rounded-full animate-spin"></div>
-        <span class="font-medium text-slate-800 text-lg">Loading Note...</span>
+      <div
+        class="absolute inset-0 bg-white/40 backdrop-blur-md flex justify-center items-center z-1000 transition-opacity duration-300">
+        <div class="flex flex-col items-center gap-4">
+          <div
+            class="w-[50px] h-[50px] border-4 border-black/10 border-l-blue-500 rounded-full animate-spin"></div>
+          <span class="font-medium text-slate-800 text-lg"
+            >Loading Note...</span
+          >
+        </div>
       </div>
-    </div>
-  }
+    }
   </div>
 </div>

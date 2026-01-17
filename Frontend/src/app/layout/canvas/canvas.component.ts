@@ -107,11 +107,12 @@ export class CanvasComponent implements AfterViewInit {
   #shapes: Shape[] = [];
   #drawings: Drawing[] = [];
 
-  #scale = 1; 
+  #scale = 1;
   #minScale = 0.1;
   #maxScale = 5;
+  scaleChanged = output<number>();
 
-  #origin: Point = [0, 0]; 
+  #origin: Point = [0, 0];
 
   #cursor: Point = [0, 0];
 
@@ -265,6 +266,18 @@ export class CanvasComponent implements AfterViewInit {
 
   get toolstate() {
     return this.#toolState;
+  }
+
+  zoomInCenter(zoom: number) {
+    if (zoom !== this.#scale) {
+      this.applyZoom(
+        zoom,
+        this.mainCtx.canvas.width / 2,
+        this.mainCtx.canvas.height / 2
+      );
+      this.scaleChanged.emit(this.scale);
+      this.renderCanvas(true, true);
+    }
   }
 
   addShapes(shapes: Shape[]) {
@@ -611,6 +624,7 @@ export class CanvasComponent implements AfterViewInit {
     this.#origin[0] = focusX - (focusX - this.#origin[0]) * scaleRatio;
     this.#origin[1] = focusY - (focusY - this.#origin[1]) * scaleRatio;
     this.#scale = clampedScale;
+    this.scaleChanged.emit(this.#scale);
 
     this.renderCanvas(true, true);
   }
@@ -878,7 +892,7 @@ export class CanvasComponent implements AfterViewInit {
     shapes: SerializedShape[] = [],
     drawings: SerializedDrawing[] = [],
     origin: Point = [0, 0],
-    scale = 1 
+    scale = 1
   ): Promise<void> {
     this.#origin = origin;
     this.#scale = scale;
@@ -887,8 +901,7 @@ export class CanvasComponent implements AfterViewInit {
       this.#shapeSerializer.deserialized(s, this.mainCtx)
     );
 
-    this.#drawings = drawings.map(d => 
-      this.#drawingSerializer.deserialized(d));
+    this.#drawings = drawings.map(d => this.#drawingSerializer.deserialized(d));
 
     this.renderCanvas(true, true);
   }
@@ -902,7 +915,7 @@ export class CanvasComponent implements AfterViewInit {
         this.#drawingSerializer.serialized(drawing)
       ),
       origin: this.#origin,
-      scale: this.#scale
+      scale: this.#scale,
     });
   }
 }
