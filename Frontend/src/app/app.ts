@@ -35,6 +35,7 @@ export class App implements OnInit {
   isDirty = signal<boolean>(false);
   isLoadingNote = signal<boolean>(false);
   hasNotes = signal<boolean>(true);
+  lastActiveNote = signal<Note | null>(null);
 
   #lastLoadRequestId = 0;
 
@@ -159,6 +160,7 @@ export class App implements OnInit {
     this.isLoadingNote.set(true);
 
     this.selectedNote.set(note);
+    this.lastActiveNote.set(note);
     this.isDirty.set(false);
     const canvas = this.canvas();
 
@@ -182,14 +184,14 @@ export class App implements OnInit {
   }
 
   async saveCurrentNote() {
-    const currentNote = this.selectedNote();
+    const targetNote = this.selectedNote() || this.lastActiveNote();
     const canvas = this.canvas();
 
-    if (!currentNote || !canvas || !this.isDirty()) return;
+    if (!targetNote || !canvas || !this.isDirty()) return;
 
     const note = new Note({
-      ...currentNote,
-      parentFolderId: this.selectedFolderId() || currentNote.parentFolderId,
+      ...targetNote,
+      parentFolderId: targetNote.parentFolderId,
       content: canvas.getCanvasData(),
     });
     await this.#notesService.updateNoteContent(note);
