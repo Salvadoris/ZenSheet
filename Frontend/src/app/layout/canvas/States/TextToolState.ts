@@ -56,7 +56,9 @@ export class TextToolState extends CanvasToolState {
   private releaseCurrentTextBox() {
     if (this.#currentTextBox) {
       if (this.#currentTextBox.text.length == 0) {
-        return;
+        this.canvas.removeShapes([
+          this.#currentTextBox.properties[ShapePropertyName.id],
+        ]);
       } else {
         this.#currentTextBox.ctx = this.canvas.mainCtx;
         this.#currentTextBox.properties[ShapePropertyName.edited] = false;
