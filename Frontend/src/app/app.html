@@ -1,15 +1,34 @@
-<div class="flex h-screen">
+<div class="flex h-screen relative overflow-hidden">
+    @if (!hasNotes() && !isLoadingNote()) {
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 animate-in fade-in duration-700">
+       <div class="absolute left-[300px] top-18 flex flex-col items-start gap-3 text-white animate-in slide-in-from-left duration-1000">
+          <div class="flex items-center gap-6">
+            <div class="flex items-center justify-center w-12 h-12 bg-white/10 backdrop-blur-md rounded-full border border-white/20 animate-bounce-x">
+              <i class="fas fa-arrow-left text-xl"></i>
+            </div>
+            <h2 class="text-4xl font-light tracking-tight drop-shadow-lg">Create your first note</h2>
+          </div>
+          <p class="text-slate-200 text-lg ml-20 opacity-90 drop-shadow-md">Click the plus icon to get started</p>
+       </div>
+    </div>
+  }
+  
   <app-canvas
     #canvas
     (styleChange)="detailsidebar.setStyle($event)"
     (modeChange)="toolbar.setMode($event)"
     (canvasChanged)="onCanvasChanged()">
   </app-canvas>
+
   <app-sidebar
     #sidebar
-    class="relative m-5"
-    (noteSelected)="onNoteSelected($event)">
+    class="relative m-5 z-20"
+    [isNoteSelected]="!!selectedNote()"
+    (noteSelected)="onNoteSelected($event)"
+    (folderSelected)="onFolderSelected($event)"
+    (itemsChanged)="updateGlobalNoteStatus()">
   </app-sidebar>
+  
   <div class="flex w-screen h-screen">
     <app-toolbar
       #toolbar

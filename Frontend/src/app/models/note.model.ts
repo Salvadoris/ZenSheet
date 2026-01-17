@@ -36,5 +36,7 @@ export interface Folder {
   id: string;
   name: string;
   notes: Note[];
+  subfolders: Folder[];
+  parentFolderId?: string;
   color?: string;
 }

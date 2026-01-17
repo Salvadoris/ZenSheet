@@ -4,6 +4,7 @@ import {
   Component,
   OnInit,
   inject,
+  input,
   output,
   signal,
 } from '@angular/core';
@@ -22,8 +23,8 @@ import {
 } from './sidebar-header.component';
 
 export enum SidebarMode {
-  Folders,
-  Notes,
+  Root,
+  Folder,
 }
 
 @Component({
@@ -40,14 +41,18 @@ export enum SidebarMode {
 })
 export class SidebarComponent implements OnInit {
   readonly SidebarView = SidebarMode;
-  view: SidebarMode = SidebarMode.Folders;
-  folders = signal<Folder[]>([]);
+  view = signal<SidebarMode>(SidebarMode.Root);
+  isNoteSelected = input<boolean>(false);
+  
+  rootFolders = signal<Folder[]>([]);
   loading = signal<boolean>(false);
   selectedFolder = signal<Folder | null>(null);
-  selectedNoteId: string | null = null;
-  isSidebarHidden = false;
+  selectedNoteId = signal<string | null>(null);
+  isSidebarHidden = signal<boolean>(false);
 
   readonly noteSelected = output<Note>();
+  readonly folderSelected = output<string>();
+  readonly itemsChanged = output<void>();
 
   readonly #notesService = inject(NotesService);
   readonly #dialogService = inject(DialogService);
@@ -58,35 +63,63 @@ export class SidebarComponent implements OnInit {
 
   async loadFolders() {
     this.loading.set(true);
-    const start = Date.now();
-
     const folders = await this.#notesService.getFolders();
-    this.folders.set(folders);
+    this.rootFolders.set(folders);
+    this.itemsChanged.emit();
 
-    const elapsed = Date.now() - start;
-    const remaining = Math.max(0, 200 - elapsed);
-    if (remaining > 0) {
-      await new Promise(resolve => setTimeout(resolve, remaining));
+    if (this.selectedFolder()) {
+      const freshSelect = this.#findFolderRecursive(folders, this.selectedFolder()!.id);
+      this.selectedFolder.set(freshSelect || null);
     }
 
     this.loading.set(false);
   }
 
+  #findFolderRecursive(folders: Folder[], folderId: string): Folder | undefined {
+    for (const f of folders) {
+      if (f.id === folderId) return f;
+      const sub = this.#findFolderRecursive(f.subfolders, folderId);
+      if (sub) return sub;
+    }
+    return undefined;
+  }
+
   selectFolder(folder: Folder) {
-    this.selectedFolder.set(folder);
-    this.view = SidebarMode.Notes;
+    this.folderSelected.emit(folder.id);
+  }
+
+  async navigateToFolder(folderId: string, note?: Note) {
+    if (this.rootFolders().length === 0) {
+      await this.loadFolders();
+    }
+
+    const folder = this.#findFolderRecursive(this.rootFolders(), folderId);
+    if (folder) {
+      this.selectedFolder.set(folder);
+      this.view.set(SidebarMode.Folder);
+      if (note) {
+        this.selectedNoteId.set(note.id);
+      }
+    } else {
+      this.goBack();
+    }
   }
 
   goBack() {
-    this.view = SidebarMode.Folders;
-    this.selectedFolder.set(null);
-    this.selectedNoteId = null;
+    const current = this.selectedFolder();
+    if (current?.parentFolderId) {
+      this.folderSelected.emit(current.parentFolderId);
+    } else {
+      this.view.set(SidebarMode.Root);
+      this.selectedFolder.set(null);
+      this.folderSelected.emit('');
+    }
   }
 
   addFolder() {
     this.#dialogService.openCreateFolderDialog().subscribe(async result => {
       if (result?.name) {
-        await this.#notesService.createFolder(result.name);
+        await this.#notesService.createFolder(result.name, this.selectedFolder()?.id);
         await this.loadFolders();
       }
     });
@@ -101,17 +134,13 @@ export class SidebarComponent implements OnInit {
           result.name
         );
         await this.loadFolders();
-        
-        this.selectedFolder.set(
-          this.folders().find(f => f.id === this.selectedFolder()!.id) || null
-        );
         this.selectNote(note);
       }
     });
   }
 
   selectNote(note: Note) {
-    this.selectedNoteId = note.id;
+    this.selectedNoteId.set(note.id);
     this.noteSelected.emit(note);
   }
 
@@ -130,50 +159,26 @@ export class SidebarComponent implements OnInit {
             this.selectedFolder()!.id,
             noteId
           );
-
           await this.loadFolders();
-          this.selectedFolder.set(
-            this.folders().find(f => f.id === this.selectedFolder()!.id) || null
-          );
-
-          if (this.selectedNoteId === noteId) {
-            this.selectedNoteId = null;
-            this.noteSelected.emit(new Note());
-          }
         }
       });
   }
 
   toggleSidebar() {
-    this.isSidebarHidden = !this.isSidebarHidden;
+    this.isSidebarHidden.update(v => !v);
   }
 
   changeFolderColor(folderId: string) {
-    const folder = this.folders().find(f => f.id === folderId);
-    if (!folder) return;
-
-    this.#dialogService.openFolderColorDialog(folder.color).subscribe(color => {
+    this.#dialogService.openFolderColorDialog().subscribe(color => {
       if (!color) return;
       this.#notesService.updateFolderColor(folderId, color).then(async () => {
         await this.loadFolders();
-        if (this.selectedFolder()?.id === folderId) {
-          this.selectedFolder.set(
-            this.folders().find(f => f.id === folderId) || null
-          );
-        }
       });
-
-      const wasSelected = this.selectedFolder()?.id === folderId;
-      if (wasSelected) {
-        this.selectedFolder.set(
-          this.folders().find(f => f.id === folderId) || null
-        );
-      }
     });
   }
 
   deleteFolder(folderId: string) {
-    const folder = this.folders().find(f => f.id === folderId);
+    const folder = this.#findInAllFolders(folderId);
     if (!folder) return;
 
     this.#dialogService
@@ -182,15 +187,16 @@ export class SidebarComponent implements OnInit {
         if (confirmed) {
           await this.#notesService.deleteFolder(folderId);
           await this.loadFolders();
-          if (this.selectedFolder()?.id === folderId) {
-            this.goBack();
-          }
         }
       });
   }
 
+  #findInAllFolders(folderId: string): Folder | undefined {
+    return this.#findFolderRecursive(this.rootFolders(), folderId);
+  }
+
   renameFolder(folderId: string) {
-    const currentFolder = this.folders().find(f => f.id === folderId);
+    const currentFolder = this.#findInAllFolders(folderId);
     this.#dialogService
       .openRenameFolderDialog(currentFolder?.name)
       .subscribe(result => {
@@ -216,7 +222,7 @@ export class SidebarComponent implements OnInit {
     return {
       id: note.id,
       name: note.title,
-      active: this.selectedNoteId === note.id,
+      active: this.selectedNoteId() === note.id,
       icon: 'fa-file',
     };
   }
@@ -253,56 +259,51 @@ export class SidebarComponent implements OnInit {
     ];
   }
 
-  getFolderHeaderButtons(): HeaderButton[] {
-    return [
-      {
-        icon: 'fa-folder-plus',
-        action: () => this.addFolder(),
-        title: 'New Folder',
-        variant: 'primary',
-      }
-    ];
-  }
-
-  getNoteHeaderButtons(): HeaderButton[] {
+  getRootHeaderButtons(): HeaderButton[] {
     return [
       {
         icon: 'fa-plus',
-        action: () => this.addNote(),
-        title: 'New Note',
+        title: 'New...',
         variant: 'primary',
-      }
+        menuItems: [
+          {
+            label: 'New Folder',
+            action: () => this.addFolder(),
+          },
+        ],
+      },
+    ];
+  }
+
+  getFolderHeaderButtons(): HeaderButton[] {
+    return [
+      {
+        icon: 'fa-plus',
+        title: 'New...',
+        variant: 'primary',
+        menuItems: [
+          {
+            label: 'New Note',
+            action: () => this.addNote(),
+          },
+          {
+            label: 'New Subfolder',
+            action: () => this.addFolder(),
+          },
+        ],
+      },
     ];
   }
 
   renameNote(noteId: string) {
-    const currentFolder = this.selectedFolder();
-    if (!currentFolder) return;
-
-    const currentNote = currentFolder.notes.find(n => n.id === noteId);
+    const note = this.selectedFolder()?.notes.find(n => n.id === noteId);
     this.#dialogService
-      .openRenameNoteDialog(currentNote?.title)
+      .openRenameNoteDialog(note?.title)
       .subscribe(result => {
         if (result) {
-          this.#notesService.renameNote(noteId, result.name);
-          this.loadFolders();
-          this.selectedFolder.set(
-            this.folders().find(f => f.id === currentFolder.id) || null
-          );
+          this.#notesService.renameNote(noteId, result.name).then(() => this.loadFolders());
         }
       });
-  }
-
-  async openFolderAndSelectNote(folderId: string, note: Note) {
-    if (this.folders().length === 0) {
-      await this.loadFolders();
-    }
-
-    const folder = this.folders().find(f => f.id === folderId);
-    if (!folder) return;
-
-    this.selectFolder(folder);
-    this.selectNote(note);
   }
 
   getContrastingTextColor(background?: string): string {

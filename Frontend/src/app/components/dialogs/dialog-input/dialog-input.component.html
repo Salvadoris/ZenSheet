@@ -1,64 +1,77 @@
-<div class="p-2">
-  <h2 mat-dialog-title>
-    <span class="inline-flex gap-4 items-center">
-      <i class="fas text-3xl" [class]="data.icon"></i>
-      {{ data.title }}
-    </span>
-  </h2>
+<div class="relative overflow-hidden rounded-2xl bg-base-100 shadow-2xl">
+  <div
+    class="absolute top-0 left-0 right-0 h-2 bg-linear-to-r from-primary to-accent opacity-80"></div>
 
-  <div mat-dialog-content>
-    <form (submit)="onSubmit($event)">
-      <div class="form-control">
-        <label class="label" for="nameInput">
-          <span class="label-text font-medium text-gray-700">
-            {{ data.label }}
-          </span>
-        </label>
+  <div class="p-8">
+    <div class="mb-6 flex justify-center">
+      <div
+        class="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-inner">
+        <i class="fas text-4xl" [class]="data.icon"></i>
+      </div>
+    </div>
 
-        <input
-          id="nameInput"
-          type="text"
-          [formControl]="inputControl"
-          [placeholder]="data.inputPlaceholder"
-          class="input input-bordered w-full focus:input-primary"
-          [ngClass]="{
-            'input-error': inputControl.invalid && inputControl.touched,
-          }"
-          [maxlength]="data.maxLength ?? 50" />
+    <div class="text-center mb-6">
+      <h2 mat-dialog-title class="p-0! text-2xl font-bold tracking-tight text-base-content">
+        {{ data.title }}
+      </h2>
+    </div>
 
-        <div class="label" id="nameInput-info">
-          <span class="label-text-alt text-gray-500">
-            {{ inputControl.value.length || 0 }}/50 characters
-          </span>
-          @if (inputControl.invalid && inputControl.touched) {
-            <span class="label-text-alt text-red-500">
-              @if (inputControl.errors?.['required']) {
-                Cannot be empty
-              }
-              @if (inputControl.errors?.['minlength']) {
-                Name must be at least {{ data.minLength }} characters
-              }
-              @if (inputControl.errors?.['maxlength']) {
-                Name must be less than
-                {{ data.maxLength ? data.maxLength : 50 }} characters
-              }
+    <div mat-dialog-content class="p-0!">
+      <form (submit)="onSubmit($event)" class="flex flex-col gap-4 px-1">
+        <div class="form-control">
+          <label class="label mb-1" for="nameInput">
+            <span class="label-text font-semibold text-base-content/70">
+              {{ data.label }}
             </span>
-          }
+          </label>
+
+          <input
+            id="nameInput"
+            type="text"
+            [formControl]="inputControl"
+            [placeholder]="data.inputPlaceholder"
+            class="input input-bordered w-full focus:input-primary bg-base-200/50 border-base-300 transition-all focus:bg-base-100"
+            [ngClass]="{
+              'input-error': inputControl.invalid && inputControl.touched,
+            }"
+            [maxlength]="data.maxLength ?? 50" />
+
+          <div class="label mt-1 flex justify-between items-start" id="nameInput-info">
+            <span class="label-text-alt text-base-content/50">
+              {{ inputControl.value.length || 0 }}/{{ data.maxLength ?? 50 }} characters
+            </span>
+            @if (inputControl.invalid && inputControl.touched) {
+              <span class="label-text-alt text-error font-medium">
+                @if (inputControl.errors?.['required']) {
+                  Cannot be empty
+                }
+                @if (inputControl.errors?.['minlength']) {
+                  At least {{ data.minLength }} characters
+                }
+              </span>
+            }
+          </div>
         </div>
-      </div>
 
-      <div mat-dialog-actions class="flex justify-between gap-3 !p-0 ">
-        <button type="button" class="btn btn-ghost" (click)="dialogRef.close(null)">
-          Cancel
-        </button>
+        <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <button
+            type="button"
+            class="btn btn-ghost order-2 sm:order-1 sm:flex-1"
+            (click)="dialogRef.close(null)">
+            Cancel
+          </button>
 
-        <button type="submit" class="btn btn-primary" [disabled]="!isFormValid">
-          @if (data.submitButton.icon) {
-            <i class="fas mr-2" [class]="data.submitButton.icon"></i>
-          }
-          {{ data.submitButton.text }}
-        </button>
-      </div>
-    </form>
+          <button
+            type="submit"
+            class="btn btn-primary order-1 sm:order-2 sm:flex-1"
+            [disabled]="!isFormValid">
+            @if (data.submitButton.icon) {
+              <i class="fas mr-2" [class]="data.submitButton.icon"></i>
+            }
+            {{ data.submitButton.text }}
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
