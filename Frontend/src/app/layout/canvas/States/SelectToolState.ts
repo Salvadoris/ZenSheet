@@ -14,6 +14,7 @@ import { CanvasToolState } from './CanvasToolState';
 
 export class SelectToolState extends CanvasToolState {
   #selectedShape: SelectedShape | SelectedMultiShape | null = null;
+  #pastePosition: Point | null = null;
   #selectRect: SelectRect | null = null;
   #selectedAction = false;
 
@@ -197,6 +198,12 @@ export class SelectToolState extends CanvasToolState {
       case 'c':
         event.preventDefault();
         if (this.#selectedShape && event.ctrlKey) {
+          this.#pastePosition = [
+            this.#selectedShape.shape.properties[ShapePropertyName.originX] +
+              20 / this.canvas.scale,
+            this.#selectedShape.shape.properties[ShapePropertyName.originY] +
+              20 / this.canvas.scale,
+          ];
           navigator.clipboard.writeText(
             JSON.stringify(
               this.canvas.shapeSerializer.serialized(this.#selectedShape.shape)
@@ -568,12 +575,17 @@ export class SelectToolState extends CanvasToolState {
   }
 
   private pasteShape(serializedShape: SerializedShape) {
+    if (this.#pastePosition === null) {
+      return;
+    }
+
     serializedShape.properties[ShapePropertyName.originX] =
-      (serializedShape.properties[ShapePropertyName.originX] as number) +
-      20 / this.canvas.scale;
+      this.#pastePosition[0];
     serializedShape.properties[ShapePropertyName.originY] =
-      (serializedShape.properties[ShapePropertyName.originY] as number) +
-      20 / this.canvas.scale;
+      this.#pastePosition[1];
+    this.#pastePosition[0] += 20 / this.canvas.scale;
+    this.#pastePosition[1] += 20 / this.canvas.scale;
+
     const shape = this.canvas.shapeSerializer.deserialized(
       serializedShape,
       this.canvas.tmpCtx,
