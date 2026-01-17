@@ -9,12 +9,12 @@ import {
 } from '@angular/core';
 
 export enum Mode {
-  Hand,
-  Select,
-  Pen,
-  FilledRect,
-  StrokedRect,
-  Text,
+  Hand = 'Hand',
+  Select = 'Select',
+  Pen = 'Pen',
+  FilledRect = 'FilledRect',
+  StrokedRect = 'StrokedRect',
+  Text = 'Text',
 }
 
 @Component({
