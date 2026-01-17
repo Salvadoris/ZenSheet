@@ -736,6 +736,12 @@ export class CanvasComponent implements AfterViewInit {
     }
 
     this.panBy(deltaX, deltaY);
+    this.updateCursor(event.clientX, event.clientY);
+    if (this.#mouseDown) {
+      this.onPressedMouseMove(event);
+    } else {
+      this.onHoveringMouseMove(event);
+    }
   }
 
   onWheel = (event: WheelEvent) => {
