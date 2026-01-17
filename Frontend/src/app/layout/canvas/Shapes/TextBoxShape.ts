@@ -598,7 +598,7 @@ export class TextBoxShape extends Shape {
   private lineStartX(lineIndex: number) {
     if (this.style[StyleName.FontAlignment] == LineAlignment.Right) {
       return (
-        this.originX +
+        this.originX -
         this.#padding +
         this.width -
         this.lineWidth(this.#lines[lineIndex])
@@ -606,7 +606,6 @@ export class TextBoxShape extends Shape {
     } else if (this.style[StyleName.FontAlignment] == LineAlignment.Center) {
       return (
         this.originX +
-        this.#padding +
         this.width / 2 -
         this.lineWidth(this.#lines[lineIndex]) / 2
       );

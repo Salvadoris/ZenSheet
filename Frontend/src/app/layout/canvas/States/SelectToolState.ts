@@ -14,6 +14,7 @@ import { CanvasToolState } from './CanvasToolState';
 
 export class SelectToolState extends CanvasToolState {
   #selectedShape: SelectedShape | SelectedMultiShape | null = null;
+  #pastePosition: Point | null = null;
   #selectRect: SelectRect | null = null;
   #selectedAction = false;
 
@@ -87,36 +88,38 @@ export class SelectToolState extends CanvasToolState {
   }
 
   override onPressedMouseMove(_event: MouseEvent): void {
-    if (this.#selectedShape && this.#selectedShape.dragged) {
-      const moveProperties = this.#selectedShape.moveTo(
-        this.canvas.cursor[0],
-        this.canvas.cursor[1]
-      );
-      this.canvas.changeShapesProperties(
-        [this.#selectedShape.shape.properties[ShapePropertyName.id]],
-        moveProperties
-      );
-    } else if (
-      this.#selectedShape &&
-      this.#selectedShape.resized != Resize.None
-    ) {
-      const resizeProperties = this.#selectedShape.resize([
-        this.canvas.cursor[0],
-        this.canvas.cursor[1],
-      ]);
-      this.canvas.changeShapesProperties(
-        [this.#selectedShape.shape.properties[ShapePropertyName.id]],
-        resizeProperties
-      );
-    } else if (this.canvas.firstMove) {
-      this.#selectRect = new SelectRect(
-        [this.canvas.startCursor[0], this.canvas.startCursor[1]],
-        [this.canvas.cursor[0], this.canvas.cursor[1]]
-      );
-    } else if (this.#selectRect) {
-      this.#selectRect.update(this.canvas.cursor[0], this.canvas.cursor[1]);
+    if (this.canvas.leftmouseDown) {
+      if (this.#selectedShape && this.#selectedShape.dragged) {
+        const moveProperties = this.#selectedShape.moveTo(
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        );
+        this.canvas.changeShapesProperties(
+          [this.#selectedShape.shape.properties[ShapePropertyName.id]],
+          moveProperties
+        );
+      } else if (
+        this.#selectedShape &&
+        this.#selectedShape.resized != Resize.None
+      ) {
+        const resizeProperties = this.#selectedShape.resize([
+          this.canvas.cursor[0],
+          this.canvas.cursor[1],
+        ]);
+        this.canvas.changeShapesProperties(
+          [this.#selectedShape.shape.properties[ShapePropertyName.id]],
+          resizeProperties
+        );
+      } else if (this.canvas.firstMove) {
+        this.#selectRect = new SelectRect(
+          [this.canvas.startCursor[0], this.canvas.startCursor[1]],
+          [this.canvas.cursor[0], this.canvas.cursor[1]]
+        );
+      } else if (this.#selectRect) {
+        this.#selectRect.update(this.canvas.cursor[0], this.canvas.cursor[1]);
+      }
+      this.canvas.renderCanvas(false, true);
     }
-    this.canvas.renderCanvas(false, true);
   }
 
   override onHoveringMouseMove(_event: MouseEvent): void {
@@ -183,8 +186,8 @@ export class SelectToolState extends CanvasToolState {
         this.selectFromRect();
         this.canvas.renderCanvas(false, true);
       }
+      this.#selectedAction = false;
     }
-    this.#selectedAction = false;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -195,6 +198,12 @@ export class SelectToolState extends CanvasToolState {
       case 'c':
         event.preventDefault();
         if (this.#selectedShape && event.ctrlKey) {
+          this.#pastePosition = [
+            this.#selectedShape.shape.properties[ShapePropertyName.originX] +
+              20 / this.canvas.scale,
+            this.#selectedShape.shape.properties[ShapePropertyName.originY] +
+              20 / this.canvas.scale,
+          ];
           navigator.clipboard.writeText(
             JSON.stringify(
               this.canvas.shapeSerializer.serialized(this.#selectedShape.shape)
@@ -373,6 +382,9 @@ export class SelectToolState extends CanvasToolState {
 
   selectSingleShape(shape: Shape) {
     this.unSelectShape();
+    this.canvas.shapes.push(
+      this.canvas.shapes.splice(this.canvas.shapes.indexOf(shape), 1)[0]
+    );
     this.#selectedShape = new SelectedShape(shape);
     shape.ctx = this.canvas.tmpCtx;
     shape.properties[ShapePropertyName.edited] = true;
@@ -389,6 +401,9 @@ export class SelectToolState extends CanvasToolState {
       this.#selectedShape &&
       this.#selectedShape instanceof SelectedMultiShape
     ) {
+      this.canvas.shapes.push(
+        this.canvas.shapes.splice(this.canvas.shapes.indexOf(shape), 1)[0]
+      );
       this.canvas.shapeToLocal(this.#selectedShape.shape, shape);
       this.#selectedShape.shape.addShape(shape);
       this.canvas.changeStyle(this.#selectedShape.shape.style);
@@ -407,6 +422,11 @@ export class SelectToolState extends CanvasToolState {
       if (shapes.length == 1) {
         this.selectSingleShape(shapes[0]);
       } else {
+        this.canvas.shapes = this.canvas.shapes.filter(
+          s => !shapes.includes(s)
+        );
+        this.canvas.shapes = this.canvas.shapes.concat(shapes);
+
         for (const shape of shapes) {
           shape.ctx = this.canvas.tmpCtx;
         }
@@ -421,6 +441,8 @@ export class SelectToolState extends CanvasToolState {
   }
 
   private selectMultipleNewShapes(shapes: Shape[]) {
+    this.canvas.shapes = this.canvas.shapes.filter(s => !shapes.includes(s));
+    this.canvas.shapes = this.canvas.shapes.concat(shapes);
     for (const shape of shapes) {
       shape.ctx = this.canvas.tmpCtx;
     }
@@ -553,12 +575,17 @@ export class SelectToolState extends CanvasToolState {
   }
 
   private pasteShape(serializedShape: SerializedShape) {
+    if (this.#pastePosition === null) {
+      return;
+    }
+
     serializedShape.properties[ShapePropertyName.originX] =
-      (serializedShape.properties[ShapePropertyName.originX] as number) +
-      20 / this.canvas.scale;
+      this.#pastePosition[0];
     serializedShape.properties[ShapePropertyName.originY] =
-      (serializedShape.properties[ShapePropertyName.originY] as number) +
-      20 / this.canvas.scale;
+      this.#pastePosition[1];
+    this.#pastePosition[0] += 20 / this.canvas.scale;
+    this.#pastePosition[1] += 20 / this.canvas.scale;
+
     const shape = this.canvas.shapeSerializer.deserialized(
       serializedShape,
       this.canvas.tmpCtx,

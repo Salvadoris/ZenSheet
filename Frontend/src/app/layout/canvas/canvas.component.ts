@@ -134,6 +134,7 @@ export class CanvasComponent implements AfterViewInit {
 
   #mouseDown = false;
   #leftMouseDown = false;
+  #rightMouseDown = false;
 
   #style = new CanvasStyle({
     [StyleName.Color]: '#000000',
@@ -244,6 +245,10 @@ export class CanvasComponent implements AfterViewInit {
 
   get leftmouseDown() {
     return this.#leftMouseDown;
+  }
+
+  get rightmouseDown() {
+    return this.#rightMouseDown;
   }
 
   get style() {
@@ -399,8 +404,10 @@ export class CanvasComponent implements AfterViewInit {
             groupShape.properties[ShapePropertyName.minWidth],
           [ShapePropertyName.minHeight]:
             groupShape.properties[ShapePropertyName.minHeight],
-          [ShapePropertyName.invertable]:
-            groupShape.properties[ShapePropertyName.invertable],
+          [ShapePropertyName.horizontallyInvertable]:
+            groupShape.properties[ShapePropertyName.horizontallyInvertable],
+          [ShapePropertyName.verticallyInvertable]:
+            groupShape.properties[ShapePropertyName.verticallyInvertable],
           [ShapePropertyName.edited]:
             groupShape.properties[ShapePropertyName.edited],
         },
@@ -555,6 +562,7 @@ export class CanvasComponent implements AfterViewInit {
   changeToHover() {
     this.#mouseDown = false;
     this.#leftMouseDown = false;
+    this.#rightMouseDown = false;
   }
 
   changeToMouseDown() {
@@ -730,6 +738,12 @@ export class CanvasComponent implements AfterViewInit {
     }
 
     this.panBy(deltaX, deltaY);
+    this.updateCursor(event.clientX, event.clientY);
+    if (this.#mouseDown) {
+      this.onPressedMouseMove(event);
+    } else {
+      this.onHoveringMouseMove(event);
+    }
   }
 
   onWheel = (event: WheelEvent) => {
@@ -790,9 +804,13 @@ export class CanvasComponent implements AfterViewInit {
   }
 
   onMouseDown = (event: MouseEvent) => {
+    if (this.pressedMouseMoved) {
+      return;
+    }
     event.preventDefault();
     this.focusCanvas();
-    this.#leftMouseDown = event.button == 0 ? true : false;
+    this.#leftMouseDown = event.button == 0;
+    this.#rightMouseDown = event.button == 2;
     this.changeToMouseDown();
     this.#dragStart[0] = event.clientX - this.#origin[0];
     this.#dragStart[1] = event.clientY - this.#origin[1];
