@@ -48,6 +48,9 @@
                 @if (inputControl.errors?.['minlength']) {
                   At least {{ data.minLength }} characters
                 }
+                @if (inputControl.errors?.['nameExists']) {
+                  Name already exists
+                }
               </span>
             }
           </div>
