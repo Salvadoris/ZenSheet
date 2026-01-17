@@ -35,6 +35,7 @@ export class App implements OnInit {
   isDirty = signal<boolean>(false);
   isLoadingNote = signal<boolean>(false);
   hasNotes = signal<boolean>(true);
+  hasFolders = signal<boolean>(false);
   lastActiveNote = signal<Note | null>(null);
 
   #lastLoadRequestId = 0;
@@ -51,12 +52,20 @@ export class App implements OnInit {
   }
 
   async updateGlobalNoteStatus() {
+    const folders = await this.#notesService.getFolders();
+    this.hasFolders.set(folders.length > 0);
+
     const count = await this.#notesService.getTotalNotesCount();
     this.hasNotes.set(count > 0);
+
+    if (count === 0) {
+      this.selectedNote.set(null);
+      this.lastActiveNote.set(null);
+    }
   }
 
   async #syncWithUrl() {
-    const url = decodeURIComponent(this.#router.url);
+    const url = decodeURIComponent(this.#router.url.split('?')[0]);
     if (url === '/') {
       await this.#loadDefaultNote();
       return;
@@ -65,18 +74,26 @@ export class App implements OnInit {
     const path = url.split('/').filter(s => s.length > 0);
     const { folder, note } = await this.#notesService.getItemByPath(path);
 
-    if (note) {
-      if (this.selectedNote()?.id !== note.id) {
-        this.selectedFolderId.set(note.parentFolderId);
-        await this.loadNote(note);
-        await this.sidebar()?.navigateToFolder(note.parentFolderId, note);
-      }
-    } else if (folder) {
+    const isFolderUrl = url.endsWith('/');
+
+    if (isFolderUrl && folder) {
       this.selectedFolderId.set(folder.id);
       this.selectedNote.set(null);
       await this.sidebar()?.navigateToFolder(folder.id);
+    } else if (!isFolderUrl && note) {
+       if (this.selectedNote()?.id !== note.id) {
+        this.selectedFolderId.set(note.parentFolderId);
+        await this.loadNote(note);
+        await this.sidebar()?.navigateToFolder(note.parentFolderId, note);
+       }
+    } else if (!isFolderUrl && folder) {
+       // URL looks like note but matches folder. 
+       // If matched note not found, but folder found -> redirect to folder URL
+       // This handles user typing "/folder" manually without slash
+       await this.onFolderSelected(folder.id);
     } else {
-      await this.#loadDefaultNote();
+       // Nothing found
+       await this.#loadDefaultNote();
     }
   }
 
@@ -146,12 +163,15 @@ export class App implements OnInit {
   async onFolderSelected(folderId: string) {
     this.selectedFolderId.set(folderId);
     const path = await this.#notesService.getFolderPath(folderId);
-    const targetUrl = '/' + path.join('/');
+    const targetUrl = '/' + path.join('/') + '/';
     
-    if (decodeURIComponent(this.#router.url) === targetUrl) {
-      await this.#syncWithUrl();
+    const currentUrl = decodeURIComponent(this.#router.url.split('?')[0]);
+    if (currentUrl === targetUrl || currentUrl === targetUrl.slice(0, -1)) {
+       if (currentUrl !== targetUrl) {
+         await this.#router.navigateByUrl(targetUrl);
+       }
     } else {
-      await this.#router.navigate(path);
+       await this.#router.navigateByUrl(targetUrl);
     }
   }
 

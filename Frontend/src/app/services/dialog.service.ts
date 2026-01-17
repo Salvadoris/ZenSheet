@@ -65,21 +65,22 @@ export class DialogService {
     return dialogRef.afterClosed();
   }
 
-  openCreateFolderDialog(initialValue?: string) {
+  openCreateFolderDialog(validator?: import('@angular/forms').ValidatorFn) {
     return this.openInputDialog({
       title: 'Create New Folder',
       icon: 'fa-folder text-blue-500',
       label: 'Folder name',
       inputPlaceholder: 'Enter folder name...',
-      initialValue: initialValue,
+      initialValue: undefined,
       submitButton: {
         text: 'Create folder',
         icon: 'fa-folder-plus',
       },
+      validator,
     });
   }
 
-  openCreateNoteDialog() {
+  openCreateNoteDialog(validator?: import('@angular/forms').ValidatorFn) {
     return this.openInputDialog({
       title: 'Create New Note',
       icon: 'fa-file-circle-plus text-yellow-500',
@@ -90,10 +91,11 @@ export class DialogService {
         text: 'Create note',
         icon: 'fa-file-circle-plus',
       },
+      validator,
     });
   }
 
-  openRenameFolderDialog(initialValue?: string) {
+  openRenameFolderDialog(initialValue?: string, validator?: import('@angular/forms').ValidatorFn) {
     return this.openInputDialog({
       title: 'Rename Folder',
       icon: 'fa-file-circle-plus text-yellow-500',
@@ -103,10 +105,11 @@ export class DialogService {
       submitButton: {
         text: 'Save',
       },
+      validator,
     });
   }
 
-  openRenameNoteDialog(initialValue?: string) {
+  openRenameNoteDialog(initialValue?: string, validator?: import('@angular/forms').ValidatorFn) {
     return this.openInputDialog({
       title: 'Create New Note',
       icon: 'fa-file-circle-plus text-yellow-500',
@@ -116,6 +119,7 @@ export class DialogService {
       submitButton: {
         text: 'Save',
       },
+      validator,
     });
   }
 

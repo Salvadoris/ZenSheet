@@ -208,16 +208,21 @@ export class NotesService {
       const isLast = i === path.length - 1;
 
       const folder = currentFolders.find(f => f.name === segment);
+      let note: Note | undefined;
+
+      if (isLast && currentFolder) {
+        note = currentFolder.notes.find(n => n.title === segment);
+      }
+
       if (folder) {
+        if (isLast) return { folder, note: note || null };
         currentFolder = folder;
         currentFolders = folder.subfolders;
-        if (isLast) return { folder, note: null };
         continue;
       }
 
-      if (isLast && currentFolder) {
-        const note = currentFolder.notes.find(n => n.title === segment);
-        if (note) return { folder: currentFolder, note };
+      if (isLast && note) {
+        return { folder: null, note };
       }
 
       break;
