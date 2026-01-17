@@ -1,11 +1,12 @@
 <button
   class="btn btn-ghost btn-square bg-gray-100 transition-all duration-300 ease-in-out"
   (click)="toggleSidebar()"
-  [title]="isSidebarHidden ? 'Show sidebar' : 'Hide sidebar'"
-  [ngClass]="isSidebarHidden ? 'rounded-xl' : 'rounded-t-lg rounded-b-none'">
+  [disabled]="!isNoteSelected()"
+  [title]="isSidebarHidden() ? 'Show sidebar' : 'Hide sidebar'"
+  [ngClass]="isSidebarHidden() ? 'rounded-xl' : 'rounded-t-lg rounded-b-none'">
   <i
     class="fas fa-chevron-down transition-transform duration-300"
-    [ngClass]="isSidebarHidden ? '-rotate-90' : 'rotate-0'">
+    [ngClass]="isSidebarHidden() ? '-rotate-90' : 'rotate-0'">
   </i>
 </button>
 
@@ -13,43 +14,61 @@
   class="bg-gray-100 w-64 p-4 flex flex-col transition-all duration-300 transform rounded-b-lg rounded-tr-lg rounded-tl-none min-h-1/2 absolute"
   [ngClass]="{
     'opacity-0 -translate-y-4 pointer-events-none scale-95 -z-10':
-      isSidebarHidden,
-    'opacity-100 translate-y-0 scale-100 z-10': !isSidebarHidden,
+      isSidebarHidden(),
+    'opacity-100 translate-y-0 scale-100 z-10': !isSidebarHidden(),
   }">
-  @if (view === SidebarView.Folders) {
+  @if (view() === SidebarView.Root) {
     <app-sidebar-header
-      title="Folder overview"
-      [buttons]="getFolderHeaderButtons()" />
+      title="All Folders"
+      [buttons]="getRootHeaderButtons()" />
     <hr class="border-t border-gray-300 my-3" />
 
-    @for (folder of folders(); track folder.id) {
-      <app-list-item
-        [itemData]="getFolderListItemData(folder)"
-        [menuItems]="getFolderMenuItems(folder)"
-        (itemClicked)="selectFolder(folder)" />
-    } @empty {
-      <app-empty-state
-        message="Looks like you haven't created any folders yet. Make one now!"
-        icon="fa-folder" />
+    @if (loading()) {
+      <div class="flex items-center justify-center py-6">
+        <span class="loading loading-dots loading-xl text-primary"></span>
+      </div>
+    } @else {
+      @for (folder of rootFolders(); track folder.id) {
+        <app-list-item
+          [itemData]="getFolderListItemData(folder)"
+          [menuItems]="getFolderMenuItems(folder)"
+          (itemClicked)="selectFolder(folder)" />
+      } @empty {
+        <app-empty-state
+          message="No folders yet. Create your first one!"
+          icon="fa-folder" />
+      }
     }
-  } @else if (view === SidebarView.Notes) {
+  } @else if (view() === SidebarView.Folder && selectedFolder()) {
     <app-sidebar-header
       [title]="selectedFolder()?.name || ''"
       [titleColor]="selectedFolder()?.color"
       [showBackButton]="true"
-      [buttons]="getNoteHeaderButtons()"
+      [buttons]="getFolderHeaderButtons()"
       (backClicked)="goBack()" />
     <hr class="border-t border-gray-300 my-3" />
 
+    <!-- Subfolders -->
+    @for (subfolder of selectedFolder()?.subfolders; track subfolder.id) {
+      <app-list-item
+        [itemData]="getFolderListItemData(subfolder)"
+        [menuItems]="getFolderMenuItems(subfolder)"
+        (itemClicked)="selectFolder(subfolder)" />
+    }
+
+    <!-- Notes -->
     @for (note of selectedFolder()?.notes; track note.id) {
       <app-list-item
         [itemData]="getNoteListItemData(note)"
         [menuItems]="getNoteMenuItems(note)"
-        (itemClicked)="selectNote(note)" />
+        (itemClicked)="selectNote(note)" 
+        />
     } @empty {
-      <app-empty-state
-        message="No notes yet. Create your first one!"
-        icon="fa-file" />
+      @if ((selectedFolder()?.subfolders || []).length === 0) {
+        <app-empty-state
+          message="No subfolders or notes yet."
+          icon="fa-file" />
+      }
     }
   }
 </div>

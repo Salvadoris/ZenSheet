@@ -2,7 +2,7 @@ import { LineAlignment } from './LineAlignment';
 import { ShapeStyle, ShapeStyleProperty } from './ShapeStyle';
 import { FontStyleName, StyleName } from './StyleName';
 
-type TextBoxStyleType = Required<
+export type TextBoxStyleType = Required<
   Pick<ShapeStyle, StyleName.Color | StyleName.Opacity | FontStyleName>
 >;
 
@@ -27,32 +27,33 @@ export class TextBoxStyle implements TextBoxStyleType {
     this[StyleName.FontAlignment] = style[StyleName.FontAlignment];
   }
 
-  updateProperty(styleProperty: ShapeStyleProperty) {
+  updateProperty(styleProperty: ShapeStyleProperty): boolean {
     switch (styleProperty.name) {
       case StyleName.Color:
         this[StyleName.Color] = styleProperty.value;
-        break;
+        return true;
       case StyleName.Opacity:
         this[StyleName.Opacity] = styleProperty.value;
-        break;
+        return true;
       case StyleName.FontSize:
         this[StyleName.FontSize] = styleProperty.value;
-        break;
+        return true;
       case StyleName.FontLineSpace:
         this[StyleName.FontLineSpace] = styleProperty.value;
-        break;
+        return true;
       case StyleName.FontName:
         this[StyleName.FontName] = styleProperty.value;
-        break;
+        return true;
       case StyleName.FontBold:
         this[StyleName.FontBold] = styleProperty.value;
-        break;
+        return true;
       case StyleName.FontItalic:
         this[StyleName.FontItalic] = styleProperty.value;
-        break;
+        return true;
       case StyleName.FontAlignment:
         this[StyleName.FontAlignment] = styleProperty.value;
-        break;
+        return true;
     }
+    return false;
   }
 }

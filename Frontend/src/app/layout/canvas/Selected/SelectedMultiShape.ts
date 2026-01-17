@@ -1,4 +1,5 @@
 import { Rect } from '../Geometry';
+import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { GroupShape } from '../Shapes/GroupShape';
 import { Shape } from '../Shapes/Shape';
 
@@ -8,7 +9,15 @@ export class SelectedMultiShape extends SelectedShape {
   declare shape: GroupShape;
 
   constructor(shapes: Shape[], ctx: CanvasRenderingContext2D) {
-    const groupShape = new GroupShape(shapes, ctx);
+    const groupShape = new GroupShape(
+      {
+        [ShapePropertyName.id]: crypto.randomUUID(),
+        [ShapePropertyName.shapes]: shapes,
+        [ShapePropertyName.edited]: false,
+        [ShapePropertyName.selected]: false,
+      },
+      ctx
+    );
     super(groupShape);
   }
 

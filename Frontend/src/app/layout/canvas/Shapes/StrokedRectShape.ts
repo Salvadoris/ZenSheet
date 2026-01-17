@@ -1,4 +1,7 @@
 import { Point, Rect } from '../Geometry';
+import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
+import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
+import { StrokedRectShapeProperties } from '../ShapeProperties/StrokedRectShapeProperties';
 import { ShapeStyle, ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { StrokedRectStyle } from '../ShapeStyles/StrokedRectStyle';
 import { StyleName } from '../ShapeStyles/StyleName';
@@ -6,19 +9,39 @@ import { StyleName } from '../ShapeStyles/StyleName';
 import { Shape } from './Shape';
 
 export class StrokedRectShape extends Shape {
-  declare style: StrokedRectStyle;
+  declare protected _properties: Required<StrokedRectShapeProperties>;
 
   constructor(
-    p0: Point,
-    p1: Point,
-    style: StrokedRectStyle,
+    properties: StrokedRectShapeProperties,
     ctx: CanvasRenderingContext2D
   ) {
-    super(p0, p1[0] - p0[0], p1[1] - p0[1], style, ctx);
+    super(properties, ctx);
   }
 
-  override setStyleProperty(styleProperty: ShapeStyleProperty): void {
-    this.style.updateProperty(styleProperty);
+  override set properties(properties: Required<StrokedRectShapeProperties>) {
+    this._properties = properties;
+  }
+
+  override get properties(): Required<StrokedRectShapeProperties> {
+    return this._properties;
+  }
+
+  override get style(): StrokedRectStyle {
+    return this.properties[ShapePropertyName.style];
+  }
+
+  override setStyleProperty(
+    styleProperty: ShapeStyleProperty
+  ): ChangableSerializedShapeProperties {
+    const updated = this.style.updateProperty(styleProperty);
+    if (updated) {
+      return {
+        [ShapePropertyName.style]: {
+          [styleProperty.name]: styleProperty.value,
+        },
+      };
+    }
+    return {};
   }
 
   override renderShape(canvasRect: Rect): void {
@@ -54,6 +77,7 @@ export class StrokedRectShape extends Shape {
     return this.ctx.isPointInStroke(this.path(), x, y);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  override resizeContent(): void {}
+  override resizeContent(): ChangableSerializedShapeProperties {
+    return {};
+  }
 }

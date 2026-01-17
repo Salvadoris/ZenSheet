@@ -1,54 +1,192 @@
 import { Point, Rect } from '../Geometry';
 import {
+  BaseShapeProperties,
+  ChangableSerializedShapeProperties,
+  ChangableShapeProperties,
+} from '../ShapeProperties/ShapeProperties';
+import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
+import {
   NullableShapeStyle,
   ShapeStyleProperty,
 } from '../ShapeStyles/ShapeStyle';
 
 export abstract class Shape {
-  scaleX = 1;
-  scaleY = 1;
-  originX: number;
-  originY: number;
-  originalWidth: number;
-  originalHeight: number;
-  width: number;
-  height: number;
-  minWidth = 1;
-  minHeight = 1;
-  invertable = true;
-  horizontalInverted: boolean;
-  verticallyInverted: boolean;
-  style: NullableShapeStyle;
-  ctx: CanvasRenderingContext2D;
-
+  protected _properties!: Required<BaseShapeProperties>;
   constructor(
-    origin: Point,
-    width: number,
-    height: number,
-    style: NullableShapeStyle,
-    ctx: CanvasRenderingContext2D
+    properties: BaseShapeProperties,
+    public ctx: CanvasRenderingContext2D
   ) {
-    if (width == 0) {
+    if (properties[ShapePropertyName.originalWidth] == 0) {
       throw new Error('Shape width cannot be zero');
     }
-    if (height == 0) {
+    if (properties[ShapePropertyName.originalWidth] == 0) {
       throw new Error('Shape height cannot be zero');
     }
-    this.originX = origin[0];
-    this.originY = origin[1];
-    this.originalWidth = width;
-    this.originalHeight = height;
-    this.width = width;
-    this.height = height;
-    this.horizontalInverted = this.width < 0;
-    this.verticallyInverted = this.height < 0;
-    this.style = style;
-    this.ctx = ctx;
+
+    const width =
+      properties[ShapePropertyName.width] !== undefined
+        ? properties[ShapePropertyName.width]
+        : properties[ShapePropertyName.originalWidth];
+    const height =
+      properties[ShapePropertyName.height] !== undefined
+        ? properties[ShapePropertyName.height]
+        : properties[ShapePropertyName.originalHeight];
+
+    this._properties = {
+      ...properties,
+      [ShapePropertyName.width]: width,
+      [ShapePropertyName.height]: height,
+      [ShapePropertyName.scaleX]: properties[ShapePropertyName.scaleX]
+        ? properties[ShapePropertyName.scaleX]
+        : 1,
+      [ShapePropertyName.scaleY]: properties[ShapePropertyName.scaleY]
+        ? properties[ShapePropertyName.scaleY]
+        : 1,
+      [ShapePropertyName.minWidth]: properties[ShapePropertyName.minWidth]
+        ? properties[ShapePropertyName.minWidth]
+        : 1,
+      [ShapePropertyName.minHeight]: properties[ShapePropertyName.minHeight]
+        ? properties[ShapePropertyName.minHeight]
+        : 1,
+      [ShapePropertyName.invertable]: properties[ShapePropertyName.invertable]
+        ? properties[ShapePropertyName.invertable]
+        : true,
+      [ShapePropertyName.horizontalInverted]: properties[
+        ShapePropertyName.horizontalInverted
+      ]
+        ? properties[ShapePropertyName.horizontalInverted]
+        : width < 0,
+      [ShapePropertyName.verticallyInverted]: properties[
+        ShapePropertyName.verticallyInverted
+      ]
+        ? properties[ShapePropertyName.verticallyInverted]
+        : height < 0,
+    };
+  }
+
+  get properties(): Required<BaseShapeProperties> {
+    return this._properties;
+  }
+
+  set properties(properties: BaseShapeProperties) {
+    const width =
+      properties[ShapePropertyName.width] !== undefined
+        ? properties[ShapePropertyName.width]
+        : properties[ShapePropertyName.originalWidth];
+    const height =
+      properties[ShapePropertyName.height] !== undefined
+        ? properties[ShapePropertyName.height]
+        : properties[ShapePropertyName.originalHeight];
+
+    this._properties = {
+      ...properties,
+      [ShapePropertyName.width]: width,
+      [ShapePropertyName.height]: height,
+      [ShapePropertyName.scaleX]: properties[ShapePropertyName.scaleX]
+        ? properties[ShapePropertyName.scaleX]
+        : 1,
+      [ShapePropertyName.scaleY]: properties[ShapePropertyName.scaleY]
+        ? properties[ShapePropertyName.scaleY]
+        : 1,
+      [ShapePropertyName.minWidth]: properties[ShapePropertyName.minWidth]
+        ? properties[ShapePropertyName.minWidth]
+        : 1,
+      [ShapePropertyName.minHeight]: properties[ShapePropertyName.minHeight]
+        ? properties[ShapePropertyName.minHeight]
+        : 1,
+      [ShapePropertyName.invertable]: properties[ShapePropertyName.invertable]
+        ? properties[ShapePropertyName.invertable]
+        : true,
+      [ShapePropertyName.horizontalInverted]: properties[
+        ShapePropertyName.horizontalInverted
+      ]
+        ? properties[ShapePropertyName.horizontalInverted]
+        : width < 0,
+      [ShapePropertyName.verticallyInverted]: properties[
+        ShapePropertyName.verticallyInverted
+      ]
+        ? properties[ShapePropertyName.verticallyInverted]
+        : height < 0,
+    };
+  }
+
+  get style(): NullableShapeStyle {
+    return this.properties[ShapePropertyName.style];
+  }
+
+  get originX() {
+    return this.properties[ShapePropertyName.originX];
+  }
+  set originX(originX: number) {
+    this.properties[ShapePropertyName.originX] = originX;
+  }
+
+  get originY() {
+    return this.properties[ShapePropertyName.originY];
+  }
+  set originY(originY: number) {
+    this.properties[ShapePropertyName.originY] = originY;
+  }
+
+  get originalWidth() {
+    return this.properties[ShapePropertyName.originalWidth];
+  }
+
+  get originalHeight() {
+    return this.properties[ShapePropertyName.originalHeight];
+  }
+
+  get width() {
+    return this.properties[ShapePropertyName.width];
+  }
+  set width(width: number) {
+    this.properties[ShapePropertyName.width] = width;
+  }
+
+  get height() {
+    return this.properties[ShapePropertyName.height];
+  }
+  set height(height: number) {
+    this.properties[ShapePropertyName.height] = height;
+  }
+
+  get scaleX() {
+    return this.properties[ShapePropertyName.scaleX];
+  }
+  set scaleX(scaleX: number) {
+    this.properties[ShapePropertyName.scaleX] = scaleX;
+  }
+
+  get scaleY() {
+    return this.properties[ShapePropertyName.scaleY];
+  }
+  set scaleY(scaleY: number) {
+    this.properties[ShapePropertyName.scaleY] = scaleY;
+  }
+
+  get minWidth() {
+    return this.properties[ShapePropertyName.minWidth];
+  }
+
+  get minHeight() {
+    return this.properties[ShapePropertyName.minHeight];
+  }
+
+  get invertable() {
+    return this.properties[ShapePropertyName.invertable];
+  }
+
+  get horizontalInverted() {
+    return this.properties[ShapePropertyName.horizontalInverted];
+  }
+
+  get verticallyInverted() {
+    return this.properties[ShapePropertyName.verticallyInverted];
   }
 
   render(canvasRect: Rect): void {
-    this.horizontalInverted = this.width < 0;
-    this.verticallyInverted = this.height < 0;
+    this.properties[ShapePropertyName.horizontalInverted] = this.width < 0;
+    this.properties[ShapePropertyName.verticallyInverted] = this.height < 0;
     this.renderShape(canvasRect);
   }
 
@@ -56,11 +194,41 @@ export abstract class Shape {
 
   abstract path(): Path2D;
 
-  abstract setStyleProperty(styleProperty: ShapeStyleProperty): void;
+  abstract setStyleProperty(
+    styleProperty: ShapeStyleProperty
+  ): ChangableSerializedShapeProperties;
+
+  updateProperties(properties: ChangableShapeProperties) {
+    this.properties = {
+      ...this.properties,
+      ...properties,
+      [ShapePropertyName.style]: {
+        ...this.properties[ShapePropertyName.style],
+        ...properties[ShapePropertyName.style],
+      },
+    };
+    if (properties[ShapePropertyName.width] !== undefined) {
+      this.properties[ShapePropertyName.scaleX] =
+        this.width / this.originalWidth;
+    }
+    if (properties[ShapePropertyName.height] !== undefined) {
+      this.properties[ShapePropertyName.scaleY] =
+        this.height / this.originalHeight;
+    }
+    if (properties[ShapePropertyName.width] !== undefined) {
+      this.properties[ShapePropertyName.horizontalInverted] = this.width < 0;
+    }
+    if (properties[ShapePropertyName.height] !== undefined) {
+      this.properties[ShapePropertyName.verticallyInverted] = this.height < 0;
+    }
+  }
 
   abstract pointInside(x: number, y: number): boolean;
 
-  resizeTop(y: number, resizeContent = true) {
+  resizeTop(
+    y: number,
+    resizeContent = true
+  ): ChangableSerializedShapeProperties {
     let newHeight = this.originY + this.height - y;
     if (
       !this.invertable &&
@@ -70,6 +238,7 @@ export abstract class Shape {
       newHeight = this.minHeight;
       y = this.originY + this.height - newHeight;
     }
+    const properties: ChangableSerializedShapeProperties = {};
     if (
       (!this.invertable && newHeight >= this.minHeight) ||
       (this.invertable && Math.abs(newHeight) >= this.minHeight)
@@ -77,13 +246,22 @@ export abstract class Shape {
       this.height = newHeight;
       this.originY = y;
       this.scaleY = this.height / this.originalHeight;
+      properties[ShapePropertyName.originY] = this.originY;
+      properties[ShapePropertyName.height] = this.height;
       if (resizeContent) {
-        this.resizeContent();
+        return {
+          ...properties,
+          ...this.resizeContent(),
+        };
       }
     }
+    return properties;
   }
 
-  resizeBottom(y: number, resizeContent = true) {
+  resizeBottom(
+    y: number,
+    resizeContent = true
+  ): ChangableSerializedShapeProperties {
     let newHeight = y - this.originY;
     if (
       !this.invertable &&
@@ -92,19 +270,28 @@ export abstract class Shape {
     ) {
       newHeight = this.minHeight;
     }
+    const properties: ChangableSerializedShapeProperties = {};
     if (
       (!this.invertable && newHeight >= this.minHeight) ||
       (this.invertable && Math.abs(newHeight) >= this.minHeight)
     ) {
       this.height = newHeight;
       this.scaleY = this.height / this.originalHeight;
+      properties[ShapePropertyName.height] = this.height;
       if (resizeContent) {
-        this.resizeContent();
+        return {
+          ...properties,
+          ...this.resizeContent(),
+        };
       }
     }
+    return properties;
   }
 
-  resizeLeft(x: number, resizeContent = true) {
+  resizeLeft(
+    x: number,
+    resizeContent = true
+  ): ChangableSerializedShapeProperties {
     let newWidth = this.originX + this.width - x;
     if (
       !this.invertable &&
@@ -113,6 +300,7 @@ export abstract class Shape {
     ) {
       newWidth = this.minWidth;
     }
+    const properties: ChangableSerializedShapeProperties = {};
     if (
       (!this.invertable && newWidth > this.minWidth) ||
       (this.invertable && Math.abs(newWidth) >= this.minWidth)
@@ -120,13 +308,22 @@ export abstract class Shape {
       this.width = newWidth;
       this.originX = x;
       this.scaleX = this.width / this.originalWidth;
+      properties[ShapePropertyName.originX] = this.originX;
+      properties[ShapePropertyName.width] = this.width;
       if (resizeContent) {
-        this.resizeContent();
+        return {
+          ...properties,
+          ...this.resizeContent(),
+        };
       }
     }
+    return properties;
   }
 
-  resizeRight(x: number, resizeContent = true) {
+  resizeRight(
+    x: number,
+    resizeContent = true
+  ): ChangableSerializedShapeProperties {
     let newWidth = x - this.originX;
     if (
       !this.invertable &&
@@ -135,19 +332,25 @@ export abstract class Shape {
     ) {
       newWidth = this.minWidth;
     }
+    const properties: ChangableSerializedShapeProperties = {};
     if (
       (!this.invertable && newWidth >= this.minWidth) ||
       (this.invertable && Math.abs(newWidth) >= this.minWidth)
     ) {
       this.width = newWidth;
       this.scaleX = this.width / this.originalWidth;
+      properties[ShapePropertyName.width] = this.width;
       if (resizeContent) {
-        this.resizeContent();
+        return {
+          ...properties,
+          ...this.resizeContent(),
+        };
       }
     }
+    return properties;
   }
 
-  abstract resizeContent(): void;
+  abstract resizeContent(): ChangableSerializedShapeProperties;
 
   trueRect(): Rect {
     let minX = 0;

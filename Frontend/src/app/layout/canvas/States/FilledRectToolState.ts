@@ -1,4 +1,5 @@
 import { CanvasComponent } from '../canvas.component';
+import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { FilledRectDrawing } from '../Drawings/FilledRectDrawing';
 import { FilledRectStyle } from '../ShapeStyles/FilledRectStyle';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
@@ -6,6 +7,8 @@ import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { CanvasToolState } from './CanvasToolState';
 
 export class FilledRectToolState extends CanvasToolState {
+  #currentDrawing: FilledRectDrawing | null = null;
+
   constructor(canvas: CanvasComponent) {
     super(canvas);
     this.canvas.changeStyle(new FilledRectStyle(this.canvas.style));
@@ -32,17 +35,28 @@ export class FilledRectToolState extends CanvasToolState {
 
   override onPressedMouseMove(_event: MouseEvent): void {
     if (this.canvas.firstMove) {
-      this.canvas.currentDrawing = new FilledRectDrawing(
-        [this.canvas.startCursor[0], this.canvas.startCursor[1]],
-        [this.canvas.cursor[0], this.canvas.cursor[1]],
-        new FilledRectStyle(this.canvas.style)
-      );
-      this.canvas.drawings.push(this.canvas.currentDrawing);
-    } else if (this.canvas.currentDrawing) {
-      this.canvas.currentDrawing.update([
+      this.#currentDrawing = new FilledRectDrawing({
+        [DrawingPropertyName.id]: crypto.randomUUID(),
+        [DrawingPropertyName.p0]: [
+          this.canvas.startCursor[0],
+          this.canvas.startCursor[1],
+        ],
+        [DrawingPropertyName.p1]: [
+          this.canvas.cursor[0],
+          this.canvas.cursor[1],
+        ],
+        [DrawingPropertyName.style]: new FilledRectStyle(this.canvas.style),
+      });
+      this.canvas.addDrawings([this.#currentDrawing]);
+    } else if (this.#currentDrawing) {
+      const changeProperties = this.#currentDrawing.update([
         this.canvas.cursor[0],
         this.canvas.cursor[1],
       ]);
+      this.canvas.changeDrawingsProperties(
+        [this.#currentDrawing.properties[DrawingPropertyName.id]],
+        changeProperties
+      );
     }
     this.canvas.renderCanvas(false, true);
   }
@@ -51,15 +65,9 @@ export class FilledRectToolState extends CanvasToolState {
   override onHoveringMouseMove(_event: MouseEvent): void {}
 
   override onMouseUp(_event: MouseEvent): void {
-    if (this.canvas.currentDrawing) {
-      this.canvas.shapes.push(
-        this.canvas.currentDrawing.toShape(this.canvas.mainCtx)
-      );
-      const idx = this.canvas.drawings.indexOf(this.canvas.currentDrawing);
-      this.canvas.currentDrawing = null;
-      if (idx !== -1) {
-        this.canvas.drawings.splice(idx, 1);
-      }
+    if (this.#currentDrawing) {
+      this.canvas.drawingToShape(this.#currentDrawing);
+      this.#currentDrawing = null;
       this.canvas.renderCanvas(true, true);
     }
   }

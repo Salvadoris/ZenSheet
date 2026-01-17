@@ -1,5 +1,10 @@
+import { ChangableDrawingProperties } from '../DrawingProperties/DrawingProperties';
+import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
+import { LineDrawingProperties } from '../DrawingProperties/LineDrawingProperties';
 import { Point } from '../Geometry';
-import { LinePoints, LineShape } from '../Shapes/LineShape';
+import { LinePoints } from '../ShapeProperties/LineShapeProperties';
+import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
+import { LineShape } from '../Shapes/LineShape';
 import { Shape } from '../Shapes/Shape';
 import { LineStyle } from '../ShapeStyles/LineStyle';
 import { StyleName } from '../ShapeStyles/StyleName';
@@ -7,10 +12,19 @@ import { StyleName } from '../ShapeStyles/StyleName';
 import { Drawing } from './Drawing';
 
 export class LineDrawing implements Drawing {
-  constructor(
-    public points: LinePoints,
-    public style: LineStyle
-  ) {}
+  constructor(public properties: LineDrawingProperties) {}
+
+  get points() {
+    return this.properties[DrawingPropertyName.points];
+  }
+
+  set points(points: LinePoints) {
+    this.properties[DrawingPropertyName.points] = points;
+  }
+
+  get style(): LineStyle {
+    return this.properties[DrawingPropertyName.style];
+  }
 
   path(): Path2D {
     const path = new Path2D();
@@ -22,12 +36,27 @@ export class LineDrawing implements Drawing {
   }
 
   toShape(ctx: CanvasRenderingContext2D): Shape {
-    return new LineShape(this.points, this.style, ctx);
+    return new LineShape(
+      {
+        [ShapePropertyName.id]: crypto.randomUUID(),
+        [ShapePropertyName.style]: this.style,
+        [ShapePropertyName.points]: this.points,
+        [ShapePropertyName.edited]: false,
+        [ShapePropertyName.selected]: false,
+      },
+      ctx
+    );
   }
 
-  update(p: Point): void {
+  update(
+    p: Point
+  ): Required<Pick<ChangableDrawingProperties, DrawingPropertyName.points>> {
     this.points.push([p[0], p[1]]);
+    return {
+      [DrawingPropertyName.points]: { lastPoint: [p[0], p[1]] },
+    };
   }
+
   render(ctx: CanvasRenderingContext2D): void {
     ctx.lineWidth = this.style[StyleName.LineWidth];
     ctx.lineCap = this.style[StyleName.LineCap];

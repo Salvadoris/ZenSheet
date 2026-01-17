@@ -1,4 +1,9 @@
 import { Point, Rect } from '../Geometry';
+import {
+  BaseSerializedShapeProperties,
+  ChangableBaseSerializedShapeProperties,
+} from '../ShapeProperties/ShapeProperties';
+import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { Shape } from '../Shapes/Shape';
 
 export enum Resize {
@@ -12,6 +17,13 @@ export enum Resize {
   BottomLeft,
   BottomRight,
 }
+
+type MoveProperties = Partial<
+  Pick<
+    BaseSerializedShapeProperties,
+    ShapePropertyName.originX | ShapePropertyName.originY
+  >
+>;
 
 export class SelectedShape {
   shape!: Shape;
@@ -46,7 +58,6 @@ export class SelectedShape {
     this.shape.ctx.fill(this.topRightCorner);
     this.shape.ctx.fill(this.bottomLeftCorner);
     this.shape.ctx.fill(this.bottomRightCorner);
-
     this.shape.ctx.strokeStyle = this.color;
     this.shape.ctx.fillStyle = this.color;
     this.shape.ctx.lineWidth = this.lineWidth / canvasScale;
@@ -54,42 +65,51 @@ export class SelectedShape {
     this.shape.ctx.stroke(this.markedLine(this.shape.ctx.lineWidth));
   }
 
-  moveTo(x: number, y: number): void {
+  moveTo(x: number, y: number): MoveProperties {
     this.shape.originX = x + this.originFromCursor[0];
     this.shape.originY = y + this.originFromCursor[1];
+    const properties: MoveProperties = {};
+    if (x !== 0) {
+      properties[ShapePropertyName.originX] = this.shape.originX;
+    }
+    if (y !== 0) {
+      properties[ShapePropertyName.originY] = this.shape.originY;
+    }
+    return properties;
   }
 
-  resize(p: Point) {
+  resize(p: Point): ChangableBaseSerializedShapeProperties {
     switch (this.resized) {
       case Resize.Top:
-        this.shape.resizeTop(p[1]);
-        break;
+        return this.shape.resizeTop(p[1]);
       case Resize.Bottom:
-        this.shape.resizeBottom(p[1]);
-        break;
+        return this.shape.resizeBottom(p[1]);
       case Resize.Left:
-        this.shape.resizeLeft(p[0]);
-        break;
+        return this.shape.resizeLeft(p[0]);
       case Resize.Right:
-        this.shape.resizeRight(p[0]);
-        break;
+        return this.shape.resizeRight(p[0]);
       case Resize.TopLeft:
-        this.shape.resizeLeft(p[0]);
-        this.shape.resizeTop(p[1]);
-        break;
+        return {
+          ...this.shape.resizeLeft(p[0]),
+          ...this.shape.resizeTop(p[1]),
+        };
       case Resize.TopRight:
-        this.shape.resizeRight(p[0]);
-        this.shape.resizeTop(p[1]);
-        break;
+        return {
+          ...this.shape.resizeRight(p[0]),
+          ...this.shape.resizeTop(p[1]),
+        };
       case Resize.BottomLeft:
-        this.shape.resizeLeft(p[0]);
-        this.shape.resizeBottom(p[1]);
-        break;
+        return {
+          ...this.shape.resizeLeft(p[0]),
+          ...this.shape.resizeBottom(p[1]),
+        };
       case Resize.BottomRight:
-        this.shape.resizeRight(p[0]);
-        this.shape.resizeBottom(p[1]);
-        break;
+        return {
+          ...this.shape.resizeRight(p[0]),
+          ...this.shape.resizeBottom(p[1]),
+        };
     }
+    return {};
   }
 
   path() {

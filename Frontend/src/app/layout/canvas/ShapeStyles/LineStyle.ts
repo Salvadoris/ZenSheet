@@ -1,7 +1,7 @@
 import { ShapeStyle, ShapeStyleProperty } from './ShapeStyle';
 import { StyleName } from './StyleName';
 
-type LineStyleType = Required<
+export type LineStyleType = Required<
   Pick<
     ShapeStyle,
     | StyleName.Color
@@ -24,20 +24,21 @@ export class LineStyle implements LineStyleType {
     this[StyleName.Opacity] = style[StyleName.Opacity];
   }
 
-  updateProperty(styleProperty: ShapeStyleProperty) {
+  updateProperty(styleProperty: ShapeStyleProperty): boolean {
     switch (styleProperty.name) {
       case StyleName.Color:
         this[StyleName.Color] = styleProperty.value;
-        break;
+        return true;
       case StyleName.LineWidth:
         this[StyleName.LineWidth] = styleProperty.value;
-        break;
+        return true;
       case StyleName.LineCap:
         this[StyleName.LineCap] = styleProperty.value;
-        break;
+        return true;
       case StyleName.Opacity:
         this[StyleName.Opacity] = styleProperty.value;
-        break;
+        return true;
     }
+    return false;
   }
 }

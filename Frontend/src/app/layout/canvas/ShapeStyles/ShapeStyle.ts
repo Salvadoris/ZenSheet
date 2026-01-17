@@ -25,8 +25,6 @@ export interface ShapeStyle extends NullableShapeStyle {
   [StyleName.FontBold]?: boolean;
   [StyleName.FontItalic]?: boolean;
   [StyleName.FontAlignment]?: LineAlignment;
-
-  updateProperty(styleProperty: ShapeStyleProperty): void;
 }
 
 export type ShapeStyleProperty =

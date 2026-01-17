@@ -1,4 +1,5 @@
 import { CanvasComponent } from '../canvas.component';
+import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { StrokedRectDrawing } from '../Drawings/StrokedRectDrawing';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { StrokedRectStyle } from '../ShapeStyles/StrokedRectStyle';
@@ -6,6 +7,8 @@ import { StrokedRectStyle } from '../ShapeStyles/StrokedRectStyle';
 import { CanvasToolState } from './CanvasToolState';
 
 export class StrokedRectToolState extends CanvasToolState {
+  #currentDrawing: StrokedRectDrawing | null = null;
+
   constructor(canvas: CanvasComponent) {
     super(canvas);
     this.canvas.changeStyle(new StrokedRectStyle(this.canvas.style));
@@ -32,17 +35,28 @@ export class StrokedRectToolState extends CanvasToolState {
 
   override onPressedMouseMove(_event: MouseEvent): void {
     if (this.canvas.firstMove) {
-      this.canvas.currentDrawing = new StrokedRectDrawing(
-        [this.canvas.startCursor[0], this.canvas.startCursor[1]],
-        [this.canvas.cursor[0], this.canvas.cursor[1]],
-        new StrokedRectStyle(this.canvas.style)
-      );
-      this.canvas.drawings.push(this.canvas.currentDrawing);
-    } else if (this.canvas.currentDrawing) {
-      this.canvas.currentDrawing.update([
+      this.#currentDrawing = new StrokedRectDrawing({
+        [DrawingPropertyName.id]: crypto.randomUUID(),
+        [DrawingPropertyName.p0]: [
+          this.canvas.startCursor[0],
+          this.canvas.startCursor[1],
+        ],
+        [DrawingPropertyName.p1]: [
+          this.canvas.cursor[0],
+          this.canvas.cursor[1],
+        ],
+        [DrawingPropertyName.style]: new StrokedRectStyle(this.canvas.style),
+      });
+      this.canvas.addDrawings([this.#currentDrawing]);
+    } else if (this.#currentDrawing) {
+      const changeProperties = this.#currentDrawing.update([
         this.canvas.cursor[0],
         this.canvas.cursor[1],
       ]);
+      this.canvas.changeDrawingsProperties(
+        [this.#currentDrawing.properties[DrawingPropertyName.id]],
+        changeProperties
+      );
     }
     this.canvas.renderCanvas(false, true);
   }
@@ -51,15 +65,9 @@ export class StrokedRectToolState extends CanvasToolState {
   override onHoveringMouseMove(_event: MouseEvent): void {}
 
   override onMouseUp(_event: MouseEvent): void {
-    if (this.canvas.currentDrawing) {
-      this.canvas.shapes.push(
-        this.canvas.currentDrawing.toShape(this.canvas.mainCtx)
-      );
-      const idx = this.canvas.drawings.indexOf(this.canvas.currentDrawing);
-      this.canvas.currentDrawing = null;
-      if (idx !== -1) {
-        this.canvas.drawings.splice(idx, 1);
-      }
+    if (this.#currentDrawing) {
+      this.canvas.drawingToShape(this.#currentDrawing);
+      this.#currentDrawing = null;
       this.canvas.renderCanvas(true, true);
     }
   }

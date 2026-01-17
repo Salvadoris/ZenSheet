@@ -1,4 +1,7 @@
 import { Point, Rect } from '../Geometry';
+import { ImageShapeProperties } from '../ShapeProperties/ImageShapeProperties';
+import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
+import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { ImageStyle } from '../ShapeStyles/ImageStyle';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { StyleName } from '../ShapeStyles/StyleName';
@@ -6,23 +9,38 @@ import { StyleName } from '../ShapeStyles/StyleName';
 import { Shape } from './Shape';
 
 export class ImageShape extends Shape {
+  declare protected _properties: Required<ImageShapeProperties>;
   private img = new Image();
   private loaded = false;
-  declare style: ImageStyle;
 
-  constructor(
-    src: string,
-    p0: Point,
-    p1: Point,
-    style: ImageStyle,
-    ctx: CanvasRenderingContext2D
-  ) {
-    super(p0, p1[0] - p0[0], p1[1] - p0[1], style, ctx);
-    this.img.src = src;
+  constructor(properties: ImageShapeProperties, ctx: CanvasRenderingContext2D) {
+    super(properties, ctx);
   }
 
-  override setStyleProperty(styleProperty: ShapeStyleProperty): void {
-    this.style.updateProperty(styleProperty);
+  override set properties(properties: Required<ImageShapeProperties>) {
+    this._properties = properties;
+  }
+
+  override get properties(): Required<ImageShapeProperties> {
+    return this._properties;
+  }
+
+  override get style(): ImageStyle {
+    return this.properties[ShapePropertyName.style];
+  }
+
+  override setStyleProperty(
+    styleProperty: ShapeStyleProperty
+  ): ChangableSerializedShapeProperties {
+    const updated = this.style.updateProperty(styleProperty);
+    if (updated) {
+      return {
+        [ShapePropertyName.style]: {
+          [styleProperty.name]: styleProperty.value,
+        },
+      };
+    }
+    return {};
   }
 
   override renderShape(canvasRect: Rect): void {
@@ -60,6 +78,7 @@ export class ImageShape extends Shape {
     return inside;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  override resizeContent(): void {}
+  override resizeContent(): ChangableSerializedShapeProperties {
+    return {};
+  }
 }

@@ -1,0 +1,226 @@
+import {
+  FilledRectShapeProperties,
+  SerializedFilledRectShapeProperties,
+} from '../ShapeProperties/FilledRectShapeProperties';
+import {
+  GroupShapeProperties,
+  SerializedGroupShapeProperties,
+} from '../ShapeProperties/GroupShapeProperties';
+import {
+  ImageShapeProperties,
+  SerializedImageShapeProperties,
+} from '../ShapeProperties/ImageShapeProperties';
+import {
+  LineShapeProperties,
+  SerializedLineShapeProperties,
+} from '../ShapeProperties/LineShapeProperties';
+import {
+  SerializedShapeProperties,
+  ShapeProperties,
+} from '../ShapeProperties/ShapeProperties';
+import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
+import {
+  SerializedStrokedRectShapeProperties,
+  StrokedRectShapeProperties,
+} from '../ShapeProperties/StrokedRectShapeProperties';
+import {
+  SerializedTextBoxShapeProperties,
+  TextBoxShapeProperties,
+} from '../ShapeProperties/TextBoxShapeProperties';
+import { Shape } from '../Shapes/Shape';
+import {
+  FilledRectStyle,
+  FilledRectStyleType,
+} from '../ShapeStyles/FilledRectStyle';
+import {
+  GroupShapeStyle,
+  GroupShapeStyleType,
+} from '../ShapeStyles/GroupShapeStyle';
+import { ImageStyle, ImageStyleType } from '../ShapeStyles/ImageStyle';
+import { LineStyle, LineStyleType } from '../ShapeStyles/LineStyle';
+import {
+  StrokedRectStyle,
+  StrokedRectStyleType,
+} from '../ShapeStyles/StrokedRectStyle';
+import { TextBoxStyle, TextBoxStyleType } from '../ShapeStyles/TextBoxStyle';
+
+import { SerializedShape, ShapeSerializer, ShapeType } from './ShapeSerializer';
+
+export class ShapePropertiesSerializer {
+  constructor(private shapeSerializer: ShapeSerializer) {}
+
+  serialized(
+    type: ShapeType,
+    properties: ShapeProperties
+  ): SerializedShapeProperties {
+    switch (type) {
+      case ShapeType.FilledRect:
+        return {
+          ...(properties as FilledRectShapeProperties),
+          [ShapePropertyName.style]: {
+            ...properties[ShapePropertyName.style],
+          },
+        } as SerializedFilledRectShapeProperties;
+      case ShapeType.StrokedRect:
+        return {
+          ...(properties as StrokedRectShapeProperties),
+          [ShapePropertyName.style]: {
+            ...properties[ShapePropertyName.style],
+          },
+        } as SerializedStrokedRectShapeProperties;
+      case ShapeType.Line:
+        return {
+          ...(properties as LineShapeProperties),
+          [ShapePropertyName.style]: {
+            ...properties[ShapePropertyName.style],
+          },
+          [ShapePropertyName.points]: [
+            ...(properties as LineShapeProperties)[ShapePropertyName.points],
+          ],
+        } as SerializedLineShapeProperties;
+      case ShapeType.Image:
+        return {
+          ...(properties as ImageShapeProperties),
+          [ShapePropertyName.style]: {
+            ...properties[ShapePropertyName.style],
+          },
+        } as SerializedImageShapeProperties;
+      case ShapeType.Text:
+        return {
+          ...(properties as TextBoxShapeProperties),
+          [ShapePropertyName.style]: {
+            ...properties[ShapePropertyName.style],
+          },
+        } as SerializedTextBoxShapeProperties;
+      case ShapeType.Group: {
+        return {
+          ...(properties as GroupShapeProperties),
+          [ShapePropertyName.style]: {
+            ...properties[ShapePropertyName.style],
+          },
+          [ShapePropertyName.shapes]: (properties as GroupShapeProperties)[
+            ShapePropertyName.shapes
+          ].map(s => this.shapeSerializer.serialized(s)),
+        } as SerializedGroupShapeProperties;
+      }
+      default:
+        throw new Error(`Unknown shape type: ${type}`);
+    }
+  }
+
+  deserialized(
+    type: ShapeType,
+    serializedProperties: SerializedShapeProperties,
+    ctx: CanvasRenderingContext2D,
+    copy = false
+  ): ShapeProperties {
+    const properties = {
+      [ShapePropertyName.scaleX]:
+        serializedProperties[ShapePropertyName.width] /
+        serializedProperties[ShapePropertyName.originalWidth],
+      [ShapePropertyName.scaleY]:
+        serializedProperties[ShapePropertyName.height] /
+        serializedProperties[ShapePropertyName.originalHeight],
+      [ShapePropertyName.horizontalInverted]:
+        serializedProperties[ShapePropertyName.width] < 0,
+      [ShapePropertyName.verticallyInverted]:
+        serializedProperties[ShapePropertyName.height] < 0,
+    };
+    switch (type) {
+      case ShapeType.FilledRect:
+        return {
+          ...(serializedProperties as SerializedFilledRectShapeProperties),
+          ...properties,
+          [ShapePropertyName.style]: new FilledRectStyle(
+            serializedProperties[ShapePropertyName.style] as FilledRectStyleType
+          ),
+          [ShapePropertyName.id]: copy
+            ? crypto.randomUUID()
+            : serializedProperties[ShapePropertyName.id],
+        } as Required<FilledRectShapeProperties>;
+      case ShapeType.StrokedRect:
+        return {
+          ...(serializedProperties as SerializedStrokedRectShapeProperties),
+          ...properties,
+          [ShapePropertyName.style]: new StrokedRectStyle(
+            serializedProperties[
+              ShapePropertyName.style
+            ] as StrokedRectStyleType
+          ),
+          [ShapePropertyName.id]: copy
+            ? crypto.randomUUID()
+            : serializedProperties[ShapePropertyName.id],
+        } as Required<StrokedRectShapeProperties>;
+      case ShapeType.Line:
+        return {
+          ...(serializedProperties as SerializedLineShapeProperties),
+          ...properties,
+          [ShapePropertyName.style]: new LineStyle(
+            serializedProperties[ShapePropertyName.style] as LineStyleType
+          ),
+          [ShapePropertyName.id]: copy
+            ? crypto.randomUUID()
+            : serializedProperties[ShapePropertyName.id],
+        } as Required<LineShapeProperties>;
+      case ShapeType.Image:
+        return {
+          ...(serializedProperties as SerializedImageShapeProperties),
+          ...properties,
+          [ShapePropertyName.style]: new ImageStyle(
+            serializedProperties[ShapePropertyName.style] as ImageStyleType
+          ),
+          [ShapePropertyName.id]: copy
+            ? crypto.randomUUID()
+            : serializedProperties[ShapePropertyName.id],
+        } as Required<ImageShapeProperties>;
+      case ShapeType.Text:
+        return {
+          ...(serializedProperties as SerializedTextBoxShapeProperties),
+          ...properties,
+          [ShapePropertyName.style]: new TextBoxStyle(
+            serializedProperties[ShapePropertyName.style] as TextBoxStyleType
+          ),
+          [ShapePropertyName.id]: copy
+            ? crypto.randomUUID()
+            : serializedProperties[ShapePropertyName.id],
+        } as Required<TextBoxShapeProperties>;
+      case ShapeType.Group: {
+        const style = new GroupShapeStyle([
+          serializedProperties[ShapePropertyName.style] as GroupShapeStyleType,
+        ]);
+        const nonNullStyle = Object.fromEntries(
+          Object.entries(style).filter(([, value]) => value != null)
+        );
+        let shapes: Shape[] = [];
+        if (
+          (serializedProperties as SerializedGroupShapeProperties)[
+            ShapePropertyName.shapes
+          ] !== undefined
+        ) {
+          shapes = (
+            (serializedProperties as SerializedGroupShapeProperties)[
+              ShapePropertyName.shapes
+            ] as SerializedShape[]
+          ).map(s => this.shapeSerializer.deserialized(s, ctx, copy));
+          shapes.forEach(s => {
+            s.properties[ShapePropertyName.style] = {
+              ...s.properties[ShapePropertyName.style],
+              ...nonNullStyle,
+            };
+          });
+        }
+        return {
+          ...(serializedProperties as SerializedGroupShapeProperties),
+          ...properties,
+          [ShapePropertyName.style]: style,
+          [ShapePropertyName.id]: copy
+            ? crypto.randomUUID()
+            : serializedProperties[ShapePropertyName.id],
+          [ShapePropertyName.shapes]: shapes,
+        } as Required<GroupShapeProperties>;
+      }
+      default:
+        throw new Error(`Unknown shape type: ${type}`);
+    }
+  }
+}

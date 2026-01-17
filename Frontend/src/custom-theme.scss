@@ -12,7 +12,9 @@ html {
         primary: mat.$azure-palette,
         tertiary: mat.$blue-palette,
       ),
-      typography: 'Helvetica Neue',
+      typography: (
+        family: 'Outfit',
+      ),
       density: 0,
     )
   );

@@ -1,9 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 
+import { DropdownMenuItem } from './dropdown-menu.component';
+
 export interface HeaderButton {
   icon: string;
-  action: () => void;
+  action?: () => void;
+  menuItems?: DropdownMenuItem[];
   title: string;
   variant?: 'primary' | 'default';
 }
@@ -27,21 +30,52 @@ export interface HeaderButton {
           <h2 class="text-xl select-none">{{ title() }}</h2>
         </div>
       } @else {
-        <h2 class="text-xl select-none">{{ title() }}</h2>
+        <h2 class="text-xl lg:px-2 select-none">{{ title() }}</h2>
       }
 
-      @for (button of buttons(); track button.title) {
-        <button
-          [class]="
-            'btn ' +
-            (button.variant === 'primary' ? 'btn-primary' : '') +
-            ' btn-square'
-          "
-          (click)="button.action()"
-          [title]="button.title">
-          <i class="fa {{ button.icon }}"></i>
-        </button>
-      }
+      <div class="flex gap-1">
+        @for (button of buttons(); track button.title) {
+          @if (button.menuItems && button.menuItems.length > 0) {
+            <div class="dropdown dropdown-end">
+              <div
+                tabindex="0"
+                role="button"
+                [class]="
+                  'btn ' +
+                  (button.variant === 'primary' ? 'btn-primary' : '') +
+                  ' btn-square'
+                "
+                [title]="button.title">
+                <i class="fa {{ button.icon }}"></i>
+              </div>
+              <ul
+                tabindex="0"
+                class="dropdown-content menu bg-base-100 rounded-box p-2 shadow-xl w-42 z-100">
+                @for (item of button.menuItems; track item.label) {
+                  <li>
+                    <button
+                      [class]="item.isDestructive ? 'text-red-500' : ''"
+                      (click)="item.action()">
+                      {{ item.label }}
+                    </button>
+                  </li>
+                }
+              </ul>
+            </div>
+          } @else {
+            <button
+              [class]="
+                'btn ' +
+                (button.variant === 'primary' ? 'btn-primary' : '') +
+                ' btn-square'
+              "
+              (click)="button.action ? button.action() : null"
+              [title]="button.title">
+              <i class="fa {{ button.icon }}"></i>
+            </button>
+          }
+        }
+      </div>
     </div>
   `,
   standalone: true,

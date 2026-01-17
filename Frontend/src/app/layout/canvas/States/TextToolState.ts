@@ -1,4 +1,6 @@
 import { CanvasComponent } from '../canvas.component';
+import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
+import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { calcLineSpace, TextBoxShape } from '../Shapes/TextBoxShape';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { StyleName } from '../ShapeStyles/StyleName';
@@ -27,7 +29,11 @@ export class TextToolState extends CanvasToolState {
   override setStyleProperty(styleProperty: ShapeStyleProperty): void {
     this.canvas.style.updateProperty(styleProperty);
     if (this.#currentTextBox) {
-      this.#currentTextBox.setStyleProperty(styleProperty);
+      const properties = this.#currentTextBox.setStyleProperty(styleProperty);
+      this.canvas.changeShapesProperties(
+        [this.#currentTextBox.properties[ShapePropertyName.id]],
+        properties
+      );
       this.canvas.renderCanvas(false, true);
     }
   }
@@ -53,7 +59,11 @@ export class TextToolState extends CanvasToolState {
         return;
       } else {
         this.#currentTextBox.ctx = this.canvas.mainCtx;
-        this.canvas.shapes.push(this.#currentTextBox);
+        this.#currentTextBox.properties[ShapePropertyName.edited] = false;
+        this.canvas.changeShapesProperties(
+          [this.#currentTextBox.properties[ShapePropertyName.id]],
+          { [ShapePropertyName.edited]: false }
+        );
       }
       this.#currentTextBox = null;
       this.#selectedStart = null;
@@ -117,27 +127,49 @@ export class TextToolState extends CanvasToolState {
     const style = new TextBoxStyle(this.canvas.style);
     const lineSpace = calcLineSpace(style);
     this.#currentTextBox = new TextBoxShape(
-      '',
-      [
-        this.canvas.cursor[0],
-        this.canvas.cursor[1] - (style[StyleName.FontSize] / 2 - lineSpace),
-      ],
-      style,
-      this.canvas.tmpCtx,
-      false
+      {
+        [ShapePropertyName.id]: crypto.randomUUID(),
+        [ShapePropertyName.text]: '',
+        [ShapePropertyName.style]: new TextBoxStyle(this.canvas.style),
+        [ShapePropertyName.wrap]: false,
+        [ShapePropertyName.originX]: this.canvas.cursor[0],
+        [ShapePropertyName.originY]:
+          this.canvas.cursor[1] - (style[StyleName.FontSize] / 2 - lineSpace),
+        [ShapePropertyName.edited]: true,
+        [ShapePropertyName.selected]: false,
+      },
+      this.canvas.tmpCtx
     );
+    this.canvas.addShapes([this.#currentTextBox]);
   }
 
   private setCurrentTextBox(textBox: TextBoxShape) {
-    if (this.#currentTextBox != textBox) {
-      const idx = this.canvas.shapes.indexOf(textBox);
-      if (idx !== -1) {
-        this.canvas.shapes.splice(idx, 1);
+    if (this.#currentTextBox) {
+      if (
+        textBox.properties[ShapePropertyName.id] ===
+        this.#currentTextBox.properties[ShapePropertyName.id]
+      ) {
+        return;
+      } else {
+        this.releaseCurrentTextBox();
       }
-      this.releaseCurrentTextBox();
-      this.#currentTextBox = textBox;
     }
+    this.#currentTextBox = textBox;
     this.#currentTextBox.ctx = this.canvas.tmpCtx;
+    this.#currentTextBox.properties[ShapePropertyName.edited] = true;
+    this.canvas.changeShapesProperties(
+      [this.#currentTextBox.properties[ShapePropertyName.id]],
+      { [ShapePropertyName.edited]: true }
+    );
+  }
+
+  private callChangeAction(properties: ChangableSerializedShapeProperties) {
+    if (this.#currentTextBox && Object.keys(properties).length !== 0) {
+      this.canvas.changeShapesProperties(
+        [this.#currentTextBox.properties[ShapePropertyName.id]],
+        properties
+      );
+    }
   }
 
   private removeSelectedRange() {
@@ -146,10 +178,12 @@ export class TextToolState extends CanvasToolState {
       this.#selectedStart !== null &&
       this.#selectedEnd !== null
     ) {
-      this.#selectedStart = this.#currentTextBox.deleteRange(
+      const { selectedStart, properties } = this.#currentTextBox.deleteRange(
         this.#selectedStart,
         this.#selectedEnd
       );
+      this.#selectedStart = selectedStart;
+      this.callChangeAction(properties);
       this.#selectedEnd = null;
     }
   }
@@ -239,14 +273,18 @@ export class TextToolState extends CanvasToolState {
             this.removeSelectedRange();
           } else {
             if (event.ctrlKey) {
-              this.#selectedStart = this.#currentTextBox.deleteRange(
-                this.#selectedStart,
-                this.#currentTextBox.nextWordEndIndex(this.#selectedStart)
-              );
+              const { selectedStart, properties } =
+                this.#currentTextBox.deleteRange(
+                  this.#selectedStart,
+                  this.#currentTextBox.nextWordEndIndex(this.#selectedStart)
+                );
+              this.#selectedStart = selectedStart;
+              this.callChangeAction(properties);
             } else {
-              this.#selectedStart = this.#currentTextBox.deleteChar(
-                this.#selectedStart + 1
-              );
+              const { selectedStart, properties } =
+                this.#currentTextBox.deleteChar(this.#selectedStart + 1);
+              this.#selectedStart = selectedStart;
+              this.callChangeAction(properties);
             }
           }
           break;
@@ -256,16 +294,20 @@ export class TextToolState extends CanvasToolState {
             this.removeSelectedRange();
           } else {
             if (event.ctrlKey) {
-              this.#selectedStart = this.#currentTextBox.deleteRange(
-                this.#currentTextBox.previousWordStartIndex(
+              const { selectedStart, properties } =
+                this.#currentTextBox.deleteRange(
+                  this.#currentTextBox.previousWordStartIndex(
+                    this.#selectedStart
+                  ),
                   this.#selectedStart
-                ),
-                this.#selectedStart
-              );
+                );
+              this.#selectedStart = selectedStart;
+              this.callChangeAction(properties);
             } else {
-              this.#selectedStart = this.#currentTextBox.deleteChar(
-                this.#selectedStart
-              );
+              const { selectedStart, properties } =
+                this.#currentTextBox.deleteChar(this.#selectedStart);
+              this.#selectedStart = selectedStart;
+              this.callChangeAction(properties);
             }
           }
           break;
@@ -290,10 +332,7 @@ export class TextToolState extends CanvasToolState {
           if (this.#selectedEnd !== null) {
             this.removeSelectedRange();
           }
-          this.#selectedStart = this.#currentTextBox.insertText(
-            '\t',
-            this.#selectedStart
-          );
+          this.insertText('\t');
           break;
         case 'Home':
           event.preventDefault();
@@ -333,10 +372,12 @@ export class TextToolState extends CanvasToolState {
       text.length > 0
     ) {
       this.removeSelectedRange();
-      this.#selectedStart = this.#currentTextBox.insertText(
+      const { selectedStart, properties } = this.#currentTextBox.insertText(
         text,
         this.#selectedStart
       );
+      this.#selectedStart = selectedStart;
+      this.callChangeAction(properties);
       return true;
     }
     return false;
