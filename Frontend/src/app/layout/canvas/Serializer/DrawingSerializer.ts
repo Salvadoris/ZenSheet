@@ -20,7 +20,10 @@ import {
   RectangleStyle,
   RectangleStyleType,
 } from '../ShapeStyles/RectangleStyle';
-import { StraightLineStyleType } from '../ShapeStyles/StraightLineStyle';
+import {
+  StraightLineStyle,
+  StraightLineStyleType,
+} from '../ShapeStyles/StraightLineStyle';
 import {
   StrokedRectStyle,
   StrokedRectStyleType,
@@ -146,7 +149,7 @@ export class DrawingSerializer {
       case DrawingType.StraightLine:
         return new StraightLineDrawing({
           ...serializedDrawing.properties,
-          [DrawingPropertyName.style]: new StrokedRectStyle(
+          [DrawingPropertyName.style]: new StraightLineStyle(
             serializedDrawing.properties[
               DrawingPropertyName.style
             ] as StraightLineStyleType
