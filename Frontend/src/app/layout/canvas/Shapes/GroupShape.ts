@@ -33,10 +33,15 @@ export class GroupShape extends Shape {
         shape.originY -= properties[ShapePropertyName.originY];
       }
     }
-    if (!properties[ShapePropertyName.invertable]) {
-      properties[ShapePropertyName.invertable] = !properties[
+    if (!properties[ShapePropertyName.horizontallyInvertable]) {
+      properties[ShapePropertyName.horizontallyInvertable] = !properties[
         ShapePropertyName.shapes
-      ].some(s => !s.invertable);
+      ].some(s => !s.horizontallyInvertable);
+    }
+    if (!properties[ShapePropertyName.verticallyInvertable]) {
+      properties[ShapePropertyName.verticallyInvertable] = !properties[
+        ShapePropertyName.shapes
+      ].some(s => !s.verticallyInvertable);
     }
     super(properties as Required<GroupShapeProperties>, ctx);
     if (this.shapes.length !== 0) {
@@ -192,8 +197,10 @@ export class GroupShape extends Shape {
       this.shapes.map(s => s.style)
     );
 
-    this.properties[ShapePropertyName.invertable] = !this.shapes.some(
-      s => !s.invertable
+    this.properties[ShapePropertyName.horizontallyInvertable] =
+      !this.shapes.some(s => !s.horizontallyInvertable);
+    this.properties[ShapePropertyName.verticallyInvertable] = !this.shapes.some(
+      s => !s.verticallyInvertable
     );
     this.properties[ShapePropertyName.minWidth] = this.calcMinWidth();
     this.properties[ShapePropertyName.minHeight] = this.calcMinHeight();
@@ -220,9 +227,10 @@ export class GroupShape extends Shape {
         this.shapes.map(s => s.style)
       );
 
-      this.properties[ShapePropertyName.invertable] = !this.shapes.some(
-        s => !s.invertable
-      );
+      this.properties[ShapePropertyName.horizontallyInvertable] =
+        !this.shapes.some(s => !s.horizontallyInvertable);
+      this.properties[ShapePropertyName.verticallyInvertable] =
+        !this.shapes.some(s => !s.verticallyInvertable);
       this.properties[ShapePropertyName.minWidth] = this.calcMinWidth();
       this.properties[ShapePropertyName.minHeight] = this.calcMinHeight();
 

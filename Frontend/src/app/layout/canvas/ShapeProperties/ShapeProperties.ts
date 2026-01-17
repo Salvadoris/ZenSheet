@@ -18,7 +18,8 @@ export interface ShapeProperties {
   [ShapePropertyName.scaleY]: number;
   [ShapePropertyName.minWidth]: number;
   [ShapePropertyName.minHeight]: number;
-  [ShapePropertyName.invertable]: boolean;
+  [ShapePropertyName.horizontallyInvertable]: boolean;
+  [ShapePropertyName.verticallyInvertable]: boolean;
   [ShapePropertyName.horizontalInverted]: boolean;
   [ShapePropertyName.verticallyInverted]: boolean;
   [ShapePropertyName.edited]: boolean;
@@ -52,7 +53,8 @@ export type BaseShapeProperties = Required<
       | ShapePropertyName.scaleY
       | ShapePropertyName.minWidth
       | ShapePropertyName.minHeight
-      | ShapePropertyName.invertable
+      | ShapePropertyName.horizontallyInvertable
+      | ShapePropertyName.verticallyInvertable
       | ShapePropertyName.horizontalInverted
       | ShapePropertyName.verticallyInverted
     >
@@ -87,7 +89,8 @@ export type BaseSerializedShapeProperties = Required<
     | ShapePropertyName.height
     | ShapePropertyName.minWidth
     | ShapePropertyName.minHeight
-    | ShapePropertyName.invertable
+    | ShapePropertyName.horizontallyInvertable
+    | ShapePropertyName.verticallyInvertable
     | ShapePropertyName.edited
   >
 >;

@@ -107,11 +107,12 @@ export class CanvasComponent implements AfterViewInit {
   #shapes: Shape[] = [];
   #drawings: Drawing[] = [];
 
-  #scale = 1; 
+  #scale = 1;
   #minScale = 0.1;
   #maxScale = 5;
+  scaleChanged = output<number>();
 
-  #origin: Point = [0, 0]; 
+  #origin: Point = [0, 0];
 
   #cursor: Point = [0, 0];
 
@@ -134,6 +135,7 @@ export class CanvasComponent implements AfterViewInit {
 
   #mouseDown = false;
   #leftMouseDown = false;
+  #rightMouseDown = false;
 
   #style = new CanvasStyle({
     [StyleName.Color]: '#000000',
@@ -246,6 +248,10 @@ export class CanvasComponent implements AfterViewInit {
     return this.#leftMouseDown;
   }
 
+  get rightmouseDown() {
+    return this.#rightMouseDown;
+  }
+
   get style() {
     return this.#style;
   }
@@ -260,6 +266,18 @@ export class CanvasComponent implements AfterViewInit {
 
   get toolstate() {
     return this.#toolState;
+  }
+
+  zoomInCenter(zoom: number) {
+    if (zoom !== this.#scale) {
+      this.applyZoom(
+        zoom,
+        this.mainCtx.canvas.width / 2,
+        this.mainCtx.canvas.height / 2
+      );
+      this.scaleChanged.emit(this.scale);
+      this.renderCanvas(true, true);
+    }
   }
 
   addShapes(shapes: Shape[]) {
@@ -399,8 +417,10 @@ export class CanvasComponent implements AfterViewInit {
             groupShape.properties[ShapePropertyName.minWidth],
           [ShapePropertyName.minHeight]:
             groupShape.properties[ShapePropertyName.minHeight],
-          [ShapePropertyName.invertable]:
-            groupShape.properties[ShapePropertyName.invertable],
+          [ShapePropertyName.horizontallyInvertable]:
+            groupShape.properties[ShapePropertyName.horizontallyInvertable],
+          [ShapePropertyName.verticallyInvertable]:
+            groupShape.properties[ShapePropertyName.verticallyInvertable],
           [ShapePropertyName.edited]:
             groupShape.properties[ShapePropertyName.edited],
         },
@@ -555,6 +575,7 @@ export class CanvasComponent implements AfterViewInit {
   changeToHover() {
     this.#mouseDown = false;
     this.#leftMouseDown = false;
+    this.#rightMouseDown = false;
   }
 
   changeToMouseDown() {
@@ -603,6 +624,7 @@ export class CanvasComponent implements AfterViewInit {
     this.#origin[0] = focusX - (focusX - this.#origin[0]) * scaleRatio;
     this.#origin[1] = focusY - (focusY - this.#origin[1]) * scaleRatio;
     this.#scale = clampedScale;
+    this.scaleChanged.emit(this.#scale);
 
     this.renderCanvas(true, true);
   }
@@ -730,6 +752,12 @@ export class CanvasComponent implements AfterViewInit {
     }
 
     this.panBy(deltaX, deltaY);
+    this.updateCursor(event.clientX, event.clientY);
+    if (this.#mouseDown) {
+      this.onPressedMouseMove(event);
+    } else {
+      this.onHoveringMouseMove(event);
+    }
   }
 
   onWheel = (event: WheelEvent) => {
@@ -790,9 +818,13 @@ export class CanvasComponent implements AfterViewInit {
   }
 
   onMouseDown = (event: MouseEvent) => {
+    if (this.pressedMouseMoved) {
+      return;
+    }
     event.preventDefault();
     this.focusCanvas();
-    this.#leftMouseDown = event.button == 0 ? true : false;
+    this.#leftMouseDown = event.button == 0;
+    this.#rightMouseDown = event.button == 2;
     this.changeToMouseDown();
     this.#dragStart[0] = event.clientX - this.#origin[0];
     this.#dragStart[1] = event.clientY - this.#origin[1];
@@ -860,7 +892,7 @@ export class CanvasComponent implements AfterViewInit {
     shapes: SerializedShape[] = [],
     drawings: SerializedDrawing[] = [],
     origin: Point = [0, 0],
-    scale = 1 
+    scale = 1
   ): Promise<void> {
     this.#origin = origin;
     this.#scale = scale;
@@ -869,8 +901,7 @@ export class CanvasComponent implements AfterViewInit {
       this.#shapeSerializer.deserialized(s, this.mainCtx)
     );
 
-    this.#drawings = drawings.map(d => 
-      this.#drawingSerializer.deserialized(d));
+    this.#drawings = drawings.map(d => this.#drawingSerializer.deserialized(d));
 
     this.renderCanvas(true, true);
   }
@@ -884,7 +915,7 @@ export class CanvasComponent implements AfterViewInit {
         this.#drawingSerializer.serialized(drawing)
       ),
       origin: this.#origin,
-      scale: this.#scale
+      scale: this.#scale,
     });
   }
 }

@@ -7,6 +7,7 @@ import { CanvasComponent } from './layout/canvas/canvas.component';
 import { DetailSidebar } from './layout/detail-sidebar/detail-sidebar.component';
 import { SidebarComponent } from './layout/sidebar/sidebar.component';
 import { ToolbarComponent } from './layout/toolbar/toolbar.component';
+import { ZoomIndicatorComponent } from './layout/zoom-indicator/zoom-indicator.component';
 import { Note, Folder } from './models/note.model';
 import { NotesService } from './services/notes.service';
 
@@ -18,6 +19,7 @@ import { NotesService } from './services/notes.service';
     ToolbarComponent,
     CanvasComponent,
     DetailSidebar,
+    ZoomIndicatorComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
@@ -42,9 +44,13 @@ export class App implements OnInit {
 
   ngOnInit() {
     this.updateGlobalNoteStatus();
-    this.#router.events.pipe(
-      filter((event): event is NavigationEnd => event instanceof NavigationEnd)
-    ).subscribe(() => this.#syncWithUrl());
+    this.#router.events
+      .pipe(
+        filter(
+          (event): event is NavigationEnd => event instanceof NavigationEnd
+        )
+      )
+      .subscribe(() => this.#syncWithUrl());
 
     if (this.#router.navigated) {
       this.#syncWithUrl();
@@ -99,14 +105,15 @@ export class App implements OnInit {
 
   async #loadDefaultNote() {
     if (this.selectedNote()) return;
-    
+
     const folders = await this.#notesService.getFolders();
     const allNotes = folders.flatMap(f => this.#getAllNotesRecursive(f));
 
     if (allNotes.length === 0) return;
 
     const recentNote = allNotes.sort(
-      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
     )[0];
 
     if (recentNote) {
@@ -124,7 +131,7 @@ export class App implements OnInit {
 
   async onNoteSelected(note: Note) {
     if (this.selectedNote()?.id === note.id) return;
-    
+
     const requestId = ++this.#lastLoadRequestId;
     this.isLoadingNote.set(true);
 

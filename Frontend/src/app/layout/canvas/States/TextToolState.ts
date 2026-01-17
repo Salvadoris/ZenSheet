@@ -56,7 +56,9 @@ export class TextToolState extends CanvasToolState {
   private releaseCurrentTextBox() {
     if (this.#currentTextBox) {
       if (this.#currentTextBox.text.length == 0) {
-        return;
+        this.canvas.removeShapes([
+          this.#currentTextBox.properties[ShapePropertyName.id],
+        ]);
       } else {
         this.#currentTextBox.ctx = this.canvas.mainCtx;
         this.#currentTextBox.properties[ShapePropertyName.edited] = false;
@@ -137,6 +139,7 @@ export class TextToolState extends CanvasToolState {
           this.canvas.cursor[1] - (style[StyleName.FontSize] / 2 - lineSpace),
         [ShapePropertyName.edited]: true,
         [ShapePropertyName.selected]: false,
+        [ShapePropertyName.horizontallyInvertable]: false,
       },
       this.canvas.tmpCtx
     );
@@ -189,30 +192,36 @@ export class TextToolState extends CanvasToolState {
   }
 
   override onMouseDown(event: MouseEvent): void {
-    const textBox = this.findTextBoxOnCursor();
-    if (textBox) {
-      this.setCurrentTextBox(textBox);
-    } else {
-      this.createTextBox();
-    }
-    if (this.#currentTextBox) {
-      this.canvas.changeStyle(this.#currentTextBox.style);
-
-      const index = this.#currentTextBox.indexFromPosition(
-        this.canvas.cursor[0],
-        this.canvas.cursor[1]
-      );
-      if (event.shiftKey && this.#selectedStart !== null) {
-        this.#selectedEnd = index;
+    if (this.canvas.leftmouseDown) {
+      const textBox = this.findTextBoxOnCursor();
+      if (textBox) {
+        this.setCurrentTextBox(textBox);
       } else {
-        this.#selectedStart = index;
-        this.#selectedEnd = null;
+        this.createTextBox();
+      }
+      if (this.#currentTextBox) {
+        this.canvas.changeStyle(this.#currentTextBox.style);
+
+        const index = this.#currentTextBox.indexFromPosition(
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        );
+        if (event.shiftKey && this.#selectedStart !== null) {
+          this.#selectedEnd = index;
+        } else {
+          this.#selectedStart = index;
+          this.#selectedEnd = null;
+        }
       }
     }
   }
 
   override onPressedMouseMove(_event: MouseEvent): void {
-    if (this.#currentTextBox && this.#selectedStart !== null) {
+    if (
+      this.canvas.leftmouseDown &&
+      this.#currentTextBox &&
+      this.#selectedStart !== null
+    ) {
       this.setSelectedEnd(
         this.#currentTextBox.indexFromPosition(
           this.canvas.cursor[0],

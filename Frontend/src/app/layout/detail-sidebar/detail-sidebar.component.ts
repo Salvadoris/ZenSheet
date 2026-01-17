@@ -26,15 +26,15 @@ export class DetailSidebar {
   LineAlignment = LineAlignment;
 
   style: NullableShapeStyle = {};
-  colors: string[] = ['#000000', '#ff0000', '#00ff00', '#0000ff'];
+
+  colors: string[] = ['#000000', '#111870', '#c21c20', '#ffea00'];
   lineWidths: number[] = [4, 10, 20];
-  lineCaps: CanvasLineCap[] = ['round', 'square'];
   lineAlignments: LineAlignment[] = [
     LineAlignment.Left,
     LineAlignment.Center,
     LineAlignment.Right,
   ];
-  fontSizes: number[] = [20, 40, 80, 120];
+  fontSizes: number[] = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120];
   fontNames: string[] = [
     'Arial',
     'Times New Roman',
@@ -43,7 +43,6 @@ export class DetailSidebar {
     'Courier New',
     'Brush Script MT',
   ];
-  lineSpaces: number[] = [1, 1.25, 1.5, 1.75, 2, 2.5, 3];
 
   #cdr = inject(ChangeDetectorRef);
 

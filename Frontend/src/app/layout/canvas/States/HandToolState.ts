@@ -25,14 +25,18 @@ export class HandToolState extends CanvasToolState {
   override remove(): void {}
 
   override onMouseDown(_event: MouseEvent): void {
-    this.canvas.disableMove();
-    this.canvas.changeCursor('grabbing');
+    if (this.canvas.leftmouseDown) {
+      this.canvas.disableMove();
+      this.canvas.changeCursor('grabbing');
+    }
   }
 
   override onPressedMouseMove(event: MouseEvent): void {
-    this.canvas.origin[0] = event.clientX - this.canvas.dragStart[0];
-    this.canvas.origin[1] = event.clientY - this.canvas.dragStart[1];
-    this.canvas.renderCanvas(true, false);
+    if (this.canvas.leftmouseDown) {
+      this.canvas.origin[0] = event.clientX - this.canvas.dragStart[0];
+      this.canvas.origin[1] = event.clientY - this.canvas.dragStart[1];
+      this.canvas.renderCanvas(true, false);
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
