@@ -404,8 +404,10 @@ export class CanvasComponent implements AfterViewInit {
             groupShape.properties[ShapePropertyName.minWidth],
           [ShapePropertyName.minHeight]:
             groupShape.properties[ShapePropertyName.minHeight],
-          [ShapePropertyName.invertable]:
-            groupShape.properties[ShapePropertyName.invertable],
+          [ShapePropertyName.horizontallyInvertable]:
+            groupShape.properties[ShapePropertyName.horizontallyInvertable],
+          [ShapePropertyName.verticallyInvertable]:
+            groupShape.properties[ShapePropertyName.verticallyInvertable],
           [ShapePropertyName.edited]:
             groupShape.properties[ShapePropertyName.edited],
         },

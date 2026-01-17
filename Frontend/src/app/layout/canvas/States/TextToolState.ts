@@ -137,6 +137,7 @@ export class TextToolState extends CanvasToolState {
           this.canvas.cursor[1] - (style[StyleName.FontSize] / 2 - lineSpace),
         [ShapePropertyName.edited]: true,
         [ShapePropertyName.selected]: false,
+        [ShapePropertyName.horizontallyInvertable]: false,
       },
       this.canvas.tmpCtx
     );
