@@ -134,9 +134,13 @@ export class LineShape extends Shape {
 
     this.ctx.lineWidth = this.style[StyleName.LineWidth];
     this.ctx.lineCap = this.style[StyleName.LineCap];
-    this.ctx.strokeStyle =
-      this.style[StyleName.Color] +
-      this.style[StyleName.Opacity].toString(16).padStart(2, '0');
+    if (this.style[StyleName.Color].length === 9) {
+      this.ctx.strokeStyle = this.style[StyleName.Color];
+    } else {
+      this.ctx.strokeStyle =
+        this.style[StyleName.Color] +
+        this.style[StyleName.Opacity].toString(16).padStart(2, '0');
+    }
     this.ctx.lineJoin = 'round';
 
     for (const chunk of this.chunks) {

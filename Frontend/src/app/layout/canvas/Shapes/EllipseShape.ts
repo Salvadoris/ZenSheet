@@ -49,8 +49,17 @@ export class EllipseShape extends Shape {
     const lineWidth = this.style[StyleName.LineWidth];
     const opacity = this.style[StyleName.Opacity].toString(16).padStart(2, '0');
     this.ctx.lineWidth = lineWidth;
-    this.ctx.strokeStyle = this.style[StyleName.Color] + opacity;
-    this.ctx.fillStyle = this.style[StyleName.BackgroundColor] + opacity;
+
+    if (this.style[StyleName.Color].length === 9) {
+      this.ctx.strokeStyle = this.style[StyleName.Color];
+    } else {
+      this.ctx.strokeStyle = this.style[StyleName.Color] + opacity;
+    }
+    if (this.style[StyleName.BackgroundColor].length === 9) {
+      this.ctx.fillStyle = this.style[StyleName.BackgroundColor];
+    } else {
+      this.ctx.fillStyle = this.style[StyleName.BackgroundColor] + opacity;
+    }
 
     const centerX = this.originX + this.width / 2;
     const centerY = this.originY + this.height / 2;

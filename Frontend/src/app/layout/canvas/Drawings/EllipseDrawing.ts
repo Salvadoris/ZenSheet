@@ -56,8 +56,17 @@ export class EllipseDrawing implements Drawing {
     const lineWidth = this.style[StyleName.LineWidth];
     const opacity = this.style[StyleName.Opacity].toString(16).padStart(2, '0');
     ctx.lineWidth = lineWidth;
-    ctx.strokeStyle = this.style[StyleName.Color] + opacity;
-    ctx.fillStyle = this.style[StyleName.BackgroundColor] + opacity;
+
+    if (this.style[StyleName.Color].length === 9) {
+      ctx.strokeStyle = this.style[StyleName.Color];
+    } else {
+      ctx.strokeStyle = this.style[StyleName.Color] + opacity;
+    }
+    if (this.style[StyleName.BackgroundColor].length === 9) {
+      ctx.fillStyle = this.style[StyleName.BackgroundColor];
+    } else {
+      ctx.fillStyle = this.style[StyleName.BackgroundColor] + opacity;
+    }
 
     const centerX = (this.p1[0] + this.p0[0]) / 2;
     const centerY = (this.p1[1] + this.p0[1]) / 2;

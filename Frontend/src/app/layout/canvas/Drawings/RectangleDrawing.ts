@@ -58,8 +58,17 @@ export class RectangleDrawing implements Drawing {
     const lineWidth = this.style[StyleName.LineWidth];
     const opacity = this.style[StyleName.Opacity].toString(16).padStart(2, '0');
     ctx.lineWidth = lineWidth;
-    ctx.strokeStyle = this.style[StyleName.Color] + opacity;
-    ctx.fillStyle = this.style[StyleName.BackgroundColor] + opacity;
+
+    if (this.style[StyleName.Color].length === 9) {
+      ctx.strokeStyle = this.style[StyleName.Color];
+    } else {
+      ctx.strokeStyle = this.style[StyleName.Color] + opacity;
+    }
+    if (this.style[StyleName.BackgroundColor].length === 9) {
+      ctx.fillStyle = this.style[StyleName.BackgroundColor];
+    } else {
+      ctx.fillStyle = this.style[StyleName.BackgroundColor] + opacity;
+    }
 
     const outerOffsetX = horizontalInverted ? -lineWidth / 2 : lineWidth / 2;
     const outerOffsetY = verticallyInverted ? -lineWidth / 2 : lineWidth / 2;

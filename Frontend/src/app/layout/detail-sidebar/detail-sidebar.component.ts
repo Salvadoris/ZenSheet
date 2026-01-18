@@ -27,7 +27,7 @@ export class DetailSidebar {
 
   style: NullableShapeStyle = {};
 
-  colors: string[] = ['#000000', '#111870', '#c21c20', '#ffea00'];
+  colors: string[] = ['#000000', '#111870', '#c21c20', '#00000000'];
   lineWidths: number[] = [4, 10, 20];
   lineAlignments: LineAlignment[] = [
     LineAlignment.Left,
@@ -98,5 +98,15 @@ export class DetailSidebar {
     }
     this.#cdr.markForCheck();
     this.stylePropertyChange.emit(styleProperty);
+  }
+
+  isColorTransparent(color: string | undefined | null) {
+    return (
+      color !== undefined &&
+      color !== null &&
+      color.length === 9 &&
+      color[7] === '0' &&
+      color[8] === '0'
+    );
   }
 }

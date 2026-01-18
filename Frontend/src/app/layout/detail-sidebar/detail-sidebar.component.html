@@ -6,19 +6,39 @@
     <div>
       <div class="text-md pb-0.5">Color</div>
       <div class="flex flex-row gap-3">
-        <div
-          tabindex="0"
-          class="tile m-px"
-          [style.background-color]="style[StyleName.Color]">
-          <input
-            #colorpicker
-            type="color"
-            class="opacity-0"
-            [value]="style[StyleName.Color]"
-            (change)="
-              changeStyle({ name: StyleName.Color, value: colorpicker.value })
-            " />
-        </div>
+        @if (isColorTransparent(style[StyleName.Color])) {
+          <div tabindex="0" class="tile m-px relative">
+            <svg class="tile-content absolute top-0 left-0" viewBox="0 0 3 3">
+              <rect x="0" y="0" width="3" height="3" fill="#e0e0e0" />
+              <rect x="1" y="0" width="1" height="1" fill="#bdbdbd" />
+              <rect x="0" y="1" width="1" height="1" fill="#bdbdbd" />
+              <rect x="2" y="1" width="1" height="1" fill="#bdbdbd" />
+              <rect x="1" y="2" width="1" height="1" fill="#bdbdbd" />
+            </svg>
+            <input
+              #colorpicker
+              type="color"
+              class="opacity-0 absolute top-0 left-0"
+              [value]="style[StyleName.Color]"
+              (change)="
+                changeStyle({ name: StyleName.Color, value: colorpicker.value })
+              " />
+          </div>
+        } @else {
+          <div
+            tabindex="0"
+            class="tile m-px"
+            [style.background-color]="style[StyleName.Color]">
+            <input
+              #colorpicker
+              type="color"
+              class="opacity-0"
+              [value]="style[StyleName.Color]"
+              (change)="
+                changeStyle({ name: StyleName.Color, value: colorpicker.value })
+              " />
+          </div>
+        }
         <hr class="m-0.5 h-8 w-0.5 bg-gray-400 border-none" />
         <div class="flex flex-row gap-2">
           @for (color of colors; track $index) {
@@ -29,7 +49,19 @@
                 'tile-selected': color === style[StyleName.Color],
               }"
               class="tile">
-              <div class="tile-content" [style.background-color]="color"></div>
+              @if (color.length === 9 && color[7] === '0' && color[8] === '0') {
+                <svg class="tile-content" viewBox="0 0 3 3">
+                  <rect x="0" y="0" width="3" height="3" fill="#e0e0e0" />
+                  <rect x="1" y="0" width="1" height="1" fill="#bdbdbd" />
+                  <rect x="0" y="1" width="1" height="1" fill="#bdbdbd" />
+                  <rect x="2" y="1" width="1" height="1" fill="#bdbdbd" />
+                  <rect x="1" y="2" width="1" height="1" fill="#bdbdbd" />
+                </svg>
+              } @else {
+                <div
+                  class="tile-content"
+                  [style.background-color]="color"></div>
+              }
             </div>
           }
         </div>
@@ -40,22 +72,45 @@
     <div>
       <div class="text-md pb-0.5">Background Color</div>
       <div class="flex flex-row gap-3">
-        <div
-          tabindex="0"
-          class="tile m-px"
-          [style.background-color]="style[StyleName.BackgroundColor]">
-          <input
-            #colorpicker
-            type="color"
-            class="opacity-0"
-            [value]="style[StyleName.BackgroundColor]"
-            (change)="
-              changeStyle({
-                name: StyleName.BackgroundColor,
-                value: colorpicker.value,
-              })
-            " />
-        </div>
+        @if (isColorTransparent(style[StyleName.BackgroundColor])) {
+          <div tabindex="0" class="tile m-px relative">
+            <svg class="tile-content absolute top-0 left-0" viewBox="0 0 3 3">
+              <rect x="0" y="0" width="3" height="3" fill="#e0e0e0" />
+              <rect x="1" y="0" width="1" height="1" fill="#bdbdbd" />
+              <rect x="0" y="1" width="1" height="1" fill="#bdbdbd" />
+              <rect x="2" y="1" width="1" height="1" fill="#bdbdbd" />
+              <rect x="1" y="2" width="1" height="1" fill="#bdbdbd" />
+            </svg>
+            <input
+              #colorpicker
+              type="color"
+              class="opacity-0 absolute top-0 left-0"
+              [value]="style[StyleName.BackgroundColor]"
+              (change)="
+                changeStyle({
+                  name: StyleName.BackgroundColor,
+                  value: colorpicker.value,
+                })
+              " />
+          </div>
+        } @else {
+          <div
+            tabindex="0"
+            class="tile m-px"
+            [style.background-color]="style[StyleName.BackgroundColor]">
+            <input
+              #colorpicker
+              type="color"
+              class="opacity-0"
+              [value]="style[StyleName.BackgroundColor]"
+              (change)="
+                changeStyle({
+                  name: StyleName.BackgroundColor,
+                  value: colorpicker.value,
+                })
+              " />
+          </div>
+        }
         <hr class="m-0.5 h-8 w-0.5 bg-gray-400 border-none" />
         <div class="flex flex-row gap-2">
           @for (color of colors; track $index) {
@@ -68,7 +123,19 @@
                 'tile-selected': color === style[StyleName.BackgroundColor],
               }"
               class="tile">
-              <div class="tile-content" [style.background-color]="color"></div>
+              @if (color.length === 9 && color[7] === '0' && color[8] === '0') {
+                <svg class="tile-content" viewBox="0 0 3 3">
+                  <rect x="0" y="0" width="3" height="3" fill="#e0e0e0" />
+                  <rect x="1" y="0" width="1" height="1" fill="#bdbdbd" />
+                  <rect x="0" y="1" width="1" height="1" fill="#bdbdbd" />
+                  <rect x="2" y="1" width="1" height="1" fill="#bdbdbd" />
+                  <rect x="1" y="2" width="1" height="1" fill="#bdbdbd" />
+                </svg>
+              } @else {
+                <div
+                  class="tile-content"
+                  [style.background-color]="color"></div>
+              }
             </div>
           }
         </div>

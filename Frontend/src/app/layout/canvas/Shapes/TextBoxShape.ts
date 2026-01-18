@@ -301,9 +301,14 @@ export class TextBoxShape extends Shape {
     selectedEnd: number | null = null
   ) {
     this.ctx.save();
-    const defaultColor =
-      this.style[StyleName.Color] +
-      this.style[StyleName.Opacity].toString(16).padStart(2, '0');
+    let defaultColor = '';
+    if (this.style[StyleName.Color].length === 9) {
+      defaultColor = this.style[StyleName.Color];
+    } else {
+      defaultColor =
+        this.style[StyleName.Color] +
+        this.style[StyleName.Opacity].toString(16).padStart(2, '0');
+    }
     this.applyFontStyle();
     this.ctx.textBaseline = 'top';
 

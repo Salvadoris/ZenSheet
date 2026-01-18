@@ -71,9 +71,13 @@ export class StraightLineDrawing implements Drawing {
   render(ctx: CanvasRenderingContext2D): void {
     ctx.lineWidth = this.style[StyleName.LineWidth];
     ctx.lineCap = this.style[StyleName.LineCap];
-    ctx.strokeStyle =
-      this.style[StyleName.Color] +
-      this.style[StyleName.Opacity].toString(16).padStart(2, '0');
+    if (this.style[StyleName.Color].length === 9) {
+      ctx.strokeStyle = this.style[StyleName.Color];
+    } else {
+      ctx.strokeStyle =
+        this.style[StyleName.Color] +
+        this.style[StyleName.Opacity].toString(16).padStart(2, '0');
+    }
     ctx.stroke(this.path());
   }
 }

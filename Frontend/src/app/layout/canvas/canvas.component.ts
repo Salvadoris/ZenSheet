@@ -140,7 +140,7 @@ export class CanvasComponent implements AfterViewInit {
 
   #style = new CanvasStyle({
     [StyleName.Color]: '#000000',
-    [StyleName.BackgroundColor]: '#000000',
+    [StyleName.BackgroundColor]: '#00000000',
     [StyleName.LineWidth]: 10,
     [StyleName.LineCap]: 'round',
     [StyleName.Opacity]: 255,
