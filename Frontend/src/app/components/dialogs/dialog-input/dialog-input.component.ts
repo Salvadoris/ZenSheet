@@ -23,6 +23,7 @@ export interface InputDialogData {
   submitButton: SubmitButton;
   minLength?: number;
   maxLength?: number;
+  validator?: import('@angular/forms').ValidatorFn;
 }
 
 @Component({
@@ -41,6 +42,7 @@ export class DialogInputComponent {
       Validators.required,
       Validators.minLength(this.data.minLength ?? 1),
       Validators.maxLength(this.data.maxLength ?? 50),
+      ...(this.data.validator ? [this.data.validator] : []),
     ],
   });
 

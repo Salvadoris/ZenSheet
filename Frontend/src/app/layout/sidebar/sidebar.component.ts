@@ -117,26 +117,37 @@ export class SidebarComponent implements OnInit {
   }
 
   addFolder() {
-    this.#dialogService.openCreateFolderDialog().subscribe(async result => {
-      if (result?.name) {
-        await this.#notesService.createFolder(result.name, this.selectedFolder()?.id);
-        await this.loadFolders();
-      }
-    });
+    const parentFolder = this.selectedFolder();
+    const existingNames = parentFolder
+      ? (parentFolder.subfolders || []).map(f => f.name)
+      : this.rootFolders().map(f => f.name);
+
+    this.#dialogService.openCreateFolderDialog(this.#getUniqueNameValidator(existingNames))
+      .subscribe(async result => {
+        if (result?.name) {
+          await this.#notesService.createFolder(result.name, parentFolder?.id);
+          await this.loadFolders();
+        }
+      });
   }
 
   async addNote() {
-    if (!this.selectedFolder()) return;
-    this.#dialogService.openCreateNoteDialog().subscribe(async result => {
-      if (result?.name) {
-        const note = await this.#notesService.createNote(
-          this.selectedFolder()!.id,
-          result.name
-        );
-        await this.loadFolders();
-        this.selectNote(note);
-      }
-    });
+    const folder = this.selectedFolder();
+    if (!folder) return;
+
+    const existingNames = (folder.notes || []).map(n => n.title);
+
+    this.#dialogService.openCreateNoteDialog(this.#getUniqueNameValidator(existingNames))
+      .subscribe(async result => {
+        if (result?.name) {
+          const note = await this.#notesService.createNote(
+            folder.id,
+            result.name
+          );
+          await this.loadFolders();
+          this.selectNote(note);
+        }
+      });
   }
 
   selectNote(note: Note) {
@@ -197,8 +208,22 @@ export class SidebarComponent implements OnInit {
 
   renameFolder(folderId: string) {
     const currentFolder = this.#findInAllFolders(folderId);
+    if (!currentFolder) return;
+
+    let siblings: Folder[] = [];
+    if (currentFolder.parentFolderId) {
+       const parent = this.#findInAllFolders(currentFolder.parentFolderId);
+       siblings = parent?.subfolders || [];
+    } else {
+       siblings = this.rootFolders();
+    }
+
+    const existingNames = siblings
+      .filter(f => f.id !== folderId)
+      .map(f => f.name);
+
     this.#dialogService
-      .openRenameFolderDialog(currentFolder?.name)
+      .openRenameFolderDialog(currentFolder.name, this.#getUniqueNameValidator(existingNames))
       .subscribe(result => {
         if (result) {
           this.#notesService
@@ -262,15 +287,10 @@ export class SidebarComponent implements OnInit {
   getRootHeaderButtons(): HeaderButton[] {
     return [
       {
-        icon: 'fa-plus',
-        title: 'New...',
+        icon: 'fa-folder-plus',
+        title: 'New Folder',
         variant: 'primary',
-        menuItems: [
-          {
-            label: 'New Folder',
-            action: () => this.addFolder(),
-          },
-        ],
+        action: () => this.addFolder()
       },
     ];
   }
@@ -296,9 +316,18 @@ export class SidebarComponent implements OnInit {
   }
 
   renameNote(noteId: string) {
-    const note = this.selectedFolder()?.notes.find(n => n.id === noteId);
+    const parentFolder = this.selectedFolder();
+    if (!parentFolder) return;
+
+    const note = parentFolder.notes.find(n => n.id === noteId);
+    if (!note) return;
+
+    const existingNames = parentFolder.notes
+      .filter(n => n.id !== noteId)
+      .map(n => n.title);
+
     this.#dialogService
-      .openRenameNoteDialog(note?.title)
+      .openRenameNoteDialog(note?.title, this.#getUniqueNameValidator(existingNames))
       .subscribe(result => {
         if (result) {
           this.#notesService.renameNote(noteId, result.name).then(() => this.loadFolders());
@@ -308,5 +337,15 @@ export class SidebarComponent implements OnInit {
 
   getContrastingTextColor(background?: string): string {
     return getContrastingTextColor(background);
+  }
+
+  #getUniqueNameValidator(existingNames: string[]): import('@angular/forms').ValidatorFn {
+    return (control: import('@angular/forms').AbstractControl): import('@angular/forms').ValidationErrors | null => {
+      const value = control.value?.trim();
+      if (!value) return null;
+      
+      const exists = existingNames.some(name => name.toLowerCase() === value.toLowerCase());
+      return exists ? { nameExists: true } : null;
+    };
   }
 }
