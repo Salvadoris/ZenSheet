@@ -45,11 +45,12 @@ import {
 } from './ShapeStyles/ShapeStyle';
 import { StyleName } from './ShapeStyles/StyleName';
 import { CanvasToolState } from './States/CanvasToolState';
-import { FilledRectToolState } from './States/FilledRectToolState';
+import { EllipseToolState } from './States/EllipseToolState';
 import { HandToolState } from './States/HandToolState';
 import { PenToolState } from './States/PenToolState';
+import { RectangleToolState } from './States/RectangleToolState';
 import { SelectToolState } from './States/SelectToolState';
-import { StrokedRectToolState } from './States/StrokedRectToolState';
+import { StraightLineToolState } from './States/StraightLineToolState';
 import { TextToolState } from './States/TextToolState';
 
 type GestureEventWithScale = Event & {
@@ -139,6 +140,7 @@ export class CanvasComponent implements AfterViewInit {
 
   #style = new CanvasStyle({
     [StyleName.Color]: '#000000',
+    [StyleName.BackgroundColor]: '#00000000',
     [StyleName.LineWidth]: 10,
     [StyleName.LineCap]: 'round',
     [StyleName.Opacity]: 255,
@@ -525,11 +527,14 @@ export class CanvasComponent implements AfterViewInit {
       case Mode.Pen:
         this.#toolState = new PenToolState(this);
         break;
-      case Mode.FilledRect:
-        this.#toolState = new FilledRectToolState(this);
+      case Mode.StraightLine:
+        this.#toolState = new StraightLineToolState(this);
         break;
-      case Mode.StrokedRect:
-        this.#toolState = new StrokedRectToolState(this);
+      case Mode.Rectangle:
+        this.#toolState = new RectangleToolState(this);
+        break;
+      case Mode.Ellipse:
+        this.#toolState = new EllipseToolState(this);
         break;
       case Mode.Text:
         this.#toolState = new TextToolState(this);

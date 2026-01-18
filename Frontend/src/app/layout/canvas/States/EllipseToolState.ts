@@ -1,17 +1,17 @@
 import { CanvasComponent } from '../canvas.component';
 import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
-import { StrokedRectDrawing } from '../Drawings/StrokedRectDrawing';
+import { EllipseDrawing } from '../Drawings/EllipseDrawing';
+import { EllipseStyle } from '../ShapeStyles/EllipseStyle';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
-import { StrokedRectStyle } from '../ShapeStyles/StrokedRectStyle';
 
 import { CanvasToolState } from './CanvasToolState';
 
-export class StrokedRectToolState extends CanvasToolState {
-  #currentDrawing: StrokedRectDrawing | null = null;
+export class EllipseToolState extends CanvasToolState {
+  #currentDrawing: EllipseDrawing | null = null;
 
   constructor(canvas: CanvasComponent) {
     super(canvas);
-    this.canvas.changeStyle(new StrokedRectStyle(this.canvas.style));
+    this.canvas.changeStyle(new EllipseStyle(this.canvas.style));
     if (this.canvas.tmpCtx) {
       this.canvas.changeCursor('default');
     }
@@ -34,40 +34,38 @@ export class StrokedRectToolState extends CanvasToolState {
   override onMouseDown(_event: MouseEvent): void {}
 
   override onPressedMouseMove(_event: MouseEvent): void {
-    if (this.canvas.leftmouseDown) {
-      if (this.canvas.firstMove) {
-        this.#currentDrawing = new StrokedRectDrawing({
-          [DrawingPropertyName.id]: crypto.randomUUID(),
-          [DrawingPropertyName.p0]: [
-            this.canvas.startCursor[0],
-            this.canvas.startCursor[1],
-          ],
-          [DrawingPropertyName.p1]: [
-            this.canvas.cursor[0],
-            this.canvas.cursor[1],
-          ],
-          [DrawingPropertyName.style]: new StrokedRectStyle(this.canvas.style),
-        });
-        this.canvas.addDrawings([this.#currentDrawing]);
-      } else if (this.#currentDrawing) {
-        const changeProperties = this.#currentDrawing.update([
+    if (this.canvas.firstMove) {
+      this.#currentDrawing = new EllipseDrawing({
+        [DrawingPropertyName.id]: crypto.randomUUID(),
+        [DrawingPropertyName.p0]: [
+          this.canvas.startCursor[0],
+          this.canvas.startCursor[1],
+        ],
+        [DrawingPropertyName.p1]: [
           this.canvas.cursor[0],
           this.canvas.cursor[1],
-        ]);
-        this.canvas.changeDrawingsProperties(
-          [this.#currentDrawing.properties[DrawingPropertyName.id]],
-          changeProperties
-        );
-      }
-      this.canvas.renderCanvas(false, true);
+        ],
+        [DrawingPropertyName.style]: new EllipseStyle(this.canvas.style),
+      });
+      this.canvas.addDrawings([this.#currentDrawing]);
+    } else if (this.#currentDrawing) {
+      const changeProperties = this.#currentDrawing.update([
+        this.canvas.cursor[0],
+        this.canvas.cursor[1],
+      ]);
+      this.canvas.changeDrawingsProperties(
+        [this.#currentDrawing.properties[DrawingPropertyName.id]],
+        changeProperties
+      );
     }
+    this.canvas.renderCanvas(false, true);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   override onHoveringMouseMove(_event: MouseEvent): void {}
 
   override onMouseUp(_event: MouseEvent): void {
-    if (this.canvas.leftmouseDown && this.#currentDrawing) {
+    if (this.#currentDrawing) {
       this.canvas.drawingToShape(this.#currentDrawing);
       this.#currentDrawing = null;
       this.canvas.renderCanvas(true, true);

@@ -1,11 +1,11 @@
-import { StrokedRectStyle } from '../ShapeStyles/StrokedRectStyle';
+import { RectangleStyle } from '../ShapeStyles/RectangleStyle';
 
 import { BaseDrawingProperties, DrawingProperties } from './DrawingProperties';
 import { DrawingPropertyName } from './DrawingPropertyName';
 
-export type StrokedRectDrawingProperties = Omit<
+export type RectangleDrawingProperties = Omit<
   BaseDrawingProperties,
   DrawingPropertyName.style
-> & { [DrawingPropertyName.style]: StrokedRectStyle } & Required<
+> & { [DrawingPropertyName.style]: RectangleStyle } & Required<
     Pick<DrawingProperties, DrawingPropertyName.p0 | DrawingPropertyName.p1>
   >;

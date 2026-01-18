@@ -1,7 +1,7 @@
 import {
-  FilledRectShapeProperties,
-  SerializedFilledRectShapeProperties,
-} from '../ShapeProperties/FilledRectShapeProperties';
+  EllipseShapeProperties,
+  SerializedEllipseShapeProperties,
+} from '../ShapeProperties/EllipseShapeProperties';
 import {
   GroupShapeProperties,
   SerializedGroupShapeProperties,
@@ -15,23 +15,24 @@ import {
   SerializedLineShapeProperties,
 } from '../ShapeProperties/LineShapeProperties';
 import {
+  RectangleShapeProperties,
+  SerializedRectangleShapeProperties,
+} from '../ShapeProperties/RectangleShapeProperties';
+import {
   SerializedShapeProperties,
   ShapeProperties,
 } from '../ShapeProperties/ShapeProperties';
 import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import {
-  SerializedStrokedRectShapeProperties,
-  StrokedRectShapeProperties,
-} from '../ShapeProperties/StrokedRectShapeProperties';
+  SerializedStraightLineShapeProperties,
+  StraightLineShapeProperties,
+} from '../ShapeProperties/StraightLineShapeProperties';
 import {
   SerializedTextBoxShapeProperties,
   TextBoxShapeProperties,
 } from '../ShapeProperties/TextBoxShapeProperties';
 import { Shape } from '../Shapes/Shape';
-import {
-  FilledRectStyle,
-  FilledRectStyleType,
-} from '../ShapeStyles/FilledRectStyle';
+import { EllipseStyle, EllipseStyleType } from '../ShapeStyles/EllipseStyle';
 import {
   GroupShapeStyle,
   GroupShapeStyleType,
@@ -39,9 +40,13 @@ import {
 import { ImageStyle, ImageStyleType } from '../ShapeStyles/ImageStyle';
 import { LineStyle, LineStyleType } from '../ShapeStyles/LineStyle';
 import {
-  StrokedRectStyle,
-  StrokedRectStyleType,
-} from '../ShapeStyles/StrokedRectStyle';
+  RectangleStyle,
+  RectangleStyleType,
+} from '../ShapeStyles/RectangleStyle';
+import {
+  StraightLineStyle,
+  StraightLineStyleType,
+} from '../ShapeStyles/StraightLineStyle';
 import { TextBoxStyle, TextBoxStyleType } from '../ShapeStyles/TextBoxStyle';
 
 import { SerializedShape, ShapeSerializer, ShapeType } from './ShapeSerializer';
@@ -54,20 +59,6 @@ export class ShapePropertiesSerializer {
     properties: ShapeProperties
   ): SerializedShapeProperties {
     switch (type) {
-      case ShapeType.FilledRect:
-        return {
-          ...(properties as FilledRectShapeProperties),
-          [ShapePropertyName.style]: {
-            ...properties[ShapePropertyName.style],
-          },
-        } as SerializedFilledRectShapeProperties;
-      case ShapeType.StrokedRect:
-        return {
-          ...(properties as StrokedRectShapeProperties),
-          [ShapePropertyName.style]: {
-            ...properties[ShapePropertyName.style],
-          },
-        } as SerializedStrokedRectShapeProperties;
       case ShapeType.Line:
         return {
           ...(properties as LineShapeProperties),
@@ -78,6 +69,27 @@ export class ShapePropertiesSerializer {
             ...(properties as LineShapeProperties)[ShapePropertyName.points],
           ],
         } as SerializedLineShapeProperties;
+      case ShapeType.StraightLine:
+        return {
+          ...(properties as StraightLineShapeProperties),
+          [ShapePropertyName.style]: {
+            ...properties[ShapePropertyName.style],
+          },
+        } as SerializedStraightLineShapeProperties;
+      case ShapeType.Rectangle:
+        return {
+          ...(properties as RectangleShapeProperties),
+          [ShapePropertyName.style]: {
+            ...properties[ShapePropertyName.style],
+          },
+        } as SerializedRectangleShapeProperties;
+      case ShapeType.Ellipse:
+        return {
+          ...(properties as EllipseShapeProperties),
+          [ShapePropertyName.style]: {
+            ...properties[ShapePropertyName.style],
+          },
+        } as SerializedEllipseShapeProperties;
       case ShapeType.Image:
         return {
           ...(properties as ImageShapeProperties),
@@ -127,30 +139,6 @@ export class ShapePropertiesSerializer {
         serializedProperties[ShapePropertyName.height] < 0,
     };
     switch (type) {
-      case ShapeType.FilledRect:
-        return {
-          ...(serializedProperties as SerializedFilledRectShapeProperties),
-          ...properties,
-          [ShapePropertyName.style]: new FilledRectStyle(
-            serializedProperties[ShapePropertyName.style] as FilledRectStyleType
-          ),
-          [ShapePropertyName.id]: copy
-            ? crypto.randomUUID()
-            : serializedProperties[ShapePropertyName.id],
-        } as Required<FilledRectShapeProperties>;
-      case ShapeType.StrokedRect:
-        return {
-          ...(serializedProperties as SerializedStrokedRectShapeProperties),
-          ...properties,
-          [ShapePropertyName.style]: new StrokedRectStyle(
-            serializedProperties[
-              ShapePropertyName.style
-            ] as StrokedRectStyleType
-          ),
-          [ShapePropertyName.id]: copy
-            ? crypto.randomUUID()
-            : serializedProperties[ShapePropertyName.id],
-        } as Required<StrokedRectShapeProperties>;
       case ShapeType.Line:
         return {
           ...(serializedProperties as SerializedLineShapeProperties),
@@ -162,6 +150,41 @@ export class ShapePropertiesSerializer {
             ? crypto.randomUUID()
             : serializedProperties[ShapePropertyName.id],
         } as Required<LineShapeProperties>;
+      case ShapeType.StraightLine:
+        return {
+          ...(serializedProperties as SerializedStraightLineShapeProperties),
+          ...properties,
+          [ShapePropertyName.style]: new StraightLineStyle(
+            serializedProperties[
+              ShapePropertyName.style
+            ] as StraightLineStyleType
+          ),
+          [ShapePropertyName.id]: copy
+            ? crypto.randomUUID()
+            : serializedProperties[ShapePropertyName.id],
+        } as Required<StraightLineShapeProperties>;
+      case ShapeType.Rectangle:
+        return {
+          ...(serializedProperties as SerializedRectangleShapeProperties),
+          ...properties,
+          [ShapePropertyName.style]: new RectangleStyle(
+            serializedProperties[ShapePropertyName.style] as RectangleStyleType
+          ),
+          [ShapePropertyName.id]: copy
+            ? crypto.randomUUID()
+            : serializedProperties[ShapePropertyName.id],
+        } as Required<RectangleShapeProperties>;
+      case ShapeType.Ellipse:
+        return {
+          ...(serializedProperties as SerializedEllipseShapeProperties),
+          ...properties,
+          [ShapePropertyName.style]: new EllipseStyle(
+            serializedProperties[ShapePropertyName.style] as EllipseStyleType
+          ),
+          [ShapePropertyName.id]: copy
+            ? crypto.randomUUID()
+            : serializedProperties[ShapePropertyName.id],
+        } as Required<EllipseShapeProperties>;
       case ShapeType.Image:
         return {
           ...(serializedProperties as SerializedImageShapeProperties),

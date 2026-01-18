@@ -1,17 +1,17 @@
 import { CanvasComponent } from '../canvas.component';
 import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
-import { FilledRectDrawing } from '../Drawings/FilledRectDrawing';
-import { FilledRectStyle } from '../ShapeStyles/FilledRectStyle';
+import { RectangleDrawing } from '../Drawings/RectangleDrawing';
+import { RectangleStyle } from '../ShapeStyles/RectangleStyle';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 
 import { CanvasToolState } from './CanvasToolState';
 
-export class FilledRectToolState extends CanvasToolState {
-  #currentDrawing: FilledRectDrawing | null = null;
+export class RectangleToolState extends CanvasToolState {
+  #currentDrawing: RectangleDrawing | null = null;
 
   constructor(canvas: CanvasComponent) {
     super(canvas);
-    this.canvas.changeStyle(new FilledRectStyle(this.canvas.style));
+    this.canvas.changeStyle(new RectangleStyle(this.canvas.style));
     if (this.canvas.tmpCtx) {
       this.canvas.changeCursor('default');
     }
@@ -34,40 +34,38 @@ export class FilledRectToolState extends CanvasToolState {
   override onMouseDown(_event: MouseEvent): void {}
 
   override onPressedMouseMove(_event: MouseEvent): void {
-    if (this.canvas.leftmouseDown) {
-      if (this.canvas.firstMove) {
-        this.#currentDrawing = new FilledRectDrawing({
-          [DrawingPropertyName.id]: crypto.randomUUID(),
-          [DrawingPropertyName.p0]: [
-            this.canvas.startCursor[0],
-            this.canvas.startCursor[1],
-          ],
-          [DrawingPropertyName.p1]: [
-            this.canvas.cursor[0],
-            this.canvas.cursor[1],
-          ],
-          [DrawingPropertyName.style]: new FilledRectStyle(this.canvas.style),
-        });
-        this.canvas.addDrawings([this.#currentDrawing]);
-      } else if (this.#currentDrawing) {
-        const changeProperties = this.#currentDrawing.update([
+    if (this.canvas.firstMove) {
+      this.#currentDrawing = new RectangleDrawing({
+        [DrawingPropertyName.id]: crypto.randomUUID(),
+        [DrawingPropertyName.p0]: [
+          this.canvas.startCursor[0],
+          this.canvas.startCursor[1],
+        ],
+        [DrawingPropertyName.p1]: [
           this.canvas.cursor[0],
           this.canvas.cursor[1],
-        ]);
-        this.canvas.changeDrawingsProperties(
-          [this.#currentDrawing.properties[DrawingPropertyName.id]],
-          changeProperties
-        );
-      }
-      this.canvas.renderCanvas(false, true);
+        ],
+        [DrawingPropertyName.style]: new RectangleStyle(this.canvas.style),
+      });
+      this.canvas.addDrawings([this.#currentDrawing]);
+    } else if (this.#currentDrawing) {
+      const changeProperties = this.#currentDrawing.update([
+        this.canvas.cursor[0],
+        this.canvas.cursor[1],
+      ]);
+      this.canvas.changeDrawingsProperties(
+        [this.#currentDrawing.properties[DrawingPropertyName.id]],
+        changeProperties
+      );
     }
+    this.canvas.renderCanvas(false, true);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   override onHoveringMouseMove(_event: MouseEvent): void {}
 
   override onMouseUp(_event: MouseEvent): void {
-    if (this.canvas.leftmouseDown && this.#currentDrawing) {
+    if (this.#currentDrawing) {
       this.canvas.drawingToShape(this.#currentDrawing);
       this.#currentDrawing = null;
       this.canvas.renderCanvas(true, true);

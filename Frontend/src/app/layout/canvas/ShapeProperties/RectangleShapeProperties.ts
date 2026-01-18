@@ -1,7 +1,7 @@
 import {
-  FilledRectStyle,
-  FilledRectStyleType,
-} from '../ShapeStyles/FilledRectStyle';
+  RectangleStyle,
+  RectangleStyleType,
+} from '../ShapeStyles/RectangleStyle';
 
 import {
   BaseSerializedShapeProperties,
@@ -9,16 +9,16 @@ import {
 } from './ShapeProperties';
 import { ShapePropertyName } from './ShapePropertyName';
 
-export type FilledRectShapeProperties = Omit<
+export type RectangleShapeProperties = Omit<
   BaseShapeProperties,
   ShapePropertyName.style
 > & {
-  [ShapePropertyName.style]: FilledRectStyle;
+  [ShapePropertyName.style]: RectangleStyle;
 };
 
-export type SerializedFilledRectShapeProperties = Omit<
+export type SerializedRectangleShapeProperties = Omit<
   BaseSerializedShapeProperties,
   ShapePropertyName.style
 > & {
-  [ShapePropertyName.style]: FilledRectStyleType;
+  [ShapePropertyName.style]: RectangleStyleType;
 };

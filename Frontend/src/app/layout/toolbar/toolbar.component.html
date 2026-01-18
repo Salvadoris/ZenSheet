@@ -25,20 +25,28 @@
     <i class="fa-solid fa-pen"></i>
   </button>
   <button
-    (click)="changeMode(Mode.FilledRect)"
+    (click)="changeMode(Mode.StraightLine)"
     [ngClass]="{
-      'tool-button-selected': mode === Mode.FilledRect,
+      'tool-button-selected': mode === Mode.StraightLine,
     }"
     class="tool-button">
-    <i class="fa-solid fa-square"></i>
+    <i class="fa-solid fa-minus"></i>
   </button>
   <button
-    (click)="changeMode(Mode.StrokedRect)"
+    (click)="changeMode(Mode.Rectangle)"
     [ngClass]="{
-      'tool-button-selected': mode === Mode.StrokedRect,
+      'tool-button-selected': mode === Mode.Rectangle,
     }"
     class="tool-button">
     <i class="fa-regular fa-square"></i>
+  </button>
+  <button
+    (click)="changeMode(Mode.Ellipse)"
+    [ngClass]="{
+      'tool-button-selected': mode === Mode.Ellipse,
+    }"
+    class="tool-button">
+    <i class="fa-regular fa-circle"></i>
   </button>
   <button
     (click)="changeMode(Mode.Text)"

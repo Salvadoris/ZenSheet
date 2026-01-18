@@ -4,6 +4,7 @@ import { StyleName } from './StyleName';
 
 export class CanvasStyle implements Required<ShapeStyle> {
   [StyleName.Color]: string;
+  [StyleName.BackgroundColor]: string;
   [StyleName.LineWidth]: number;
   [StyleName.LineCap]: CanvasLineCap;
   [StyleName.Opacity]: number;
@@ -16,6 +17,7 @@ export class CanvasStyle implements Required<ShapeStyle> {
 
   constructor(style: Required<ShapeStyle>) {
     this[StyleName.Color] = style[StyleName.Color];
+    this[StyleName.BackgroundColor] = style[StyleName.BackgroundColor];
     this[StyleName.LineWidth] = style[StyleName.LineWidth];
     this[StyleName.LineCap] = style[StyleName.LineCap];
     this[StyleName.Opacity] = style[StyleName.Opacity];
@@ -31,6 +33,9 @@ export class CanvasStyle implements Required<ShapeStyle> {
     switch (styleProperty.name) {
       case StyleName.Color:
         this[StyleName.Color] = styleProperty.value;
+        break;
+      case StyleName.BackgroundColor:
+        this[StyleName.BackgroundColor] = styleProperty.value;
         break;
       case StyleName.LineWidth:
         this[StyleName.LineWidth] = styleProperty.value;

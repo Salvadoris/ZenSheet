@@ -6,6 +6,7 @@ export type GroupShapeStyleType = NullableShapeStyle;
 
 export class GroupShapeStyle implements NullableShapeStyle {
   [StyleName.Color]?: string | null;
+  [StyleName.BackgroundColor]?: string | null;
   [StyleName.LineWidth]?: number | null;
   [StyleName.LineCap]?: CanvasLineCap | null;
   [StyleName.Opacity]?: number | null;
@@ -19,6 +20,10 @@ export class GroupShapeStyle implements NullableShapeStyle {
   constructor(styles: NullableShapeStyle[]) {
     this[StyleName.Color] = this.checkStyleProperty<string>(
       StyleName.Color,
+      styles
+    );
+    this[StyleName.BackgroundColor] = this.checkStyleProperty<string>(
+      StyleName.BackgroundColor,
       styles
     );
     this[StyleName.LineWidth] = this.checkStyleProperty<number>(
@@ -63,6 +68,9 @@ export class GroupShapeStyle implements NullableShapeStyle {
     switch (styleProperty.name) {
       case StyleName.Color:
         this[StyleName.Color] = styleProperty.value;
+        return true;
+      case StyleName.BackgroundColor:
+        this[StyleName.BackgroundColor] = styleProperty.value;
         return true;
       case StyleName.LineWidth:
         this[StyleName.LineWidth] = styleProperty.value;
