@@ -89,8 +89,8 @@ export class EllipseShape extends Shape {
     path.ellipse(
       this.originX + this.width / 2,
       this.originY + this.height / 2,
-      this.width / 2,
-      this.height / 2,
+      Math.abs(this.width) / 2,
+      Math.abs(this.height) / 2,
       0,
       0,
       2 * Math.PI
