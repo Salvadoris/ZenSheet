@@ -66,29 +66,8 @@ export class EllipseShape extends Shape {
     const radiusX = Math.abs(this.width) / 2;
     const radiusY = Math.abs(this.height) / 2;
 
-    const fillpath = new Path2D();
-    fillpath.ellipse(
-      centerX,
-      centerY,
-      Math.abs(radiusX - lineWidth),
-      Math.abs(radiusY - lineWidth),
-      0,
-      0,
-      2 * Math.PI
-    );
-    this.ctx.fill(fillpath);
-
-    const strokePath = new Path2D();
-    strokePath.ellipse(
-      centerX,
-      centerY,
-      Math.abs(radiusX - lineWidth / 2),
-      Math.abs(radiusY - lineWidth / 2),
-      0,
-      0,
-      2 * Math.PI
-    );
-    this.ctx.stroke(strokePath);
+    this.ctx.fill(this.backgroundPath(centerX, centerY, radiusX, radiusY));
+    this.ctx.stroke(this.borderPath(centerX, centerY, radiusX, radiusY));
 
     this.ctx.restore();
   }
@@ -107,9 +86,75 @@ export class EllipseShape extends Shape {
     return path;
   }
 
+  borderPath(
+    centerX: number,
+    centerY: number,
+    radiusX: number,
+    radiusY: number
+  ) {
+    const path = new Path2D();
+    path.ellipse(
+      centerX,
+      centerY,
+      Math.abs(radiusX - this.style[StyleName.LineWidth] / 2),
+      Math.abs(radiusY - this.style[StyleName.LineWidth] / 2),
+      0,
+      0,
+      2 * Math.PI
+    );
+    return path;
+  }
+
+  backgroundPath(
+    centerX: number,
+    centerY: number,
+    radiusX: number,
+    radiusY: number
+  ) {
+    const path = new Path2D();
+    path.ellipse(
+      centerX,
+      centerY,
+      Math.abs(radiusX - this.style[StyleName.LineWidth]),
+      Math.abs(radiusY - this.style[StyleName.LineWidth]),
+      0,
+      0,
+      2 * Math.PI
+    );
+    return path;
+  }
+
   override pointInside(x: number, y: number): boolean {
     this.ctx.lineWidth = this.style[StyleName.LineWidth];
-    return this.ctx.isPointInPath(this.path(), x, y);
+    const backgroundTransparent =
+      this.style[StyleName.BackgroundColor].length === 9 &&
+      this.style[StyleName.BackgroundColor][7] === '0' &&
+      this.style[StyleName.BackgroundColor][8] === '0';
+    const borderTransparent =
+      this.style[StyleName.Color].length === 9 &&
+      this.style[StyleName.Color][7] === '0' &&
+      this.style[StyleName.Color][8] === '0';
+    if (backgroundTransparent !== borderTransparent) {
+      const centerX = this.originX + this.width / 2;
+      const centerY = this.originY + this.height / 2;
+      const radiusX = Math.abs(this.width) / 2;
+      const radiusY = Math.abs(this.height) / 2;
+      if (backgroundTransparent) {
+        return this.ctx.isPointInStroke(
+          this.borderPath(centerX, centerY, radiusX, radiusY),
+          x,
+          y
+        );
+      } else {
+        return this.ctx.isPointInPath(
+          this.backgroundPath(centerX, centerY, radiusX, radiusY),
+          x,
+          y
+        );
+      }
+    } else {
+      return this.ctx.isPointInPath(this.path(), x, y);
+    }
   }
 
   override resizeContent(): ChangableSerializedShapeProperties {

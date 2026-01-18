@@ -61,22 +61,25 @@ export class RectangleShape extends Shape {
       this.ctx.fillStyle = this.style[StyleName.BackgroundColor] + opacity;
     }
 
+    this.ctx.fill(this.backgroundPath());
+    this.ctx.stroke(this.borderPath());
+
+    this.ctx.restore();
+  }
+
+  override path(): Path2D {
+    const path = new Path2D();
+    path.rect(this.originX, this.originY, this.width, this.height);
+    return path;
+  }
+
+  borderPath() {
     const outerOffsetX = this.horizontalInverted
-      ? -lineWidth / 2
-      : lineWidth / 2;
+      ? -this.style[StyleName.LineWidth] / 2
+      : this.style[StyleName.LineWidth] / 2;
     const outerOffsetY = this.verticallyInverted
-      ? -lineWidth / 2
-      : lineWidth / 2;
-    const innerOffsetX = this.horizontalInverted ? -lineWidth : lineWidth;
-    const innerOffsetY = this.verticallyInverted ? -lineWidth : lineWidth;
-
-    this.ctx.fillRect(
-      this.originX + innerOffsetX,
-      this.originY + innerOffsetY,
-      this.width - innerOffsetX * 2,
-      this.height - innerOffsetY * 2
-    );
-
+      ? -this.style[StyleName.LineWidth] / 2
+      : this.style[StyleName.LineWidth] / 2;
     const path = new Path2D();
     path.moveTo(this.originX + outerOffsetX, this.originY + outerOffsetY);
     path.lineTo(
@@ -92,14 +95,23 @@ export class RectangleShape extends Shape {
       this.originY + this.height - outerOffsetY
     );
     path.closePath();
-    this.ctx.stroke(path);
-
-    this.ctx.restore();
+    return path;
   }
 
-  override path(): Path2D {
+  backgroundPath() {
+    const innerOffsetX = this.horizontalInverted
+      ? -this.style[StyleName.LineWidth]
+      : this.style[StyleName.LineWidth];
+    const innerOffsetY = this.verticallyInverted
+      ? -this.style[StyleName.LineWidth]
+      : this.style[StyleName.LineWidth];
     const path = new Path2D();
-    path.rect(this.originX, this.originY, this.width, this.height);
+    path.rect(
+      this.originX + innerOffsetX,
+      this.originY + innerOffsetY,
+      this.width - innerOffsetX * 2,
+      this.height - innerOffsetY * 2
+    );
     return path;
   }
 
@@ -125,7 +137,21 @@ export class RectangleShape extends Shape {
 
   override pointInside(x: number, y: number): boolean {
     this.ctx.lineWidth = this.style[StyleName.LineWidth];
-    return this.ctx.isPointInPath(this.path(), x, y);
+    const backgroundTransparent =
+      this.style[StyleName.BackgroundColor].length === 9 &&
+      this.style[StyleName.BackgroundColor][7] === '0' &&
+      this.style[StyleName.BackgroundColor][8] === '0';
+    const borderTransparent =
+      this.style[StyleName.Color].length === 9 &&
+      this.style[StyleName.Color][7] === '0' &&
+      this.style[StyleName.Color][8] === '0';
+    if (backgroundTransparent && !borderTransparent) {
+      return this.ctx.isPointInStroke(this.borderPath(), x, y);
+    } else if (borderTransparent && !backgroundTransparent) {
+      return this.ctx.isPointInPath(this.backgroundPath(), x, y);
+    } else {
+      return this.ctx.isPointInPath(this.path(), x, y);
+    }
   }
 
   override resizeContent(): ChangableSerializedShapeProperties {
