@@ -5,8 +5,32 @@
     (click)="zoomOut()">
     <i class="fa-solid fa-minus"></i>
   </button>
-  <div class="w-10 flex text-lg justify-center">
-    <div>{{ Math.round(zoom * 100) }}%</div>
+  <div 
+    class="w-16 flex text-lg justify-center items-center cursor-pointer select-none relative"
+    tabindex="0"
+    role="button"
+    (click)="resetZoom()"
+    (keydown.enter)="resetZoom()"
+    (keydown.space)="resetZoom()"
+    (dblclick)="enableEdit()"
+    (contextmenu)="onContextMenu($event)">
+    
+    @if (!isEditing) {
+      <div>{{ Math.round(zoom * 100) }}%</div>
+    } @else {
+      <input
+        type="number"
+        class="w-full h-full bg-white text-black text-center text-sm rounded no-spin appearance-none outline-none border border-blue-500"
+        [(ngModel)]="customZoomValue"
+        (ngModelChange)="onZoomInput()"
+        (blur)="onInputBlur()"
+        (keydown.enter)="onInputEnter()"
+        (click)="$event.stopPropagation()" 
+        autoFocus
+        min="10"
+        max="500"
+      />
+    }
   </div>
   <button
     class="rounded-lg hover:text-gray-100 hover:bg-gray-500"

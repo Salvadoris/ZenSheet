@@ -83,8 +83,19 @@ declare global {
       (keypress)="onKeyPress($event)"
       (keydown)="onKeyDown($event)"
       (dblclick)="onDoubleClick($event)"
+      (touchstart)="onTouchStart($event)"
+      (touchmove)="onTouchMove($event)"
+      (touchend)="onTouchEnd($event)"
+      (touchcancel)="onTouchCancel($event)"
       tabindex="0"
       class="absolute top-0 left-0"></canvas>
+    <textarea
+      #hiddenInput
+      class="absolute opacity-0 top-0 left-0 h-0 w-0 overflow-hidden"
+      (input)="onInput($event)"
+      (keydown)="onKeyDown($event)"
+      (blur)="onInputBlur()"
+    ></textarea>
   </div>`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -93,6 +104,9 @@ export class CanvasComponent implements AfterViewInit {
   private mainCanvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('tmpCanvas', { static: true })
   private tmpCanvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('hiddenInput', { static: true })
+  private hiddenInputRef!: ElementRef<HTMLTextAreaElement>;
+
   #mainCtx!: CanvasRenderingContext2D;
   #tmpCtx!: CanvasRenderingContext2D;
 
@@ -129,10 +143,17 @@ export class CanvasComponent implements AfterViewInit {
   #pinchFocus: Point = [0, 0];
   #moveEnabled = true;
 
+  #lastTouchDistance = 0;
+  #isTouchPinching = false;
+  #touchStartFocus: Point = [0, 0];
+
   #dragStart: Point = [0, 0];
 
   #firstMove = false;
   #pressedMouseMoved = false;
+
+  #isPanning = false;
+  #previousCursor = '';
 
   #mouseDown = false;
   #leftMouseDown = false;
@@ -733,6 +754,11 @@ export class CanvasComponent implements AfterViewInit {
     const normalizedDelta = Math.max(-1, Math.min(1, delta * step));
     const zoomFactor = Math.exp(normalizedDelta);
     this.applyZoom(this.#scale * zoomFactor, event.pageX, event.pageY);
+
+    if (this.#isPanning) {
+      this.#dragStart[0] = event.clientX - this.#origin[0];
+      this.#dragStart[1] = event.clientY - this.#origin[1];
+    }
   }
 
   private panWithWheel(event: WheelEvent) {
@@ -822,6 +848,147 @@ export class CanvasComponent implements AfterViewInit {
     this.#isPinching = false;
   }
 
+  onTouchStart(event: TouchEvent) {
+    event.preventDefault();
+    if (event.touches.length === 1) {
+      this.#isTouchPinching = false;
+      
+      // Touch fix. Reset movement state for a new touch input.
+      this.#pressedMouseMoved = false;
+      this.#firstMove = true;
+      
+      const touch = event.touches[0];
+      const mouseEvent = new MouseEvent('mousedown', {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        button: 0,
+        buttons: 1,
+      });
+      this.onMouseDown(mouseEvent);
+    } else if (event.touches.length === 2) {
+      if (this.#mouseDown) {
+        this.onMouseUp(
+          new MouseEvent('mouseup', {
+            clientX: event.touches[0].clientX,
+            clientY: event.touches[0].clientY,
+          })
+        );
+      }
+      this.#isTouchPinching = true;
+      this.#lastTouchDistance = this.getTouchDistance(event.touches);
+      const center = this.getTouchCenter(event.touches);
+      this.#touchStartFocus[0] = center.x;
+      this.#touchStartFocus[1] = center.y;
+    }
+  }
+
+  onTouchMove(event: TouchEvent) {
+    event.preventDefault();
+    if (event.touches.length === 1 && !this.#isTouchPinching) {
+      const touch = event.touches[0];
+      const startScreenX = this.#startCursor[0] * this.#scale + this.#origin[0];
+      const startScreenY = this.#startCursor[1] * this.#scale + this.#origin[1];
+      
+      const screenDist = Math.hypot(touch.clientX - startScreenX, touch.clientY - startScreenY);
+      
+      if (screenDist < 5) {
+        return;
+      }
+
+      const mouseEvent = new MouseEvent('mousemove', {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        button: 0,
+        buttons: 1,
+      });
+      this.onPressedMouseMove(mouseEvent);
+    } else if (event.touches.length === 2) {
+      const currentDistance = this.getTouchDistance(event.touches);
+      const center = this.getTouchCenter(event.touches);
+
+      // Zoom
+      if (this.#lastTouchDistance > 0) {
+        const zoomFactor = currentDistance / this.#lastTouchDistance;
+        const newScale = this.#scale * zoomFactor;
+        
+        // Use the center between fingers as zoom focus
+        this.applyZoom(newScale, center.x, center.y);
+        
+        this.#lastTouchDistance = currentDistance;
+      }
+
+      // Pan
+      const deltaX = center.x - this.#touchStartFocus[0];
+      const deltaY = center.y - this.#touchStartFocus[1];
+      
+      this.panBy(-deltaX, -deltaY);
+      
+      this.#touchStartFocus[0] = center.x;
+      this.#touchStartFocus[1] = center.y;
+    }
+  }
+
+  onTouchEnd(event: TouchEvent) {
+    event.preventDefault();
+    if (event.touches.length === 0) {
+      if (this.#isTouchPinching) {
+        this.#isTouchPinching = false;
+      } else {
+        const touch = event.changedTouches[0];
+        const mouseEvent = new MouseEvent('mouseup', {
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+          button: 0,
+          buttons: 0,
+        });
+        this.onMouseUp(mouseEvent);
+      }
+    } else if (event.touches.length < 2) {
+      this.#isTouchPinching = false;
+    }
+  }
+
+  onTouchCancel(event: TouchEvent) {
+    this.onTouchEnd(event);
+  }
+
+  showKeyboard() {
+    this.hiddenInputRef.nativeElement.focus();
+  }
+
+  onInput(event: Event) {
+    const textarea = event.target as HTMLTextAreaElement;
+    const value = textarea.value;
+    if (value.length > 0) {
+      const char = value.slice(-1);
+      
+      const keyEvent = new KeyboardEvent('keypress', {
+        key: char,
+      });
+      this.onKeyPress(keyEvent);
+      
+      textarea.value = '';
+    }
+  }
+  
+  onInputBlur() {
+     this.focusCanvas();
+  }
+
+  private getTouchDistance(touches: TouchList): number {
+    return Math.hypot(
+      touches[0].clientX - touches[1].clientX,
+      touches[0].clientY - touches[1].clientY
+    );
+  }
+
+  private getTouchCenter(touches: TouchList): { x: number; y: number } {
+    return {
+      x: (touches[0].clientX + touches[1].clientX) / 2,
+      y: (touches[0].clientY + touches[1].clientY) / 2,
+    };
+  }
+
   onMouseDown = (event: MouseEvent) => {
     if (this.pressedMouseMoved) {
       return;
@@ -841,6 +1008,13 @@ export class CanvasComponent implements AfterViewInit {
     this.#startCursor[1] = this.#cursor[1];
     this.#firstMove = true;
 
+    if (this.#leftMouseDown && event.ctrlKey) {
+      this.#isPanning = true;
+      this.#previousCursor = this.#tmpCtx.canvas.style.cursor;
+      this.changeCursor('grabbing');
+      return;
+    }
+
     this.#toolState.onMouseDown(event);
 
     this.renderCanvas(true, true);
@@ -857,6 +1031,12 @@ export class CanvasComponent implements AfterViewInit {
 
   onPressedMouseMove = (event: MouseEvent) => {
     event.preventDefault();
+    if (this.#isPanning) {
+      this.#origin[0] = event.clientX - this.#dragStart[0];
+      this.#origin[1] = event.clientY - this.#dragStart[1];
+      this.renderCanvas(true, true);
+      return;
+    }
     this.#toolState.onPressedMouseMove(event);
     this.updateCursor(event.clientX, event.clientY);
     this.#firstMove = false;
@@ -865,6 +1045,14 @@ export class CanvasComponent implements AfterViewInit {
 
   onMouseUp = (event: MouseEvent) => {
     event.preventDefault();
+    if (this.#isPanning) {
+      this.#isPanning = false;
+      this.changeCursor(this.#previousCursor);
+      this.#firstMove = false;
+      this.#pressedMouseMoved = false;
+      this.changeToHover();
+      return;
+    }
     this.#toolState.onMouseUp(event);
     this.#firstMove = false;
     this.#pressedMouseMoved = false;

@@ -196,8 +196,10 @@ export class TextToolState extends CanvasToolState {
       const textBox = this.findTextBoxOnCursor();
       if (textBox) {
         this.setCurrentTextBox(textBox);
+        this.canvas.showKeyboard();
       } else {
         this.createTextBox();
+        this.canvas.showKeyboard();
       }
       if (this.#currentTextBox) {
         this.canvas.changeStyle(this.#currentTextBox.style);
