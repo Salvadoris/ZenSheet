@@ -39,7 +39,7 @@ export class PenToolState extends CanvasToolState {
         this.#currentDrawing = new LineDrawing({
           [DrawingPropertyName.id]: crypto.randomUUID(),
           [DrawingPropertyName.points]: [
-            [this.canvas.prevCursor[0], this.canvas.prevCursor[1]],
+            [this.canvas.startCursor[0], this.canvas.startCursor[1]],
             [this.canvas.cursor[0], this.canvas.cursor[1]],
           ],
           [DrawingPropertyName.style]: new LineStyle(this.canvas.style),
