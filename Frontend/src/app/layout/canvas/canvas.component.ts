@@ -23,6 +23,8 @@ import { RemoveDrawingsAction } from './Actions/RemoveDrawingsAction';
 import { RemoveGroupShapeAction } from './Actions/RemoveGroupShapeAction';
 import { RemoveShapesAction } from './Actions/RemoveShapesAction';
 import { ShapeToLocalAction } from './Actions/ShapeToLocal';
+import { CanvasContextMenu } from './ContextMenus/canvas-context-menu/canvas-context-menu.component';
+import { ShapeContextMenu } from './ContextMenus/shape-context-menu/shape-context-menu.component';
 import { ChangableDrawingProperties } from './DrawingProperties/DrawingProperties';
 import { DrawingPropertyName } from './DrawingProperties/DrawingPropertyName';
 import { Drawing } from './Drawings/Drawing';
@@ -72,7 +74,7 @@ declare global {
 
 @Component({
   selector: 'app-canvas',
-  imports: [],
+  imports: [ShapeContextMenu, CanvasContextMenu],
   template: `<div class="relative">
     <canvas #mainCanvas class="absolute top-0 left-0"></canvas>
     <canvas
@@ -94,9 +96,28 @@ declare global {
       class="absolute opacity-0 top-0 left-0 h-0 w-0 overflow-hidden"
       (input)="onInput($event)"
       (keydown)="onKeyDown($event)"
-      (blur)="onInputBlur()"
-    ></textarea>
-  </div>`,
+      (blur)="onInputBlur()"></textarea>
+    @if (isSelectToolState()) {
+      <app-shape-context-menu
+        [hidden]="!asSelectToolState().shapeContextMenuVisible"
+        [style.left.px]="asSelectToolState().contextMenuPosition[0]"
+        [style.top.px]="asSelectToolState().contextMenuPosition[1]"
+        [selectedShape]="asSelectToolState().selectedShapeChange()"
+        (removeShape)="asSelectToolState().removeSelectedShape()"
+        (copyShape)="asSelectToolState().copySelectedShape()"
+        (pasteShape)="asSelectToolState().pasteShapeAtContextMenuPosition()"
+        (duplicateShape)="asSelectToolState().duplicateSelectedShape()"
+        (groupShapes)="asSelectToolState().groupShapes()"
+        (splitGroupShape)="asSelectToolState().splitGroupShape()"
+        class="absolute z-2"></app-shape-context-menu>
+      <app-canvas-context-menu
+        [hidden]="!asSelectToolState().canvasContextMenuVisible"
+        [style.left.px]="asSelectToolState().contextMenuPosition[0]"
+        [style.top.px]="asSelectToolState().contextMenuPosition[1]"
+        (pasteShape)="asSelectToolState().pasteShapeAtContextMenuPosition()"
+        class="absolute z-2"></app-canvas-context-menu>
+    }
+  </div> `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CanvasComponent implements AfterViewInit {
@@ -289,6 +310,14 @@ export class CanvasComponent implements AfterViewInit {
 
   get toolstate() {
     return this.#toolState;
+  }
+
+  isSelectToolState() {
+    return this.#toolState instanceof SelectToolState;
+  }
+
+  asSelectToolState() {
+    return this.#toolState as SelectToolState;
   }
 
   zoomInCenter(zoom: number) {
@@ -816,6 +845,15 @@ export class CanvasComponent implements AfterViewInit {
   onDoubleClick = (event: MouseEvent) => {
     this.#toolState.onDoubleClick(event);
   };
+
+  @HostListener('contextmenu', ['$event'])
+  onContextMenu(event: PointerEvent) {
+    event.preventDefault();
+    this.updateCursor(event.clientX, event.clientY);
+    if (this.#toolState instanceof SelectToolState) {
+      this.#toolState.onContextMenu(event);
+    }
+  }
 
   @HostListener('window:gesturestart', ['$event'])
   handleGestureStart(event: GestureEventWithScale) {

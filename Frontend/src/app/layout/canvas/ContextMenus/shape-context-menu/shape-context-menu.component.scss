@@ -1,0 +1,12 @@
+:host {
+  display: block;
+}
+
+.item {
+  padding: 0.25rem;
+  padding-left: 0.5rem;
+  border-radius: var(--radius-md);
+}
+.item:hover {
+  background-color: var(--color-blue-200);
+}
