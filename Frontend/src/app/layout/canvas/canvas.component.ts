@@ -851,7 +851,7 @@ export class CanvasComponent implements AfterViewInit {
     event.preventDefault();
     this.updateCursor(event.clientX, event.clientY);
     if (this.#toolState instanceof SelectToolState) {
-      this.#toolState.onContextMenu(event);
+      this.#toolState.onContextMenu(event.clientX, event.clientY);
     }
   }
 

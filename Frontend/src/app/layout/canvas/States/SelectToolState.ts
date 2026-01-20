@@ -363,7 +363,7 @@ export class SelectToolState extends CanvasToolState {
     }
   }
 
-  onContextMenu(event: PointerEvent): void {
+  onContextMenu(screenX: number, screenY: number): void {
     if (
       this.#selectedShape &&
       this.#selectedShape.pointInside(
@@ -372,7 +372,7 @@ export class SelectToolState extends CanvasToolState {
         this.canvas.cursor[1]
       )
     ) {
-      this.showShapeContextMenu(event.clientX, event.clientY);
+      this.showShapeContextMenu(screenX, screenY);
       return;
     }
     const shape = this.findSelectedShape(this.canvas.cursor);
@@ -387,9 +387,9 @@ export class SelectToolState extends CanvasToolState {
         this.selectSingleShape(shape);
         this.canvas.renderCanvas(true, true);
       }
-      this.showShapeContextMenu(event.clientX, event.clientY);
+      this.showShapeContextMenu(screenX, screenY);
     } else {
-      this.showCanvasContextMenu(event.clientX, event.clientY);
+      this.showCanvasContextMenu(screenX, screenY);
     }
   }
 
