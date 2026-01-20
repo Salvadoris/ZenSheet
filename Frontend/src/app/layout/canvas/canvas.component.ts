@@ -852,11 +852,11 @@ export class CanvasComponent implements AfterViewInit {
     event.preventDefault();
     if (event.touches.length === 1) {
       this.#isTouchPinching = false;
-      
+
       // Touch fix. Reset movement state for a new touch input.
       this.#pressedMouseMoved = false;
       this.#firstMove = true;
-      
+
       const touch = event.touches[0];
       const mouseEvent = new MouseEvent('mousedown', {
         clientX: touch.clientX,
@@ -888,9 +888,12 @@ export class CanvasComponent implements AfterViewInit {
       const touch = event.touches[0];
       const startScreenX = this.#startCursor[0] * this.#scale + this.#origin[0];
       const startScreenY = this.#startCursor[1] * this.#scale + this.#origin[1];
-      
-      const screenDist = Math.hypot(touch.clientX - startScreenX, touch.clientY - startScreenY);
-      
+
+      const screenDist = Math.hypot(
+        touch.clientX - startScreenX,
+        touch.clientY - startScreenY
+      );
+
       if (screenDist < 5) {
         return;
       }
@@ -910,19 +913,19 @@ export class CanvasComponent implements AfterViewInit {
       if (this.#lastTouchDistance > 0) {
         const zoomFactor = currentDistance / this.#lastTouchDistance;
         const newScale = this.#scale * zoomFactor;
-        
+
         // Use the center between fingers as zoom focus
         this.applyZoom(newScale, center.x, center.y);
-        
+
         this.#lastTouchDistance = currentDistance;
       }
 
       // Pan
       const deltaX = center.x - this.#touchStartFocus[0];
       const deltaY = center.y - this.#touchStartFocus[1];
-      
+
       this.panBy(-deltaX, -deltaY);
-      
+
       this.#touchStartFocus[0] = center.x;
       this.#touchStartFocus[1] = center.y;
     }
@@ -961,18 +964,18 @@ export class CanvasComponent implements AfterViewInit {
     const value = textarea.value;
     if (value.length > 0) {
       const char = value.slice(-1);
-      
+
       const keyEvent = new KeyboardEvent('keypress', {
         key: char,
       });
       this.onKeyPress(keyEvent);
-      
+
       textarea.value = '';
     }
   }
-  
+
   onInputBlur() {
-     this.focusCanvas();
+    this.focusCanvas();
   }
 
   private getTouchDistance(touches: TouchList): number {
