@@ -180,6 +180,8 @@ export class CanvasComponent implements AfterViewInit {
   #leftMouseDown = false;
   #rightMouseDown = false;
 
+  #longTouchTimeout?: number;
+
   #style = new CanvasStyle({
     [StyleName.Color]: '#000000',
     [StyleName.BackgroundColor]: '#00000000',
@@ -886,8 +888,26 @@ export class CanvasComponent implements AfterViewInit {
     this.#isPinching = false;
   }
 
+  startLongTouch(event: TouchEvent) {
+    this.#longTouchTimeout = setTimeout(() => {
+      if (
+        event.touches.length > 0 &&
+        this.#toolState instanceof SelectToolState
+      )
+        this.#toolState.onContextMenu(
+          event.touches[0].clientX,
+          event.touches[0].clientY
+        );
+    }, 500);
+  }
+
+  cancelLongTouch() {
+    clearTimeout(this.#longTouchTimeout);
+  }
+
   onTouchStart(event: TouchEvent) {
     event.preventDefault();
+    this.startLongTouch(event);
     if (event.touches.length === 1) {
       this.#isTouchPinching = false;
 
@@ -922,6 +942,7 @@ export class CanvasComponent implements AfterViewInit {
 
   onTouchMove(event: TouchEvent) {
     event.preventDefault();
+    this.cancelLongTouch();
     if (event.touches.length === 1 && !this.#isTouchPinching) {
       const touch = event.touches[0];
       const startScreenX = this.#startCursor[0] * this.#scale + this.#origin[0];
@@ -971,6 +992,7 @@ export class CanvasComponent implements AfterViewInit {
 
   onTouchEnd(event: TouchEvent) {
     event.preventDefault();
+    this.cancelLongTouch();
     if (event.touches.length === 0) {
       if (this.#isTouchPinching) {
         this.#isTouchPinching = false;

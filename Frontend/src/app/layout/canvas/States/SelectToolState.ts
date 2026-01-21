@@ -176,7 +176,7 @@ export class SelectToolState extends CanvasToolState {
         this.#selectedShape.dragged = false;
         this.#selectedShape.resized = Resize.None;
       }
-      if (!this.canvas.pressedMouseMoved) {
+      if (!this.canvas.pressedMouseMoved && !this.shapeContextMenuVisible) {
         if (
           this.#selectedShape &&
           !this.#selectedAction &&
