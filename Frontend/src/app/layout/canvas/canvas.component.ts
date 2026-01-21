@@ -23,6 +23,8 @@ import { RemoveDrawingsAction } from './Actions/RemoveDrawingsAction';
 import { RemoveGroupShapeAction } from './Actions/RemoveGroupShapeAction';
 import { RemoveShapesAction } from './Actions/RemoveShapesAction';
 import { ShapeToLocalAction } from './Actions/ShapeToLocal';
+import { CanvasContextMenu } from './ContextMenus/canvas-context-menu/canvas-context-menu.component';
+import { ShapeContextMenu } from './ContextMenus/shape-context-menu/shape-context-menu.component';
 import { ChangableDrawingProperties } from './DrawingProperties/DrawingProperties';
 import { DrawingPropertyName } from './DrawingProperties/DrawingPropertyName';
 import { Drawing } from './Drawings/Drawing';
@@ -72,7 +74,7 @@ declare global {
 
 @Component({
   selector: 'app-canvas',
-  imports: [],
+  imports: [ShapeContextMenu, CanvasContextMenu],
   template: `<div class="relative">
     <canvas #mainCanvas class="absolute top-0 left-0"></canvas>
     <canvas
@@ -94,9 +96,28 @@ declare global {
       class="absolute opacity-0 top-0 left-0 h-0 w-0 overflow-hidden"
       (input)="onInput($event)"
       (keydown)="onKeyDown($event)"
-      (blur)="onInputBlur()"
-    ></textarea>
-  </div>`,
+      (blur)="onInputBlur()"></textarea>
+    @if (isSelectToolState()) {
+      <app-shape-context-menu
+        [hidden]="!asSelectToolState().shapeContextMenuVisible"
+        [style.left.px]="asSelectToolState().contextMenuPosition[0]"
+        [style.top.px]="asSelectToolState().contextMenuPosition[1]"
+        [selectedShape]="asSelectToolState().selectedShapeChange()"
+        (removeShape)="asSelectToolState().removeSelectedShape()"
+        (copyShape)="asSelectToolState().copySelectedShape()"
+        (pasteShape)="asSelectToolState().pasteShapeAtContextMenuPosition()"
+        (duplicateShape)="asSelectToolState().duplicateSelectedShape()"
+        (groupShapes)="asSelectToolState().groupShapes()"
+        (splitGroupShape)="asSelectToolState().splitGroupShape()"
+        class="absolute z-2"></app-shape-context-menu>
+      <app-canvas-context-menu
+        [hidden]="!asSelectToolState().canvasContextMenuVisible"
+        [style.left.px]="asSelectToolState().contextMenuPosition[0]"
+        [style.top.px]="asSelectToolState().contextMenuPosition[1]"
+        (pasteShape)="asSelectToolState().pasteShapeAtContextMenuPosition()"
+        class="absolute z-2"></app-canvas-context-menu>
+    }
+  </div> `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CanvasComponent implements AfterViewInit {
@@ -158,6 +179,8 @@ export class CanvasComponent implements AfterViewInit {
   #mouseDown = false;
   #leftMouseDown = false;
   #rightMouseDown = false;
+
+  #longTouchTimeout?: number;
 
   #style = new CanvasStyle({
     [StyleName.Color]: '#000000',
@@ -289,6 +312,14 @@ export class CanvasComponent implements AfterViewInit {
 
   get toolstate() {
     return this.#toolState;
+  }
+
+  isSelectToolState() {
+    return this.#toolState instanceof SelectToolState;
+  }
+
+  asSelectToolState() {
+    return this.#toolState as SelectToolState;
   }
 
   zoomInCenter(zoom: number) {
@@ -817,6 +848,15 @@ export class CanvasComponent implements AfterViewInit {
     this.#toolState.onDoubleClick(event);
   };
 
+  @HostListener('contextmenu', ['$event'])
+  onContextMenu(event: PointerEvent) {
+    event.preventDefault();
+    this.updateCursor(event.clientX, event.clientY);
+    if (this.#toolState instanceof SelectToolState) {
+      this.#toolState.onContextMenu(event.clientX, event.clientY);
+    }
+  }
+
   @HostListener('window:gesturestart', ['$event'])
   handleGestureStart(event: GestureEventWithScale) {
     if (!this.#moveEnabled) {
@@ -848,15 +888,33 @@ export class CanvasComponent implements AfterViewInit {
     this.#isPinching = false;
   }
 
+  startLongTouch(event: TouchEvent) {
+    this.#longTouchTimeout = setTimeout(() => {
+      if (
+        event.touches.length > 0 &&
+        this.#toolState instanceof SelectToolState
+      )
+        this.#toolState.onContextMenu(
+          event.touches[0].clientX,
+          event.touches[0].clientY
+        );
+    }, 500);
+  }
+
+  cancelLongTouch() {
+    clearTimeout(this.#longTouchTimeout);
+  }
+
   onTouchStart(event: TouchEvent) {
     event.preventDefault();
+    this.startLongTouch(event);
     if (event.touches.length === 1) {
       this.#isTouchPinching = false;
-      
+
       // Touch fix. Reset movement state for a new touch input.
       this.#pressedMouseMoved = false;
       this.#firstMove = true;
-      
+
       const touch = event.touches[0];
       const mouseEvent = new MouseEvent('mousedown', {
         clientX: touch.clientX,
@@ -884,13 +942,17 @@ export class CanvasComponent implements AfterViewInit {
 
   onTouchMove(event: TouchEvent) {
     event.preventDefault();
+    this.cancelLongTouch();
     if (event.touches.length === 1 && !this.#isTouchPinching) {
       const touch = event.touches[0];
       const startScreenX = this.#startCursor[0] * this.#scale + this.#origin[0];
       const startScreenY = this.#startCursor[1] * this.#scale + this.#origin[1];
-      
-      const screenDist = Math.hypot(touch.clientX - startScreenX, touch.clientY - startScreenY);
-      
+
+      const screenDist = Math.hypot(
+        touch.clientX - startScreenX,
+        touch.clientY - startScreenY
+      );
+
       if (screenDist < 5) {
         return;
       }
@@ -910,19 +972,19 @@ export class CanvasComponent implements AfterViewInit {
       if (this.#lastTouchDistance > 0) {
         const zoomFactor = currentDistance / this.#lastTouchDistance;
         const newScale = this.#scale * zoomFactor;
-        
+
         // Use the center between fingers as zoom focus
         this.applyZoom(newScale, center.x, center.y);
-        
+
         this.#lastTouchDistance = currentDistance;
       }
 
       // Pan
       const deltaX = center.x - this.#touchStartFocus[0];
       const deltaY = center.y - this.#touchStartFocus[1];
-      
+
       this.panBy(-deltaX, -deltaY);
-      
+
       this.#touchStartFocus[0] = center.x;
       this.#touchStartFocus[1] = center.y;
     }
@@ -930,6 +992,7 @@ export class CanvasComponent implements AfterViewInit {
 
   onTouchEnd(event: TouchEvent) {
     event.preventDefault();
+    this.cancelLongTouch();
     if (event.touches.length === 0) {
       if (this.#isTouchPinching) {
         this.#isTouchPinching = false;
@@ -961,18 +1024,18 @@ export class CanvasComponent implements AfterViewInit {
     const value = textarea.value;
     if (value.length > 0) {
       const char = value.slice(-1);
-      
+
       const keyEvent = new KeyboardEvent('keypress', {
         key: char,
       });
       this.onKeyPress(keyEvent);
-      
+
       textarea.value = '';
     }
   }
-  
+
   onInputBlur() {
-     this.focusCanvas();
+    this.focusCanvas();
   }
 
   private getTouchDistance(touches: TouchList): number {

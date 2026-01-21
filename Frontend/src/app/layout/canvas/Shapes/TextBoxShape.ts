@@ -48,7 +48,7 @@ export class TextBoxShape extends Shape {
     super(properties as Required<TextBoxShapeProperties>, ctx);
     this.#lineSpace = calcLineSpace(this.style);
     this.#lineHeight = calcLineHeight(this.style, this.#lineSpace);
-    this.resizeContent();
+    this.resizeContent(this.properties[ShapePropertyName.text].length > 0);
   }
 
   override set properties(properties: Required<TextBoxShapeProperties>) {
@@ -265,7 +265,9 @@ export class TextBoxShape extends Shape {
     return properties;
   }
 
-  override resizeContent(): ChangableSerializedShapeProperties {
+  override resizeContent(
+    minWidthChanged = false
+  ): ChangableSerializedShapeProperties {
     this.applyFontStyle();
     this.#lines = [];
     const lines = this.text.split('\n');
@@ -284,6 +286,16 @@ export class TextBoxShape extends Shape {
       );
       properties[ShapePropertyName.width] = this.width;
       this.scaleX = this.width / this.originalWidth;
+    }
+
+    if (minWidthChanged) {
+      const minWidth = this.minWidth;
+      this.properties[ShapePropertyName.minWidth] =
+        Math.max(...this.#lines.map(l => l.maxChunkWidth)) + this.#padding * 2;
+      this.width = Math.max(this.width, this.minWidth);
+      if (minWidth !== this.minWidth) {
+        properties[ShapePropertyName.minWidth] = this.minWidth;
+      }
     }
 
     const newHeight = this.#lineHeight * this.#lines.length + this.#padding * 2;
