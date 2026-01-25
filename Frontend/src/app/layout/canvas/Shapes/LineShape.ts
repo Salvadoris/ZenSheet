@@ -130,7 +130,7 @@ export class LineShape extends Shape {
       Math.max(xMin, xMax),
       Math.max(yMin, yMax),
     ];
-
+    this.bufferCtx.save();
     this.bufferCtx.translate(this.originX, this.originY);
     this.bufferCtx.scale(this.scaleX, this.scaleY);
 
@@ -155,7 +155,6 @@ export class LineShape extends Shape {
     ctx.drawImage(this.bufferCtx.canvas, 0, 0);
     ctx.restore();
 
-    this.bufferCtx.save();
     this.bufferCtx.clearRect(
       canvasRect[0],
       canvasRect[1],
