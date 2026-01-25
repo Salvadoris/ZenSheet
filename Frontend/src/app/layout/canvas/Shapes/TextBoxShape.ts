@@ -31,7 +31,7 @@ export class TextBoxShape extends Shape {
 
   constructor(
     properties: TextBoxShapeProperties,
-    ctx: CanvasRenderingContext2D
+    bufferCtx: CanvasRenderingContext2D
   ) {
     if (
       properties[ShapePropertyName.wrap] &&
@@ -45,7 +45,7 @@ export class TextBoxShape extends Shape {
     if (properties[ShapePropertyName.originalHeight] === undefined) {
       properties[ShapePropertyName.originalHeight] = 1;
     }
-    super(properties as Required<TextBoxShapeProperties>, ctx);
+    super(properties as Required<TextBoxShapeProperties>, bufferCtx);
     this.#lineSpace = calcLineSpace(this.style);
     this.#lineHeight = calcLineHeight(this.style, this.#lineSpace);
     this.resizeContent(this.properties[ShapePropertyName.text].length > 0);
@@ -76,8 +76,8 @@ export class TextBoxShape extends Shape {
     return this.properties[ShapePropertyName.style];
   }
 
-  override renderShape(_canvasRect: Rect): void {
-    this.renderEditedShape();
+  override renderShape(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
+    this.renderEditedShape(canvasRect, ctx);
   }
 
   override path(): Path2D {
@@ -128,11 +128,15 @@ export class TextBoxShape extends Shape {
       font += ' italic';
     }
     font += ` ${this.style[StyleName.FontSize]}px ${this.style[StyleName.FontName]}`;
-    this.ctx.font = font;
+    this.bufferCtx.font = font;
   }
 
-  override pointInside(x: number, y: number): boolean {
-    return this.ctx.isPointInPath(this.path(), x, y);
+  override pointInside(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number
+  ): boolean {
+    return ctx.isPointInPath(this.path(), x, y);
   }
 
   override resizeTop(_y: number): ChangableSerializedShapeProperties {
@@ -309,20 +313,15 @@ export class TextBoxShape extends Shape {
   }
 
   renderEditedShape(
+    canvasRect: Rect,
+    ctx: CanvasRenderingContext2D,
     selectedStart: number | null = null,
     selectedEnd: number | null = null
   ) {
-    this.ctx.save();
-    let defaultColor = '';
-    if (this.style[StyleName.Color].length === 9) {
-      defaultColor = this.style[StyleName.Color];
-    } else {
-      defaultColor =
-        this.style[StyleName.Color] +
-        this.style[StyleName.Opacity].toString(16).padStart(2, '0');
-    }
+    this.bufferCtx.save();
+    const defaultColor = this.style[StyleName.Color];
     this.applyFontStyle();
-    this.ctx.textBaseline = 'top';
+    this.bufferCtx.textBaseline = 'top';
 
     if (selectedStart !== null && selectedEnd !== null) {
       const firstIndex = Math.max(Math.min(selectedStart, selectedEnd), 0);
@@ -366,8 +365,8 @@ export class TextBoxShape extends Shape {
         const textIndex = this.globalIndexToTextIndex(
           Math.min(Math.max(selectedStart, 0), this.text.length)
         );
-        this.ctx.fillStyle = '#000';
-        this.ctx.fillRect(
+        this.bufferCtx.fillStyle = '#000';
+        this.bufferCtx.fillRect(
           this.xPositonInLine(textIndex),
           this.originY +
             this.#padding +
@@ -378,7 +377,19 @@ export class TextBoxShape extends Shape {
         );
       }
     }
-    this.ctx.restore();
+    this.bufferCtx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = this.style[StyleName.Opacity];
+    ctx.drawImage(this.bufferCtx.canvas, 0, 0);
+    ctx.restore();
+
+    this.bufferCtx.clearRect(
+      canvasRect[0],
+      canvasRect[1],
+      canvasRect[2] - canvasRect[0],
+      canvasRect[3] - canvasRect[1]
+    );
   }
 
   insertText(text: string, index: number): EditProperties {
@@ -680,7 +691,7 @@ export class TextBoxShape extends Shape {
 
   private lineWidth(line: TextLine): number {
     return (
-      this.ctx.measureText(line.text.replace('\t', '')).width +
+      this.bufferCtx.measureText(line.text.replace('\t', '')).width +
       line.tabWidths.reduce((sum, width) => sum + width, 0)
     );
   }
@@ -695,7 +706,7 @@ export class TextBoxShape extends Shape {
       .reduce((sum, width) => sum + width, 0);
     return (
       lineStartX +
-      this.ctx.measureText(line.replaceAll('\t', '')).width +
+      this.bufferCtx.measureText(line.replaceAll('\t', '')).width +
       tabWidths
     );
   }
@@ -714,7 +725,7 @@ export class TextBoxShape extends Shape {
         if (
           x <
           lineStart +
-            this.ctx.measureText(tablessLine).width +
+            this.bufferCtx.measureText(tablessLine).width +
             currentAccumulatedTabWidth +
             width / 2
         ) {
@@ -724,11 +735,11 @@ export class TextBoxShape extends Shape {
         currentAccumulatedTabWidth += width;
       } else {
         tablessLine += line.text[i];
-        const width = this.ctx.measureText(line.text[i]).width;
+        const width = this.bufferCtx.measureText(line.text[i]).width;
         if (
           x <
           lineStart +
-            this.ctx.measureText(tablessLine).width -
+            this.bufferCtx.measureText(tablessLine).width -
             width +
             currentAccumulatedTabWidth +
             width / 2
@@ -767,9 +778,9 @@ export class TextBoxShape extends Shape {
       if (chunk[0] === '\t') {
         chunkWidth =
           this.tabWidth(currentLineWidth) +
-          this.ctx.measureText(chunk.slice(1)).width;
+          this.bufferCtx.measureText(chunk.slice(1)).width;
       } else {
-        chunkWidth = this.ctx.measureText(chunk).width;
+        chunkWidth = this.bufferCtx.measureText(chunk).width;
       }
       if (chunkWidth > maxChunkWidth) {
         maxChunkWidth = chunkWidth;
@@ -813,10 +824,11 @@ export class TextBoxShape extends Shape {
       let chunkWidth = 0;
       if (chunk[0] === '\t') {
         const tabWidth = this.tabWidth(currentWidth);
-        chunkWidth = tabWidth + this.ctx.measureText(chunk.slice(1)).width;
+        chunkWidth =
+          tabWidth + this.bufferCtx.measureText(chunk.slice(1)).width;
         tabWidths.push(tabWidth);
       } else {
-        chunkWidth = this.ctx.measureText(chunk).width;
+        chunkWidth = this.bufferCtx.measureText(chunk).width;
       }
       if (chunkWidth > maxChunkWidth) {
         maxChunkWidth = chunkWidth;
@@ -836,7 +848,7 @@ export class TextBoxShape extends Shape {
     defaultColor: string,
     selectedRange: [number, number] | null = null
   ) {
-    this.ctx.textAlign = 'left';
+    this.bufferCtx.textAlign = 'left';
     const y =
       this.originY +
       this.#padding +
@@ -852,8 +864,9 @@ export class TextBoxShape extends Shape {
       ) {
         x1 =
           this.xPositonInLine({ line: lineIndex, char: selectedRange[0] + 1 }) -
-          this.ctx.measureText(this.#lines[lineIndex].text[selectedRange[0]])
-            .width;
+          this.bufferCtx.measureText(
+            this.#lines[lineIndex].text[selectedRange[0]]
+          ).width;
       } else {
         x1 = this.xPositonInLine({ line: lineIndex, char: selectedRange[0] });
       }
@@ -864,14 +877,15 @@ export class TextBoxShape extends Shape {
       ) {
         x2 =
           this.xPositonInLine({ line: lineIndex, char: selectedRange[1] + 1 }) -
-          this.ctx.measureText(this.#lines[lineIndex].text[selectedRange[1]])
-            .width;
+          this.bufferCtx.measureText(
+            this.#lines[lineIndex].text[selectedRange[1]]
+          ).width;
       } else {
         x2 = this.xPositonInLine({ line: lineIndex, char: selectedRange[1] });
       }
 
-      this.ctx.fillStyle = markColor;
-      this.ctx.fillRect(
+      this.bufferCtx.fillStyle = markColor;
+      this.bufferCtx.fillRect(
         x1,
         this.originY + this.#padding + this.#lineHeight * lineIndex,
         this.xPositonInLine({ line: lineIndex, char: selectedRange[1] }) - x1,
@@ -914,14 +928,14 @@ export class TextBoxShape extends Shape {
     const tabIndex =
       this.#lines[lineIndex].text.slice(0, start).split('\t').length - 1;
     const lineParts = this.#lines[lineIndex].text.slice(start, end).split('\t');
-    this.ctx.fillStyle = color;
+    this.bufferCtx.fillStyle = color;
     let currentWidth = position[0];
     for (let i = 0; i < lineParts.length; i++) {
       if (i != 0) {
         currentWidth += this.#lines[lineIndex].tabWidths[tabIndex + i - 1];
       }
-      this.ctx.fillText(lineParts[i], currentWidth, position[1]);
-      currentWidth += this.ctx.measureText(lineParts[i]).width;
+      this.bufferCtx.fillText(lineParts[i], currentWidth, position[1]);
+      currentWidth += this.bufferCtx.measureText(lineParts[i]).width;
     }
   }
 

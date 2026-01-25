@@ -13,9 +13,9 @@ export class StraightLineShape extends Shape {
 
   constructor(
     properties: StraightLineShapeProperties,
-    ctx: CanvasRenderingContext2D
+    bufferCtx: CanvasRenderingContext2D
   ) {
-    super(properties, ctx);
+    super(properties, bufferCtx);
   }
 
   override set properties(properties: Required<StraightLineShapeProperties>) {
@@ -44,17 +44,25 @@ export class StraightLineShape extends Shape {
     return {};
   }
 
-  override renderShape(_canvasRect: Rect): void {
-    this.ctx.lineWidth = this.style[StyleName.LineWidth];
-    this.ctx.lineCap = this.style[StyleName.LineCap];
-    if (this.style[StyleName.Color].length === 9) {
-      this.ctx.strokeStyle = this.style[StyleName.Color];
-    } else {
-      this.ctx.strokeStyle =
-        this.style[StyleName.Color] +
-        this.style[StyleName.Opacity].toString(16).padStart(2, '0');
-    }
-    this.ctx.stroke(this.path());
+  override renderShape(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
+    this.bufferCtx.save();
+    this.bufferCtx.lineWidth = this.style[StyleName.LineWidth];
+    this.bufferCtx.lineCap = this.style[StyleName.LineCap];
+    this.bufferCtx.strokeStyle = this.style[StyleName.Color];
+    this.bufferCtx.stroke(this.path());
+    this.bufferCtx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = this.style[StyleName.Opacity];
+    ctx.drawImage(this.bufferCtx.canvas, 0, 0);
+    ctx.restore();
+
+    this.bufferCtx.clearRect(
+      canvasRect[0],
+      canvasRect[1],
+      canvasRect[2] - canvasRect[0],
+      canvasRect[3] - canvasRect[1]
+    );
   }
 
   override path(): Path2D {
@@ -77,10 +85,14 @@ export class StraightLineShape extends Shape {
     return path;
   }
 
-  override pointInside(x: number, y: number): boolean {
-    this.ctx.lineWidth = this.style[StyleName.LineWidth];
-    this.ctx.lineCap = this.style[StyleName.LineCap];
-    return this.ctx.isPointInStroke(this.path(), x, y);
+  override pointInside(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number
+  ): boolean {
+    ctx.lineWidth = this.style[StyleName.LineWidth];
+    ctx.lineCap = this.style[StyleName.LineCap];
+    return ctx.isPointInStroke(this.path(), x, y);
   }
 
   override resizeContent(): ChangableSerializedShapeProperties {

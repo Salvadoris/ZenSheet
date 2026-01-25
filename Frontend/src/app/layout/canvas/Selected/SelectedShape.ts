@@ -46,23 +46,28 @@ export class SelectedShape {
     this.shape = shape;
   }
 
-  render(canvasScale: number, canvasRect: Rect): void {
-    this.shape.render(canvasRect);
-    this.shape.ctx.fillStyle = 'transparent';
+  render(
+    canvasScale: number,
+    canvasRect: Rect,
+    selectFrameCtx: CanvasRenderingContext2D,
+    ctx: CanvasRenderingContext2D
+  ): void {
+    this.shape.render(canvasRect, ctx);
+    selectFrameCtx.fillStyle = 'transparent';
     this.setHoverLines(canvasScale);
-    this.shape.ctx.fill(this.topLine);
-    this.shape.ctx.fill(this.bottomLine);
-    this.shape.ctx.fill(this.leftLine);
-    this.shape.ctx.fill(this.rightLine);
-    this.shape.ctx.fill(this.topLeftCorner);
-    this.shape.ctx.fill(this.topRightCorner);
-    this.shape.ctx.fill(this.bottomLeftCorner);
-    this.shape.ctx.fill(this.bottomRightCorner);
-    this.shape.ctx.strokeStyle = this.color;
-    this.shape.ctx.fillStyle = this.color;
-    this.shape.ctx.lineWidth = this.lineWidth / canvasScale;
-    this.shape.ctx.lineCap = 'square';
-    this.shape.ctx.stroke(this.markedLine(this.shape.ctx.lineWidth));
+    selectFrameCtx.fill(this.topLine);
+    selectFrameCtx.fill(this.bottomLine);
+    selectFrameCtx.fill(this.leftLine);
+    selectFrameCtx.fill(this.rightLine);
+    selectFrameCtx.fill(this.topLeftCorner);
+    selectFrameCtx.fill(this.topRightCorner);
+    selectFrameCtx.fill(this.bottomLeftCorner);
+    selectFrameCtx.fill(this.bottomRightCorner);
+    selectFrameCtx.strokeStyle = this.color;
+    selectFrameCtx.fillStyle = this.color;
+    selectFrameCtx.lineWidth = this.lineWidth / canvasScale;
+    selectFrameCtx.lineCap = 'square';
+    selectFrameCtx.stroke(this.markedLine(selectFrameCtx.lineWidth));
   }
 
   moveTo(x: number, y: number): MoveProperties {

@@ -34,9 +34,11 @@ export interface SerializedShape {
 
 export class ShapeSerializer {
   #propertiesSerializer: ShapePropertiesSerializer;
+  #bufferCtx: CanvasRenderingContext2D;
 
-  constructor() {
+  constructor(bufferCtx: CanvasRenderingContext2D) {
     this.#propertiesSerializer = new ShapePropertiesSerializer(this);
+    this.#bufferCtx = bufferCtx;
   }
 
   get propertiesSerializer() {
@@ -104,49 +106,47 @@ export class ShapeSerializer {
     throw new Error(`Unknown shape: ${shape}`);
   }
 
-  deserialized(
-    serializedShape: SerializedShape,
-    ctx: CanvasRenderingContext2D,
-    copy = false
-  ): Shape {
+  deserialized(serializedShape: SerializedShape, copy = false): Shape {
     const properties = this.#propertiesSerializer.deserialized(
       serializedShape.type,
       serializedShape.properties,
-      ctx,
       copy
     );
     switch (serializedShape.type) {
       case ShapeType.Line:
-        return new LineShape(properties as Required<LineShapeProperties>, ctx);
+        return new LineShape(
+          properties as Required<LineShapeProperties>,
+          this.#bufferCtx
+        );
       case ShapeType.StraightLine:
         return new StraightLineShape(
           properties as Required<StraightLineShapeProperties>,
-          ctx
+          this.#bufferCtx
         );
       case ShapeType.Rectangle:
         return new RectangleShape(
           properties as Required<RectangleShapeProperties>,
-          ctx
+          this.#bufferCtx
         );
       case ShapeType.Ellipse:
         return new EllipseShape(
           properties as Required<EllipseShapeProperties>,
-          ctx
+          this.#bufferCtx
         );
       case ShapeType.Image:
         return new ImageShape(
           properties as Required<ImageShapeProperties>,
-          ctx
+          this.#bufferCtx
         );
       case ShapeType.Text:
         return new TextBoxShape(
           properties as Required<TextBoxShapeProperties>,
-          ctx
+          this.#bufferCtx
         );
       case ShapeType.Group: {
         return new GroupShape(
           properties as Required<GroupShapeProperties>,
-          ctx
+          this.#bufferCtx
         );
       }
       default:
