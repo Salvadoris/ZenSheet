@@ -36,14 +36,17 @@ export class PenToolState extends CanvasToolState {
   override onPressedMouseMove(_event: MouseEvent): void {
     if (this.canvas.leftmouseDown) {
       if (this.canvas.firstMove) {
-        this.#currentDrawing = new LineDrawing({
-          [DrawingPropertyName.id]: crypto.randomUUID(),
-          [DrawingPropertyName.points]: [
-            [this.canvas.startCursor[0], this.canvas.startCursor[1]],
-            [this.canvas.cursor[0], this.canvas.cursor[1]],
-          ],
-          [DrawingPropertyName.style]: new LineStyle(this.canvas.style),
-        });
+        this.#currentDrawing = new LineDrawing(
+          {
+            [DrawingPropertyName.id]: crypto.randomUUID(),
+            [DrawingPropertyName.points]: [
+              [this.canvas.startCursor[0], this.canvas.startCursor[1]],
+              [this.canvas.cursor[0], this.canvas.cursor[1]],
+            ],
+            [DrawingPropertyName.style]: new LineStyle(this.canvas.style),
+          },
+          this.canvas.bufferCtx
+        );
         this.canvas.addDrawings([this.#currentDrawing]);
       } else if (this.#currentDrawing) {
         const changeProperties = this.#currentDrawing.update([

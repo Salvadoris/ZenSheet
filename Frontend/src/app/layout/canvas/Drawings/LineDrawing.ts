@@ -1,7 +1,7 @@
 import { ChangableDrawingProperties } from '../DrawingProperties/DrawingProperties';
 import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { LineDrawingProperties } from '../DrawingProperties/LineDrawingProperties';
-import { Point } from '../Geometry';
+import { Point, Rect } from '../Geometry';
 import { LinePoints } from '../ShapeProperties/LineShapeProperties';
 import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { LineShape } from '../Shapes/LineShape';
@@ -12,7 +12,10 @@ import { StyleName } from '../ShapeStyles/StyleName';
 import { Drawing } from './Drawing';
 
 export class LineDrawing implements Drawing {
-  constructor(public properties: LineDrawingProperties) {}
+  constructor(
+    public properties: LineDrawingProperties,
+    public bufferCtx: CanvasRenderingContext2D
+  ) {}
 
   get points() {
     return this.properties[DrawingPropertyName.points];
@@ -35,7 +38,7 @@ export class LineDrawing implements Drawing {
     return path;
   }
 
-  toShape(ctx: CanvasRenderingContext2D): Shape {
+  toShape(): Shape {
     return new LineShape(
       {
         [ShapePropertyName.id]: crypto.randomUUID(),
@@ -44,7 +47,7 @@ export class LineDrawing implements Drawing {
         [ShapePropertyName.edited]: false,
         [ShapePropertyName.selected]: false,
       },
-      ctx
+      this.bufferCtx
     );
   }
 
@@ -57,19 +60,26 @@ export class LineDrawing implements Drawing {
     };
   }
 
-  render(ctx: CanvasRenderingContext2D): void {
-    ctx.lineWidth = this.style[StyleName.LineWidth];
-    ctx.lineCap = this.style[StyleName.LineCap];
-    if (this.style[StyleName.Color].length === 9) {
-      ctx.strokeStyle = this.style[StyleName.Color];
-    } else {
-      ctx.strokeStyle =
-        this.style[StyleName.Color] +
-        this.style[StyleName.Opacity].toString(16).padStart(2, '0');
-    }
-    ctx.lineJoin = 'round';
+  render(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
+    this.bufferCtx.save();
+    this.bufferCtx.lineWidth = this.style[StyleName.LineWidth];
+    this.bufferCtx.lineCap = this.style[StyleName.LineCap];
+    this.bufferCtx.strokeStyle = this.style[StyleName.Color];
+    this.bufferCtx.lineJoin = 'round';
+    this.bufferCtx.stroke(this.path());
+    this.bufferCtx.restore();
 
-    ctx.stroke(this.path());
+    ctx.save();
+    ctx.globalAlpha = this.style[StyleName.Opacity];
+    ctx.drawImage(this.bufferCtx.canvas, 0, 0);
+    ctx.restore();
+
+    this.bufferCtx.clearRect(
+      canvasRect[0],
+      canvasRect[1],
+      canvasRect[2] - canvasRect[0],
+      canvasRect[3] - canvasRect[1]
+    );
   }
 }
 

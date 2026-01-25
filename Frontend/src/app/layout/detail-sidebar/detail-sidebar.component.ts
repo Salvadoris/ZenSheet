@@ -109,4 +109,14 @@ export class DetailSidebar {
       color[8] === '0'
     );
   }
+
+  roundedOpacity() {
+    if (
+      this.style[StyleName.Opacity] === undefined ||
+      this.style[StyleName.Opacity] === null
+    ) {
+      return undefined;
+    }
+    return Math.round(this.style[StyleName.Opacity] * 100);
+  }
 }

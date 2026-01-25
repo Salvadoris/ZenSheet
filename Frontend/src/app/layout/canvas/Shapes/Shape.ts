@@ -12,9 +12,10 @@ import {
 
 export abstract class Shape {
   protected _properties!: Required<BaseShapeProperties>;
+  #bufferCtx: CanvasRenderingContext2D;
   constructor(
     properties: BaseShapeProperties,
-    public ctx: CanvasRenderingContext2D
+    bufferCtx: CanvasRenderingContext2D
   ) {
     if (properties[ShapePropertyName.originalWidth] == 0) {
       throw new Error('Shape width cannot be zero');
@@ -22,7 +23,7 @@ export abstract class Shape {
     if (properties[ShapePropertyName.originalWidth] == 0) {
       throw new Error('Shape height cannot be zero');
     }
-
+    this.#bufferCtx = bufferCtx;
     const width =
       properties[ShapePropertyName.width] !== undefined
         ? properties[ShapePropertyName.width]
@@ -69,6 +70,10 @@ export abstract class Shape {
           ? properties[ShapePropertyName.verticallyInverted]
           : height < 0,
     };
+  }
+
+  get bufferCtx() {
+    return this.#bufferCtx;
   }
 
   get properties(): Required<BaseShapeProperties> {
@@ -202,13 +207,13 @@ export abstract class Shape {
     return this.properties[ShapePropertyName.verticallyInverted];
   }
 
-  render(canvasRect: Rect): void {
+  render(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
     this.properties[ShapePropertyName.horizontalInverted] = this.width < 0;
     this.properties[ShapePropertyName.verticallyInverted] = this.height < 0;
-    this.renderShape(canvasRect);
+    this.renderShape(canvasRect, ctx);
   }
 
-  abstract renderShape(canvasRect: Rect): void;
+  abstract renderShape(canvasRect: Rect, ctx: CanvasRenderingContext2D): void;
 
   abstract path(): Path2D;
 
@@ -241,7 +246,11 @@ export abstract class Shape {
     }
   }
 
-  abstract pointInside(x: number, y: number): boolean;
+  abstract pointInside(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number
+  ): boolean;
 
   resizeTop(
     y: number,

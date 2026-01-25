@@ -184,12 +184,12 @@
           type="range"
           name="amountRange"
           min="0"
-          max="255"
-          [value]="style[StyleName.Opacity]"
+          max="100"
+          [value]="roundedOpacity()"
           (input)="
             changeStyle({
               name: StyleName.Opacity,
-              value: +opacityslider.value,
+              value: +opacityslider.value / 100,
             });
             opacityvalue.value = opacityslider.value
           " />
@@ -198,12 +198,12 @@
           type="number"
           name="amountInput"
           min="0"
-          max="255"
-          [value]="style[StyleName.Opacity]"
+          max="100"
+          [value]="roundedOpacity()"
           (input)="
             changeStyle({
               name: StyleName.Opacity,
-              value: +opacityvalue.value,
+              value: +opacityvalue.value / 100,
             });
             opacityslider.value = opacityvalue.value
           " />

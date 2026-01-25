@@ -13,9 +13,9 @@ export class RectangleShape extends Shape {
 
   constructor(
     properties: RectangleShapeProperties,
-    ctx: CanvasRenderingContext2D
+    bufferCtx: CanvasRenderingContext2D
   ) {
-    super(properties, ctx);
+    super(properties, bufferCtx);
   }
 
   override set properties(properties: Required<RectangleShapeProperties>) {
@@ -44,27 +44,28 @@ export class RectangleShape extends Shape {
     return {};
   }
 
-  override renderShape(_canvasRect: Rect): void {
-    this.ctx.save();
-    const lineWidth = this.style[StyleName.LineWidth];
-    const opacity = this.style[StyleName.Opacity].toString(16).padStart(2, '0');
-    this.ctx.lineWidth = lineWidth;
+  override renderShape(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
+    this.bufferCtx.save();
+    this.bufferCtx.lineWidth = this.style[StyleName.LineWidth];
+    this.bufferCtx.strokeStyle = this.style[StyleName.Color];
+    this.bufferCtx.fillStyle = this.style[StyleName.BackgroundColor];
 
-    if (this.style[StyleName.Color].length === 9) {
-      this.ctx.strokeStyle = this.style[StyleName.Color];
-    } else {
-      this.ctx.strokeStyle = this.style[StyleName.Color] + opacity;
-    }
-    if (this.style[StyleName.BackgroundColor].length === 9) {
-      this.ctx.fillStyle = this.style[StyleName.BackgroundColor];
-    } else {
-      this.ctx.fillStyle = this.style[StyleName.BackgroundColor] + opacity;
-    }
+    const path = this.borderPath();
+    this.bufferCtx.fill(path);
+    this.bufferCtx.stroke(path);
+    this.bufferCtx.restore();
 
-    this.ctx.fill(this.backgroundPath());
-    this.ctx.stroke(this.borderPath());
+    ctx.save();
+    ctx.globalAlpha = this.style[StyleName.Opacity];
+    ctx.drawImage(this.bufferCtx.canvas, 0, 0);
+    ctx.restore();
 
-    this.ctx.restore();
+    this.bufferCtx.clearRect(
+      canvasRect[0],
+      canvasRect[1],
+      canvasRect[2] - canvasRect[0],
+      canvasRect[3] - canvasRect[1]
+    );
   }
 
   override path(): Path2D {
@@ -73,32 +74,25 @@ export class RectangleShape extends Shape {
     return path;
   }
 
-  borderPath() {
-    const outerOffsetX = this.horizontalInverted
+  private borderPath() {
+    const offsetX = this.horizontalInverted
       ? -this.style[StyleName.LineWidth] / 2
       : this.style[StyleName.LineWidth] / 2;
-    const outerOffsetY = this.verticallyInverted
+    const offsetY = this.verticallyInverted
       ? -this.style[StyleName.LineWidth] / 2
       : this.style[StyleName.LineWidth] / 2;
+
     const path = new Path2D();
-    path.moveTo(this.originX + outerOffsetX, this.originY + outerOffsetY);
-    path.lineTo(
-      this.originX + this.width - outerOffsetX,
-      this.originY + outerOffsetY
+    path.rect(
+      this.originX + offsetX,
+      this.originY + offsetY,
+      this.width - offsetX * 2,
+      this.height - offsetY * 2
     );
-    path.lineTo(
-      this.originX + this.width - outerOffsetX,
-      this.originY + this.height - outerOffsetY
-    );
-    path.lineTo(
-      this.originX + outerOffsetX,
-      this.originY + this.height - outerOffsetY
-    );
-    path.closePath();
     return path;
   }
 
-  backgroundPath() {
+  private backgroundPath() {
     const innerOffsetX = this.horizontalInverted
       ? -this.style[StyleName.LineWidth]
       : this.style[StyleName.LineWidth];
@@ -115,28 +109,12 @@ export class RectangleShape extends Shape {
     return path;
   }
 
-  filledPath() {
-    const path = new Path2D();
-    const lineWidth = this.style[StyleName.LineWidth];
-    path.rect(
-      this.horizontalInverted
-        ? this.originX - lineWidth
-        : this.originX + lineWidth,
-      this.verticallyInverted
-        ? this.originY - lineWidth
-        : this.originY + lineWidth,
-      this.horizontalInverted
-        ? this.width + lineWidth * 2
-        : this.width - lineWidth * 2,
-      this.verticallyInverted
-        ? this.height + lineWidth * 2
-        : this.height - lineWidth * 2
-    );
-    return path;
-  }
-
-  override pointInside(x: number, y: number): boolean {
-    this.ctx.lineWidth = this.style[StyleName.LineWidth];
+  override pointInside(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number
+  ): boolean {
+    ctx.lineWidth = this.style[StyleName.LineWidth];
     const backgroundTransparent =
       this.style[StyleName.BackgroundColor].length === 9 &&
       this.style[StyleName.BackgroundColor][7] === '0' &&
@@ -146,11 +124,11 @@ export class RectangleShape extends Shape {
       this.style[StyleName.Color][7] === '0' &&
       this.style[StyleName.Color][8] === '0';
     if (backgroundTransparent && !borderTransparent) {
-      return this.ctx.isPointInStroke(this.borderPath(), x, y);
+      return ctx.isPointInStroke(this.borderPath(), x, y);
     } else if (borderTransparent && !backgroundTransparent) {
-      return this.ctx.isPointInPath(this.backgroundPath(), x, y);
+      return ctx.isPointInPath(this.backgroundPath(), x, y);
     } else {
-      return this.ctx.isPointInPath(this.path(), x, y);
+      return ctx.isPointInPath(this.path(), x, y);
     }
   }
 

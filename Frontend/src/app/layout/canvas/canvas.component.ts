@@ -76,9 +76,11 @@ declare global {
   selector: 'app-canvas',
   imports: [ShapeContextMenu, CanvasContextMenu],
   template: `<div class="relative">
+    <canvas hidden #bufferCanvas class="absolute top-0 left-0"></canvas>
     <canvas #mainCanvas class="absolute top-0 left-0"></canvas>
+    <canvas #tmpCanvas class="absolute top-0 left-0 "></canvas>
     <canvas
-      #tmpCanvas
+      #selectFrameCanvas
       (mousedown)="onMouseDown($event)"
       (mousemove)="onHoveringMouseMove($event)"
       (wheel)="onWheel($event)"
@@ -125,11 +127,17 @@ export class CanvasComponent implements AfterViewInit {
   private mainCanvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('tmpCanvas', { static: true })
   private tmpCanvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('bufferCanvas', { static: true })
+  private bufferCanvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('selectFrameCanvas', { static: true })
+  private selectFrameCanvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('hiddenInput', { static: true })
   private hiddenInputRef!: ElementRef<HTMLTextAreaElement>;
 
   #mainCtx!: CanvasRenderingContext2D;
   #tmpCtx!: CanvasRenderingContext2D;
+  #bufferCtx!: CanvasRenderingContext2D;
+  #selectFrameCtx!: CanvasRenderingContext2D;
 
   #toolState!: CanvasToolState;
   modeChange = output<Mode>();
@@ -187,7 +195,7 @@ export class CanvasComponent implements AfterViewInit {
     [StyleName.BackgroundColor]: '#00000000',
     [StyleName.LineWidth]: 10,
     [StyleName.LineCap]: 'round',
-    [StyleName.Opacity]: 255,
+    [StyleName.Opacity]: 1,
     [StyleName.FontSize]: 40,
     [StyleName.FontLineSpace]: 1.25,
     [StyleName.FontName]: 'Times New Roman',
@@ -201,14 +209,18 @@ export class CanvasComponent implements AfterViewInit {
   #smoothLineFactor = 4;
 
   ngAfterViewInit() {
-    this.#shapeSerializer = new ShapeSerializer();
-    this.#drawingSerializer = new DrawingSerializer();
-    this.#actionHandler = new CanvasActionHandler(this);
-
+    const bufferCanvas = this.bufferCanvasRef.nativeElement;
+    this.#bufferCtx = bufferCanvas.getContext('2d')!;
     const mainCanvas = this.mainCanvasRef.nativeElement;
     this.#mainCtx = mainCanvas.getContext('2d')!;
     const tmpCanvas = this.tmpCanvasRef.nativeElement;
     this.#tmpCtx = tmpCanvas.getContext('2d')!;
+    const selectFrameCanvas = this.selectFrameCanvasRef.nativeElement;
+    this.#selectFrameCtx = selectFrameCanvas.getContext('2d')!;
+
+    this.#shapeSerializer = new ShapeSerializer(this.#bufferCtx);
+    this.#drawingSerializer = new DrawingSerializer(this.#bufferCtx);
+    this.#actionHandler = new CanvasActionHandler(this);
 
     this.changeToHover();
     this.renderCanvas(true, true);
@@ -220,6 +232,14 @@ export class CanvasComponent implements AfterViewInit {
 
   get tmpCtx() {
     return this.#tmpCtx;
+  }
+
+  get bufferCtx() {
+    return this.#bufferCtx;
+  }
+
+  get selectFrameCtx() {
+    return this.#selectFrameCtx;
   }
 
   get shapeSerializer() {
@@ -420,7 +440,7 @@ export class CanvasComponent implements AfterViewInit {
   }
 
   drawingToShape(drawing: Drawing) {
-    const shape = drawing.toShape(this.mainCtx);
+    const shape = drawing.toShape();
     this.shapes.push(shape);
     const serializedShape = this.shapeSerializer.serialized(shape);
 
@@ -602,7 +622,7 @@ export class CanvasComponent implements AfterViewInit {
   }
 
   focusCanvas() {
-    this.tmpCanvasRef.nativeElement.focus();
+    this.selectFrameCanvasRef.nativeElement.focus();
   }
 
   changeStyle(style: NullableShapeStyle) {
@@ -618,7 +638,7 @@ export class CanvasComponent implements AfterViewInit {
   }
 
   changeCursor(cursor: string) {
-    this.#tmpCtx.canvas.style.cursor = cursor;
+    this.#selectFrameCtx.canvas.style.cursor = cursor;
   }
 
   enableMove() {
@@ -709,6 +729,16 @@ export class CanvasComponent implements AfterViewInit {
     const yMax = originY + window.innerHeight / this.#scale;
     this.#trueRect = [originX, originY, xMax, yMax];
 
+    this.#selectFrameCtx.canvas.width = window.innerWidth;
+    this.#selectFrameCtx.canvas.height = window.innerHeight;
+    this.#selectFrameCtx.translate(this.#origin[0], this.#origin[1]);
+    this.#selectFrameCtx.scale(this.#scale, this.#scale);
+
+    this.#bufferCtx.canvas.width = window.innerWidth;
+    this.#bufferCtx.canvas.height = window.innerHeight;
+    this.#bufferCtx.translate(this.#origin[0], this.#origin[1]);
+    this.#bufferCtx.scale(this.#scale, this.#scale);
+
     if (main) {
       this.#mainCtx.canvas.width = window.innerWidth;
       this.#mainCtx.canvas.height = window.innerHeight;
@@ -721,14 +751,12 @@ export class CanvasComponent implements AfterViewInit {
         this.#mainCtx.canvas.height
       );
 
-      this.#mainCtx.translate(this.#origin[0], this.#origin[1]);
-      this.#mainCtx.scale(this.#scale, this.#scale);
       for (const shape of this.#shapes) {
         if (
           !shape.properties[ShapePropertyName.edited] &&
           this.shapeInside(shape)
         ) {
-          shape.render(this.#trueRect);
+          shape.render(this.#trueRect, this.#mainCtx);
         }
       }
 
@@ -749,21 +777,18 @@ export class CanvasComponent implements AfterViewInit {
         this.#tmpCtx.canvas.height
       );
 
-      this.#tmpCtx.translate(this.#origin[0], this.#origin[1]);
-      this.#tmpCtx.scale(this.#scale, this.#scale);
-
       for (const shape of this.#shapes) {
         if (
           shape.properties[ShapePropertyName.edited] &&
           !shape.properties[ShapePropertyName.selected] &&
           this.shapeInside(shape)
         ) {
-          shape.render(this.#trueRect);
+          shape.render(this.#trueRect, this.#tmpCtx);
         }
       }
 
       for (const drawing of this.#drawings) {
-        drawing.render(this.#tmpCtx);
+        drawing.render(this.#trueRect, this.#tmpCtx, this.#bufferCtx);
       }
       this.#toolState.renderTmp();
 
@@ -1073,7 +1098,7 @@ export class CanvasComponent implements AfterViewInit {
 
     if (this.#leftMouseDown && event.ctrlKey) {
       this.#isPanning = true;
-      this.#previousCursor = this.#tmpCtx.canvas.style.cursor;
+      this.#previousCursor = this.#selectFrameCtx.canvas.style.cursor;
       this.changeCursor('grabbing');
       return;
     }
@@ -1153,9 +1178,7 @@ export class CanvasComponent implements AfterViewInit {
     this.#origin = origin;
     this.#scale = scale;
 
-    this.#shapes = shapes.map(s =>
-      this.#shapeSerializer.deserialized(s, this.mainCtx)
-    );
+    this.#shapes = shapes.map(s => this.#shapeSerializer.deserialized(s));
 
     this.#drawings = drawings.map(d => this.#drawingSerializer.deserialized(d));
 

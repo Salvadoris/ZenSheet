@@ -123,7 +123,6 @@ export class ShapePropertiesSerializer {
   deserialized(
     type: ShapeType,
     serializedProperties: SerializedShapeProperties,
-    ctx: CanvasRenderingContext2D,
     copy = false
   ): ShapeProperties {
     const properties = {
@@ -224,7 +223,7 @@ export class ShapePropertiesSerializer {
             (serializedProperties as SerializedGroupShapeProperties)[
               ShapePropertyName.shapes
             ] as SerializedShape[]
-          ).map(s => this.shapeSerializer.deserialized(s, ctx, copy));
+          ).map(s => this.shapeSerializer.deserialized(s, copy));
           shapes.forEach(s => {
             s.properties[ShapePropertyName.style] = {
               ...s.properties[ShapePropertyName.style],

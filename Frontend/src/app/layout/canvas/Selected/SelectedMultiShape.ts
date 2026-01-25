@@ -8,26 +8,31 @@ import { SelectedShape } from './SelectedShape';
 export class SelectedMultiShape extends SelectedShape {
   declare shape: GroupShape;
 
-  constructor(shapes: Shape[], ctx: CanvasRenderingContext2D) {
+  constructor(shapes: Shape[], bufferCtx: CanvasRenderingContext2D) {
     const groupShape = new GroupShape(
       {
         [ShapePropertyName.id]: crypto.randomUUID(),
         [ShapePropertyName.shapes]: shapes,
-        [ShapePropertyName.edited]: false,
-        [ShapePropertyName.selected]: false,
+        [ShapePropertyName.edited]: true,
+        [ShapePropertyName.selected]: true,
       },
-      ctx
+      bufferCtx
     );
     super(groupShape);
   }
 
-  override render(canvasScale: number, canvasRect: Rect): void {
-    super.render(canvasScale, canvasRect);
-    this.shape.ctx.lineWidth = 2 / canvasScale;
-    this.shape.ctx.lineCap = 'square';
-    this.shape.ctx.strokeStyle = this.color;
+  override render(
+    canvasScale: number,
+    canvasRect: Rect,
+    selectFramectx: CanvasRenderingContext2D,
+    ctx: CanvasRenderingContext2D
+  ): void {
+    super.render(canvasScale, canvasRect, selectFramectx, ctx);
+    ctx.lineWidth = 2 / canvasScale;
+    ctx.lineCap = 'square';
+    ctx.strokeStyle = this.color;
     for (const shape of this.shape.shapes) {
-      this.shape.ctx.strokeRect(
+      selectFramectx.strokeRect(
         this.shape.originX + shape.originX * this.shape.scaleX,
         this.shape.originY + shape.originY * this.shape.scaleY,
         shape.width * this.shape.scaleX,

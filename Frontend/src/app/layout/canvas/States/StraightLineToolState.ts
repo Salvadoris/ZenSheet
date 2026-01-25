@@ -35,18 +35,21 @@ export class StraightLineToolState extends CanvasToolState {
 
   override onPressedMouseMove(_event: MouseEvent): void {
     if (this.canvas.firstMove) {
-      this.#currentDrawing = new StraightLineDrawing({
-        [DrawingPropertyName.id]: crypto.randomUUID(),
-        [DrawingPropertyName.p0]: [
-          this.canvas.startCursor[0],
-          this.canvas.startCursor[1],
-        ],
-        [DrawingPropertyName.p1]: [
-          this.canvas.cursor[0],
-          this.canvas.cursor[1],
-        ],
-        [DrawingPropertyName.style]: new StraightLineStyle(this.canvas.style),
-      });
+      this.#currentDrawing = new StraightLineDrawing(
+        {
+          [DrawingPropertyName.id]: crypto.randomUUID(),
+          [DrawingPropertyName.p0]: [
+            this.canvas.startCursor[0],
+            this.canvas.startCursor[1],
+          ],
+          [DrawingPropertyName.p1]: [
+            this.canvas.cursor[0],
+            this.canvas.cursor[1],
+          ],
+          [DrawingPropertyName.style]: new StraightLineStyle(this.canvas.style),
+        },
+        this.canvas.bufferCtx
+      );
       this.canvas.addDrawings([this.#currentDrawing]);
     } else if (this.#currentDrawing) {
       const changeProperties = this.#currentDrawing.update([

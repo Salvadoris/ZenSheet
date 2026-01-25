@@ -2,12 +2,17 @@ import {
   ChangableDrawingProperties,
   DrawingProperties,
 } from '../DrawingProperties/DrawingProperties';
-import { Point } from '../Geometry';
+import { Point, Rect } from '../Geometry';
 import { Shape } from '../Shapes/Shape';
 
 export interface Drawing {
   properties: DrawingProperties;
+  bufferCtx: CanvasRenderingContext2D;
   update(p: Point): ChangableDrawingProperties;
-  render(ctx: CanvasRenderingContext2D): void;
-  toShape(ctx: CanvasRenderingContext2D): Shape;
+  render(
+    canvasRect: Rect,
+    ctx: CanvasRenderingContext2D,
+    bufferCtx: CanvasRenderingContext2D
+  ): void;
+  toShape(): Shape;
 }

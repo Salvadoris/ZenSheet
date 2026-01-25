@@ -84,10 +84,10 @@ export class CanvasActionHandler {
     const shapes = action.data.shapes.map(s => {
       if (s.properties[ShapePropertyName.edited] === true) {
         tmp = true;
-        return this.canvas.shapeSerializer.deserialized(s, this.canvas.tmpCtx);
+        return this.canvas.shapeSerializer.deserialized(s);
       } else {
         main = true;
-        return this.canvas.shapeSerializer.deserialized(s, this.canvas.mainCtx);
+        return this.canvas.shapeSerializer.deserialized(s);
       }
     });
     this.canvas.shapes = this.canvas.shapes.concat(shapes);
@@ -176,13 +176,6 @@ export class CanvasActionHandler {
         shape.properties[ShapePropertyName.verticallyInverted] =
           action.data.properties[ShapePropertyName.height] < 0;
       }
-      if (action.data.properties[ShapePropertyName.edited] !== undefined) {
-        if (action.data.properties[ShapePropertyName.edited] === true) {
-          shape.ctx = this.canvas.tmpCtx;
-        } else {
-          shape.ctx = this.canvas.mainCtx;
-        }
-      }
     });
     this.canvas.renderCanvas(true, true);
   }
@@ -253,10 +246,7 @@ export class CanvasActionHandler {
       this.canvas.drawings.splice(idx, 1);
     }
     this.canvas.shapes.push(
-      this.canvas.shapeSerializer.deserialized(
-        action.data.shape,
-        this.canvas.mainCtx
-      )
+      this.canvas.shapeSerializer.deserialized(action.data.shape)
     );
     this.canvas.renderCanvas(true, true);
   }
@@ -272,13 +262,10 @@ export class CanvasActionHandler {
       s => !shapeIdList.includes(s.properties[ShapePropertyName.id])
     );
 
-    const groupShape = this.canvas.shapeSerializer.deserialized(
-      {
-        type: ShapeType.Group,
-        properties: action.data.groupShape,
-      },
-      this.canvas.mainCtx
-    ) as GroupShape;
+    const groupShape = this.canvas.shapeSerializer.deserialized({
+      type: ShapeType.Group,
+      properties: action.data.groupShape,
+    }) as GroupShape;
 
     groupShape.properties[ShapePropertyName.shapes] = shapes;
     for (const shape of groupShape.shapes) {

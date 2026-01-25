@@ -1,7 +1,7 @@
 import { ChangableDrawingProperties } from '../DrawingProperties/DrawingProperties';
 import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { StraightLineDrawingProperties } from '../DrawingProperties/StraightLineDrawingProperties';
-import { Point } from '../Geometry';
+import { Point, Rect } from '../Geometry';
 import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { Shape } from '../Shapes/Shape';
 import { StraightLineShape } from '../Shapes/StraightLineShape';
@@ -11,7 +11,10 @@ import { StyleName } from '../ShapeStyles/StyleName';
 import { Drawing } from './Drawing';
 
 export class StraightLineDrawing implements Drawing {
-  constructor(public properties: StraightLineDrawingProperties) {}
+  constructor(
+    public properties: StraightLineDrawingProperties,
+    public bufferCtx: CanvasRenderingContext2D
+  ) {}
 
   get p0() {
     return this.properties[DrawingPropertyName.p0];
@@ -32,7 +35,7 @@ export class StraightLineDrawing implements Drawing {
     return path;
   }
 
-  toShape(ctx: CanvasRenderingContext2D): Shape {
+  toShape(): Shape {
     const horizontalInverted = this.p1[0] < this.p0[0];
     const verticallyInverted = this.p1[1] < this.p0[1];
     return new StraightLineShape(
@@ -54,7 +57,7 @@ export class StraightLineDrawing implements Drawing {
         [ShapePropertyName.edited]: false,
         [ShapePropertyName.selected]: false,
       },
-      ctx
+      this.bufferCtx
     );
   }
 
@@ -68,16 +71,23 @@ export class StraightLineDrawing implements Drawing {
     };
   }
 
-  render(ctx: CanvasRenderingContext2D): void {
-    ctx.lineWidth = this.style[StyleName.LineWidth];
-    ctx.lineCap = this.style[StyleName.LineCap];
-    if (this.style[StyleName.Color].length === 9) {
-      ctx.strokeStyle = this.style[StyleName.Color];
-    } else {
-      ctx.strokeStyle =
-        this.style[StyleName.Color] +
-        this.style[StyleName.Opacity].toString(16).padStart(2, '0');
-    }
-    ctx.stroke(this.path());
+  render(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
+    this.bufferCtx.save();
+    this.bufferCtx.lineWidth = this.style[StyleName.LineWidth];
+    this.bufferCtx.lineCap = this.style[StyleName.LineCap];
+    this.bufferCtx.strokeStyle = this.style[StyleName.Color];
+    this.bufferCtx.stroke(this.path());
+
+    ctx.save();
+    ctx.globalAlpha = this.style[StyleName.Opacity];
+    ctx.drawImage(this.bufferCtx.canvas, 0, 0);
+    ctx.restore();
+
+    this.bufferCtx.clearRect(
+      canvasRect[0],
+      canvasRect[1],
+      canvasRect[2] - canvasRect[0],
+      canvasRect[3] - canvasRect[1]
+    );
   }
 }

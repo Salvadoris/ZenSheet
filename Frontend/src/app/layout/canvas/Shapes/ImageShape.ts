@@ -13,8 +13,11 @@ export class ImageShape extends Shape {
   private img = new Image();
   private loaded = false;
 
-  constructor(properties: ImageShapeProperties, ctx: CanvasRenderingContext2D) {
-    super(properties, ctx);
+  constructor(
+    properties: ImageShapeProperties,
+    bufferCtx: CanvasRenderingContext2D
+  ) {
+    super(properties, bufferCtx);
   }
 
   override set properties(properties: Required<ImageShapeProperties>) {
@@ -43,24 +46,41 @@ export class ImageShape extends Shape {
     return {};
   }
 
-  override renderShape(canvasRect: Rect): void {
+  override renderShape(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
     if (this.loaded) {
-      this.renderImage();
+      this.renderImage(canvasRect, ctx);
     } else {
       this.img.onload = () => {
         this.loaded = true;
-        this.renderImage();
+        this.renderImage(canvasRect, ctx);
       };
     }
   }
 
-  private renderImage() {
-    this.ctx.save();
-    this.ctx.translate(this.originX, this.originY);
-    this.ctx.scale(this.scaleX, this.scaleY);
-    this.ctx.globalAlpha = this.style[StyleName.Opacity] / 255;
-    this.ctx.drawImage(this.img, 0, 0, this.originalWidth, this.originalHeight);
-    this.ctx.restore();
+  private renderImage(canvasRect: Rect, ctx: CanvasRenderingContext2D) {
+    this.bufferCtx.save();
+    this.bufferCtx.translate(this.originX, this.originY);
+    this.bufferCtx.scale(this.scaleX, this.scaleY);
+    this.bufferCtx.drawImage(
+      this.img,
+      0,
+      0,
+      this.originalWidth,
+      this.originalHeight
+    );
+    this.bufferCtx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = this.style[StyleName.Opacity];
+    ctx.drawImage(this.bufferCtx.canvas, 0, 0);
+    ctx.restore();
+
+    this.bufferCtx.clearRect(
+      canvasRect[0],
+      canvasRect[1],
+      canvasRect[2] - canvasRect[0],
+      canvasRect[3] - canvasRect[1]
+    );
   }
 
   override path(): Path2D {
@@ -69,12 +89,16 @@ export class ImageShape extends Shape {
     return path;
   }
 
-  override pointInside(x: number, y: number): boolean {
-    this.ctx.save();
-    this.ctx.translate(this.originX, this.originY);
-    this.ctx.scale(this.scaleX, this.scaleY);
-    const inside = this.ctx.isPointInPath(this.path(), x, y);
-    this.ctx.restore();
+  override pointInside(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number
+  ): boolean {
+    ctx.save();
+    ctx.translate(this.originX, this.originY);
+    ctx.scale(this.scaleX, this.scaleY);
+    const inside = ctx.isPointInPath(this.path(), x, y);
+    ctx.restore();
     return inside;
   }
 

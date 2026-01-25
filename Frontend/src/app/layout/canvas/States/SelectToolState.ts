@@ -86,13 +86,18 @@ export class SelectToolState extends CanvasToolState {
 
   override renderTmp() {
     if (this.#selectedShape) {
-      this.#selectedShape.render(this.canvas.scale, this.canvas.trueRect);
+      this.#selectedShape.render(
+        this.canvas.scale,
+        this.canvas.trueRect,
+        this.canvas.selectFrameCtx,
+        this.canvas.tmpCtx
+      );
     }
     if (this.#selectRect) {
-      this.#selectRect.render(this.canvas.tmpCtx, this.canvas.scale);
+      this.#selectRect.render(this.canvas.selectFrameCtx, this.canvas.scale);
       const shapes = this.shapesInsideSelectRect();
       this.#selectRect.renderShapeOutlines(
-        this.canvas.tmpCtx,
+        this.canvas.selectFrameCtx,
         this.canvas.scale,
         shapes
       );
@@ -195,7 +200,7 @@ export class SelectToolState extends CanvasToolState {
               this.canvas.cursor[1]
             );
             for (const shape of this.#selectedShape.shape.shapes) {
-              if (shape.pointInside(localX, localY)) {
+              if (shape.pointInside(this.canvas.tmpCtx, localX, localY)) {
                 insideShape = true;
                 this.selectSingleShape(shape);
                 this.canvas.renderCanvas(true, true);
@@ -204,6 +209,7 @@ export class SelectToolState extends CanvasToolState {
             }
           } else if (
             this.#selectedShape.shape.pointInside(
+              this.canvas.tmpCtx,
               this.canvas.cursor[0],
               this.canvas.cursor[1]
             )
@@ -228,7 +234,7 @@ export class SelectToolState extends CanvasToolState {
       }
       if (this.#selectRect) {
         this.selectFromRect();
-        this.canvas.renderCanvas(false, true);
+        this.canvas.renderCanvas(true, true);
       }
       this.#selectedAction = false;
     }
@@ -525,27 +531,12 @@ export class SelectToolState extends CanvasToolState {
     return shapes;
   }
 
-  private setTmpCtx(shape: Shape) {
-    shape.ctx = this.canvas.tmpCtx;
-    if (shape instanceof GroupShape) {
-      shape.shapes.forEach(s => this.setTmpCtx(s));
-    }
-  }
-
-  private setMainCtx(shape: Shape) {
-    shape.ctx = this.canvas.mainCtx;
-    if (shape instanceof GroupShape) {
-      shape.shapes.forEach(s => this.setMainCtx(s));
-    }
-  }
-
   selectSingleShape(shape: Shape) {
     this.unSelectShape();
     this.canvas.shapes.push(
       this.canvas.shapes.splice(this.canvas.shapes.indexOf(shape), 1)[0]
     );
     this.#selectedShape = new SelectedShape(shape);
-    this.setTmpCtx(shape);
     shape.properties[ShapePropertyName.edited] = true;
     shape.properties[ShapePropertyName.selected] = true;
     this.canvas.changeShapesProperties(
@@ -560,13 +551,13 @@ export class SelectToolState extends CanvasToolState {
       this.#selectedShape &&
       this.#selectedShape instanceof SelectedMultiShape
     ) {
-      this.canvas.shapes.push(
-        this.canvas.shapes.splice(this.canvas.shapes.indexOf(shape), 1)[0]
-      );
+      const idx = this.canvas.shapes.indexOf(shape);
+      if (idx !== -1) {
+        this.canvas.shapes.splice(idx, 1);
+      }
       this.canvas.shapeToLocal(this.#selectedShape.shape, shape);
       this.#selectedShape.shape.addShape(shape);
       this.canvas.changeStyle(this.#selectedShape.shape.style);
-      this.setTmpCtx(shape);
     } else if (this.#selectedShape) {
       const firstShape = this.#selectedShape.shape;
       this.unSelectShape();
@@ -581,31 +572,24 @@ export class SelectToolState extends CanvasToolState {
       if (shapes.length == 1) {
         this.selectSingleShape(shapes[0]);
       } else {
+        console.log(this.canvas.shapes.length);
         this.canvas.shapes = this.canvas.shapes.filter(
           s => !shapes.includes(s)
         );
-        this.canvas.shapes = this.canvas.shapes.concat(shapes);
 
-        for (const shape of shapes) {
-          this.setTmpCtx(shape);
-        }
         this.#selectedShape = new SelectedMultiShape(
           shapes,
-          this.canvas.tmpCtx
+          this.canvas.bufferCtx
         );
         this.canvas.addGroupShape(this.#selectedShape.shape as GroupShape);
         this.canvas.changeStyle(this.#selectedShape.shape.style);
+        console.log(this.canvas.shapes.length);
       }
     }
   }
 
   private selectMultipleNewShapes(shapes: Shape[]) {
-    this.canvas.shapes = this.canvas.shapes.filter(s => !shapes.includes(s));
-    this.canvas.shapes = this.canvas.shapes.concat(shapes);
-    for (const shape of shapes) {
-      this.setTmpCtx(shape);
-    }
-    this.#selectedShape = new SelectedMultiShape(shapes, this.canvas.tmpCtx);
+    this.#selectedShape = new SelectedMultiShape(shapes, this.canvas.bufferCtx);
     this.canvas.addShapes([this.#selectedShape.shape]);
     this.canvas.changeStyle(this.#selectedShape.shape.style);
   }
@@ -614,12 +598,10 @@ export class SelectToolState extends CanvasToolState {
     if (this.#selectedShape) {
       this.canvas.removeCurrentStyle();
       if (this.#selectedShape instanceof SelectedMultiShape) {
-        this.setMainCtx(this.#selectedShape.shape);
         this.#selectedShape.shape.shapesToGlobal();
         this.canvas.removeGroupShape(this.#selectedShape.shape);
         this.#selectedShape.shape.clearShapes();
       } else {
-        this.setMainCtx(this.#selectedShape.shape);
         this.#selectedShape.shape.properties[ShapePropertyName.edited] = false;
         this.#selectedShape.shape.properties[ShapePropertyName.selected] =
           false;
@@ -641,7 +623,7 @@ export class SelectToolState extends CanvasToolState {
         this.canvas.cursor[1]
       )
     ) {
-      this.canvas.tmpCtx.canvas.style.cursor = 'move';
+      this.canvas.selectFrameCtx.canvas.style.cursor = 'move';
     } else if (
       this.#selectedShape &&
       (this.#selectedShape.pointOnTopLine(
@@ -655,7 +637,7 @@ export class SelectToolState extends CanvasToolState {
           this.canvas.cursor[1]
         ))
     ) {
-      this.canvas.tmpCtx.canvas.style.cursor = 'ns-resize';
+      this.canvas.selectFrameCtx.canvas.style.cursor = 'ns-resize';
     } else if (
       this.#selectedShape &&
       (this.#selectedShape.pointOnLeftLine(
@@ -669,7 +651,7 @@ export class SelectToolState extends CanvasToolState {
           this.canvas.cursor[1]
         ))
     ) {
-      this.canvas.tmpCtx.canvas.style.cursor = 'ew-resize';
+      this.canvas.selectFrameCtx.canvas.style.cursor = 'ew-resize';
     } else if (
       this.#selectedShape &&
       (this.#selectedShape.pointOnTopLeftCorner(
@@ -687,9 +669,9 @@ export class SelectToolState extends CanvasToolState {
         this.#selectedShape.shape.horizontalInverted !==
         this.#selectedShape.shape.verticallyInverted
       ) {
-        this.canvas.tmpCtx.canvas.style.cursor = 'nesw-resize';
+        this.canvas.selectFrameCtx.canvas.style.cursor = 'nesw-resize';
       } else {
-        this.canvas.tmpCtx.canvas.style.cursor = 'nwse-resize';
+        this.canvas.selectFrameCtx.canvas.style.cursor = 'nwse-resize';
       }
     } else if (
       this.#selectedShape &&
@@ -721,9 +703,12 @@ export class SelectToolState extends CanvasToolState {
 
   private findSelectedShape(p: Point): Shape | null {
     for (let i = this.canvas.shapes.length - 1; i >= 0; i--) {
+      const ctx = this.canvas.shapes[i].properties[ShapePropertyName.edited]
+        ? this.canvas.tmpCtx
+        : this.canvas.mainCtx;
       if (
         this.canvas.shapeInside(this.canvas.shapes[i]) &&
-        this.canvas.shapes[i].pointInside(p[0], p[1])
+        this.canvas.shapes[i].pointInside(ctx, p[0], p[1])
       ) {
         return this.canvas.shapes[i];
       }
@@ -744,7 +729,7 @@ export class SelectToolState extends CanvasToolState {
         [ShapePropertyName.selected]: false,
         [ShapePropertyName.horizontallyInvertable]: false,
       },
-      this.canvas.tmpCtx
+      this.canvas.bufferCtx
     );
   }
 
@@ -764,7 +749,6 @@ export class SelectToolState extends CanvasToolState {
           copiedShape.shape.properties[ShapePropertyName.originY] = position[1];
           const shape = this.canvas.shapeSerializer.deserialized(
             copiedShape.shape,
-            this.canvas.tmpCtx,
             true
           );
 
