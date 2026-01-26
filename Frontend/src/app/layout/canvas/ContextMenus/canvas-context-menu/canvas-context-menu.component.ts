@@ -1,5 +1,9 @@
 import { ChangeDetectionStrategy, Component, output } from '@angular/core';
 
+export enum CanvasContextMenuAction {
+  Paste = 'Paste',
+}
+
 @Component({
   selector: 'app-canvas-context-menu',
   imports: [],
@@ -8,5 +12,6 @@ import { ChangeDetectionStrategy, Component, output } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CanvasContextMenu {
-  pasteShape = output<void>();
+  CanvasContextMenuAction = CanvasContextMenuAction;
+  executeAction = output<CanvasContextMenuAction>();
 }
