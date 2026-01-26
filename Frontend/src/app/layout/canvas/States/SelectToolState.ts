@@ -1,6 +1,8 @@
 import { signal } from '@angular/core';
 
 import { CanvasComponent } from '../canvas.component';
+import { CanvasContextMenuAction } from '../ContextMenus/canvas-context-menu/canvas-context-menu.component';
+import { ShapeContextMenuAction } from '../ContextMenus/shape-context-menu/shape-context-menu.component';
 import { Point, Rect } from '../Geometry';
 import { SelectedMultiShape } from '../Selected/SelectedMultiShape';
 import { Resize, SelectedShape } from '../Selected/SelectedShape';
@@ -43,6 +45,39 @@ export class SelectToolState extends CanvasToolState {
     this.canvas.removeCurrentStyle();
     if (this.canvas.tmpCtx) {
       this.canvas.changeCursor('default');
+    }
+  }
+
+  executeShapeContextMenuAction(action: ShapeContextMenuAction) {
+    this.hideContextMenu();
+    switch (action) {
+      case ShapeContextMenuAction.Remove:
+        this.removeSelectedShape();
+        break;
+      case ShapeContextMenuAction.Copy:
+        this.copySelectedShape();
+        break;
+      case ShapeContextMenuAction.Paste:
+        this.pasteShapeAtContextMenuPosition();
+        break;
+      case ShapeContextMenuAction.Duplicate:
+        this.duplicateSelectedShape();
+        break;
+      case ShapeContextMenuAction.Group:
+        this.groupShapes();
+        break;
+      case ShapeContextMenuAction.SplitGroup:
+        this.splitGroupShape();
+        break;
+    }
+  }
+
+  executeCanvasContextMenuAction(action: CanvasContextMenuAction) {
+    this.hideContextMenu();
+    switch (action) {
+      case CanvasContextMenuAction.Paste:
+        this.pasteShapeAtContextMenuPosition();
+        break;
     }
   }
 
@@ -271,7 +306,6 @@ export class SelectToolState extends CanvasToolState {
       ]);
       this.#selectedShape = null;
       this.canvas.renderCanvas(true, true);
-      this.hideContextMenu();
       this.hoverSelectedShape();
     }
   }
@@ -284,7 +318,6 @@ export class SelectToolState extends CanvasToolState {
         this.#selectedShape.shape.properties[ShapePropertyName.originY] +
           20 / this.canvas.scale,
       ];
-      this.hideContextMenu();
       return navigator.clipboard.writeText(
         JSON.stringify({
           type:
@@ -301,7 +334,6 @@ export class SelectToolState extends CanvasToolState {
   }
 
   pasteShapeAtContextMenuPosition() {
-    this.hideContextMenu();
     this.pasteShapeFromClipBoard([
       (this.contextMenuPosition[0] - this.canvas.origin[0]) / this.canvas.scale,
       (this.contextMenuPosition[1] - this.canvas.origin[1]) / this.canvas.scale,
@@ -326,7 +358,6 @@ export class SelectToolState extends CanvasToolState {
 
   duplicateSelectedShape() {
     if (this.#selectedShape) {
-      this.hideContextMenu();
       this.copySelectedShape()?.then(() => {
         this.pasteWithOffset();
       });
@@ -339,7 +370,6 @@ export class SelectToolState extends CanvasToolState {
       this.#selectedShape instanceof SelectedMultiShape
     ) {
       this.#selectedShape = new SelectedShape(this.#selectedShape.shape);
-      this.hideContextMenu();
       this.canvas.renderCanvas(false, true);
     }
   }
@@ -355,7 +385,6 @@ export class SelectToolState extends CanvasToolState {
       this.canvas.removeGroupShape(this.#selectedShape.shape);
       this.selectMultipleShapes(shapes);
 
-      this.hideContextMenu();
       this.canvas.renderCanvas(false, true);
     }
   }

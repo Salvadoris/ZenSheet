@@ -9,6 +9,15 @@ import { SelectedMultiShape } from '../../Selected/SelectedMultiShape';
 import { SelectedShape } from '../../Selected/SelectedShape';
 import { GroupShape } from '../../Shapes/GroupShape';
 
+export enum ShapeContextMenuAction {
+  Remove = 'Remove',
+  Copy = 'Copy',
+  Paste = 'Paste',
+  Duplicate = 'Duplicate',
+  Group = 'Group',
+  SplitGroup = 'SplitGroup',
+}
+
 @Component({
   selector: 'app-shape-context-menu',
   imports: [],
@@ -17,14 +26,10 @@ import { GroupShape } from '../../Shapes/GroupShape';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ShapeContextMenu {
+  ShapeContextMenuAction = ShapeContextMenuAction;
   #selectedShape: SelectedShape | undefined = undefined;
 
-  removeShape = output<void>();
-  copyShape = output<void>();
-  pasteShape = output<void>();
-  duplicateShape = output<void>();
-  groupShapes = output<void>();
-  splitGroupShape = output<void>();
+  executeAction = output<ShapeContextMenuAction>();
 
   @Input() set selectedShape(selectedShape: SelectedShape | undefined) {
     this.#selectedShape = selectedShape;

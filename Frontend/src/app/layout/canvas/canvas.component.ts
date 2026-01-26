@@ -105,18 +105,17 @@ declare global {
         [style.left.px]="asSelectToolState().contextMenuPosition[0]"
         [style.top.px]="asSelectToolState().contextMenuPosition[1]"
         [selectedShape]="asSelectToolState().selectedShapeChange()"
-        (removeShape)="asSelectToolState().removeSelectedShape()"
-        (copyShape)="asSelectToolState().copySelectedShape()"
-        (pasteShape)="asSelectToolState().pasteShapeAtContextMenuPosition()"
-        (duplicateShape)="asSelectToolState().duplicateSelectedShape()"
-        (groupShapes)="asSelectToolState().groupShapes()"
-        (splitGroupShape)="asSelectToolState().splitGroupShape()"
+        (executeAction)="
+          asSelectToolState().executeShapeContextMenuAction($event)
+        "
         class="absolute z-2"></app-shape-context-menu>
       <app-canvas-context-menu
         [hidden]="!asSelectToolState().canvasContextMenuVisible"
         [style.left.px]="asSelectToolState().contextMenuPosition[0]"
         [style.top.px]="asSelectToolState().contextMenuPosition[1]"
-        (pasteShape)="asSelectToolState().pasteShapeAtContextMenuPosition()"
+        (executeAction)="
+          asSelectToolState().executeCanvasContextMenuAction($event)
+        "
         class="absolute z-2"></app-canvas-context-menu>
     }
   </div> `,

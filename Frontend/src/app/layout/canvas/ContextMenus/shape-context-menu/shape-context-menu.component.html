@@ -1,24 +1,32 @@
 <div class="menu bg-base-200 rounded-box w-56 shadow-md">
   <ul>
-    <li tabindex="0" (click)="removeShape.emit()">
+    <li
+      tabindex="0"
+      (click)="executeAction.emit(ShapeContextMenuAction.Remove)">
       <button>Remove</button>
     </li>
-    <li tabindex="0" (click)="copyShape.emit()">
+    <li tabindex="0" (click)="executeAction.emit(ShapeContextMenuAction.Copy)">
       <button>Copy</button>
     </li>
-    <li tabindex="0" (click)="pasteShape.emit()">
+    <li tabindex="0" (click)="executeAction.emit(ShapeContextMenuAction.Paste)">
       <button>Paste</button>
     </li>
-    <li tabindex="0" (click)="duplicateShape.emit()">
+    <li
+      tabindex="0"
+      (click)="executeAction.emit(ShapeContextMenuAction.Duplicate)">
       <button>Duplicate</button>
     </li>
     @if (isMultiShape()) {
-      <li tabindex="0" (click)="groupShapes.emit()">
+      <li
+        tabindex="0"
+        (click)="executeAction.emit(ShapeContextMenuAction.Group)">
         <button>Group</button>
       </li>
     }
     @if (isGroup()) {
-      <li tabindex="0" (click)="splitGroupShape.emit()">
+      <li
+        tabindex="0"
+        (click)="executeAction.emit(ShapeContextMenuAction.SplitGroup)">
         <button>Split Group</button>
       </li>
     }
