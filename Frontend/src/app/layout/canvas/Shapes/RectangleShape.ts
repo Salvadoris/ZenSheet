@@ -92,23 +92,6 @@ export class RectangleShape extends Shape {
     return path;
   }
 
-  private backgroundPath() {
-    const innerOffsetX = this.horizontalInverted
-      ? -this.style[StyleName.LineWidth]
-      : this.style[StyleName.LineWidth];
-    const innerOffsetY = this.verticallyInverted
-      ? -this.style[StyleName.LineWidth]
-      : this.style[StyleName.LineWidth];
-    const path = new Path2D();
-    path.rect(
-      this.originX + innerOffsetX,
-      this.originY + innerOffsetY,
-      this.width - innerOffsetX * 2,
-      this.height - innerOffsetY * 2
-    );
-    return path;
-  }
-
   override pointInside(
     ctx: CanvasRenderingContext2D,
     x: number,
@@ -126,7 +109,7 @@ export class RectangleShape extends Shape {
     if (backgroundTransparent && !borderTransparent) {
       return ctx.isPointInStroke(this.borderPath(), x, y);
     } else if (borderTransparent && !backgroundTransparent) {
-      return ctx.isPointInPath(this.backgroundPath(), x, y);
+      return ctx.isPointInPath(this.borderPath(), x, y);
     } else {
       return ctx.isPointInPath(this.path(), x, y);
     }
