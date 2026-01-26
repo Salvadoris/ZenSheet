@@ -189,6 +189,7 @@ export class CanvasComponent implements AfterViewInit {
   #rightMouseDown = false;
 
   #longTouchTimeout?: number;
+  #doubleTouchTimeout?: number;
 
   #style = new CanvasStyle({
     [StyleName.Color]: '#000000',
@@ -947,6 +948,16 @@ export class CanvasComponent implements AfterViewInit {
         button: 0,
         buttons: 1,
       });
+
+      if (this.#doubleTouchTimeout === undefined) {
+        this.#doubleTouchTimeout = event.timeStamp + 500;
+      } else if (event.timeStamp <= this.#doubleTouchTimeout) {
+        this.#doubleTouchTimeout = undefined;
+        this.onDoubleClick(mouseEvent);
+      } else {
+        this.#doubleTouchTimeout = event.timeStamp + 500;
+      }
+
       this.onMouseDown(mouseEvent);
     } else if (event.touches.length === 2) {
       if (this.#mouseDown) {
