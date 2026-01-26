@@ -43,7 +43,7 @@ export class SelectToolState extends CanvasToolState {
   constructor(canvas: CanvasComponent) {
     super(canvas);
     this.canvas.removeCurrentStyle();
-    if (this.canvas.tmpCtx) {
+    if (this.canvas.selectFrameCtx) {
       this.canvas.changeCursor('default');
     }
   }
@@ -112,20 +112,17 @@ export class SelectToolState extends CanvasToolState {
         [this.#selectedShape.shape.properties[ShapePropertyName.id]],
         properties
       );
-      this.canvas.renderCanvas(true, true);
+      this.canvas.renderCanvas(true, false);
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  override renderMain(): void {}
-
-  override renderTmp() {
+  override renderShapes(): void {
     if (this.#selectedShape) {
       this.#selectedShape.render(
         this.canvas.scale,
         this.canvas.trueRect,
         this.canvas.selectFrameCtx,
-        this.canvas.tmpCtx
+        this.canvas.shapeCtx
       );
     }
     if (this.#selectRect) {
@@ -139,9 +136,12 @@ export class SelectToolState extends CanvasToolState {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  override renderDrawings() {}
+
   override remove(): void {
     this.unSelectShape();
-    this.canvas.renderCanvas(true, true);
+    this.canvas.renderCanvas(true, false);
   }
 
   override onMouseDown(event: MouseEvent): void {
@@ -202,7 +202,7 @@ export class SelectToolState extends CanvasToolState {
       } else if (this.#selectRect) {
         this.#selectRect.update(this.canvas.cursor[0], this.canvas.cursor[1]);
       }
-      this.canvas.renderCanvas(false, true);
+      this.canvas.renderCanvas(true, false);
     }
   }
 
@@ -221,7 +221,7 @@ export class SelectToolState extends CanvasToolState {
           this.#selectedShape &&
           !this.#selectedAction &&
           this.#selectedShape.pointInside(
-            this.canvas.tmpCtx,
+            this.canvas.shapeCtx,
             this.canvas.cursor[0],
             this.canvas.cursor[1]
           )
@@ -235,16 +235,16 @@ export class SelectToolState extends CanvasToolState {
               this.canvas.cursor[1]
             );
             for (const shape of this.#selectedShape.shape.shapes) {
-              if (shape.pointInside(this.canvas.tmpCtx, localX, localY)) {
+              if (shape.pointInside(this.canvas.shapeCtx, localX, localY)) {
                 insideShape = true;
                 this.selectSingleShape(shape);
-                this.canvas.renderCanvas(true, true);
+                this.canvas.renderCanvas(true, false);
                 break;
               }
             }
           } else if (
             this.#selectedShape.shape.pointInside(
-              this.canvas.tmpCtx,
+              this.canvas.shapeCtx,
               this.canvas.cursor[0],
               this.canvas.cursor[1]
             )
@@ -263,13 +263,13 @@ export class SelectToolState extends CanvasToolState {
             } else {
               this.unSelectShape();
             }
-            this.canvas.renderCanvas(true, true);
+            this.canvas.renderCanvas(true, false);
           }
         }
       }
       if (this.#selectRect) {
         this.selectFromRect();
-        this.canvas.renderCanvas(true, true);
+        this.canvas.renderCanvas(true, false);
       }
       this.#selectedAction = false;
     }
@@ -305,7 +305,7 @@ export class SelectToolState extends CanvasToolState {
         this.#selectedShape.shape.properties[ShapePropertyName.id],
       ]);
       this.#selectedShape = null;
-      this.canvas.renderCanvas(true, true);
+      this.canvas.renderCanvas(true, false);
       this.hoverSelectedShape();
     }
   }
@@ -338,7 +338,7 @@ export class SelectToolState extends CanvasToolState {
       (this.contextMenuPosition[0] - this.canvas.origin[0]) / this.canvas.scale,
       (this.contextMenuPosition[1] - this.canvas.origin[1]) / this.canvas.scale,
     ]).then(() => {
-      this.canvas.renderCanvas(true, true);
+      this.canvas.renderCanvas(true, false);
     });
   }
 
@@ -352,7 +352,7 @@ export class SelectToolState extends CanvasToolState {
       }
       this.#pastePosition[0] += 20 / this.canvas.scale;
       this.#pastePosition[1] += 20 / this.canvas.scale;
-      this.canvas.renderCanvas(true, true);
+      this.canvas.renderCanvas(true, false);
     });
   }
 
@@ -370,7 +370,7 @@ export class SelectToolState extends CanvasToolState {
       this.#selectedShape instanceof SelectedMultiShape
     ) {
       this.#selectedShape = new SelectedShape(this.#selectedShape.shape);
-      this.canvas.renderCanvas(false, true);
+      this.canvas.renderCanvas(true, false);
     }
   }
 
@@ -385,7 +385,7 @@ export class SelectToolState extends CanvasToolState {
       this.canvas.removeGroupShape(this.#selectedShape.shape);
       this.selectMultipleShapes(shapes);
 
-      this.canvas.renderCanvas(false, true);
+      this.canvas.renderCanvas(true, false);
     }
   }
 
@@ -402,7 +402,7 @@ export class SelectToolState extends CanvasToolState {
     if (
       this.#selectedShape &&
       this.#selectedShape.pointInside(
-        this.canvas.tmpCtx,
+        this.canvas.shapeCtx,
         this.canvas.cursor[0],
         this.canvas.cursor[1]
       )
@@ -420,7 +420,7 @@ export class SelectToolState extends CanvasToolState {
         )
       ) {
         this.selectSingleShape(shape);
-        this.canvas.renderCanvas(true, true);
+        this.canvas.renderCanvas(true, false);
       }
       this.showShapeContextMenu(screenX, screenY);
     } else {
@@ -432,7 +432,7 @@ export class SelectToolState extends CanvasToolState {
     if (this.#selectedShape) {
       if (
         this.#selectedShape.pointInside(
-          this.canvas.mainCtx,
+          this.canvas.shapeCtx,
           this.canvas.cursor[0],
           this.canvas.cursor[1]
         )
@@ -446,7 +446,7 @@ export class SelectToolState extends CanvasToolState {
       }
       if (
         this.#selectedShape.pointOnTopLine(
-          this.canvas.mainCtx,
+          this.canvas.shapeCtx,
           this.canvas.cursor[0],
           this.canvas.cursor[1]
         )
@@ -456,7 +456,7 @@ export class SelectToolState extends CanvasToolState {
       }
       if (
         this.#selectedShape.pointOnBottomLine(
-          this.canvas.mainCtx,
+          this.canvas.shapeCtx,
           this.canvas.cursor[0],
           this.canvas.cursor[1]
         )
@@ -466,7 +466,7 @@ export class SelectToolState extends CanvasToolState {
       }
       if (
         this.#selectedShape.pointOnLeftLine(
-          this.canvas.mainCtx,
+          this.canvas.shapeCtx,
           this.canvas.cursor[0],
           this.canvas.cursor[1]
         )
@@ -476,7 +476,7 @@ export class SelectToolState extends CanvasToolState {
       }
       if (
         this.#selectedShape.pointOnRightLine(
-          this.canvas.mainCtx,
+          this.canvas.shapeCtx,
           this.canvas.cursor[0],
           this.canvas.cursor[1]
         )
@@ -486,7 +486,7 @@ export class SelectToolState extends CanvasToolState {
       }
       if (
         this.#selectedShape.pointOnTopLeftCorner(
-          this.canvas.mainCtx,
+          this.canvas.shapeCtx,
           this.canvas.cursor[0],
           this.canvas.cursor[1]
         )
@@ -496,7 +496,7 @@ export class SelectToolState extends CanvasToolState {
       }
       if (
         this.#selectedShape.pointOnTopRightCorner(
-          this.canvas.mainCtx,
+          this.canvas.shapeCtx,
           this.canvas.cursor[0],
           this.canvas.cursor[1]
         )
@@ -506,7 +506,7 @@ export class SelectToolState extends CanvasToolState {
       }
       if (
         this.#selectedShape.pointOnBottomLeftCorner(
-          this.canvas.mainCtx,
+          this.canvas.shapeCtx,
           this.canvas.cursor[0],
           this.canvas.cursor[1]
         )
@@ -516,7 +516,7 @@ export class SelectToolState extends CanvasToolState {
       }
       if (
         this.#selectedShape.pointOnBottomRightCorner(
-          this.canvas.mainCtx,
+          this.canvas.shapeCtx,
           this.canvas.cursor[0],
           this.canvas.cursor[1]
         )
@@ -645,7 +645,7 @@ export class SelectToolState extends CanvasToolState {
     if (
       this.#selectedShape &&
       this.#selectedShape.pointInside(
-        this.canvas.mainCtx,
+        this.canvas.shapeCtx,
         this.canvas.cursor[0],
         this.canvas.cursor[1]
       )
@@ -654,12 +654,12 @@ export class SelectToolState extends CanvasToolState {
     } else if (
       this.#selectedShape &&
       (this.#selectedShape.pointOnTopLine(
-        this.canvas.mainCtx,
+        this.canvas.shapeCtx,
         this.canvas.cursor[0],
         this.canvas.cursor[1]
       ) ||
         this.#selectedShape.pointOnBottomLine(
-          this.canvas.mainCtx,
+          this.canvas.shapeCtx,
           this.canvas.cursor[0],
           this.canvas.cursor[1]
         ))
@@ -668,12 +668,12 @@ export class SelectToolState extends CanvasToolState {
     } else if (
       this.#selectedShape &&
       (this.#selectedShape.pointOnLeftLine(
-        this.canvas.mainCtx,
+        this.canvas.shapeCtx,
         this.canvas.cursor[0],
         this.canvas.cursor[1]
       ) ||
         this.#selectedShape.pointOnRightLine(
-          this.canvas.mainCtx,
+          this.canvas.shapeCtx,
           this.canvas.cursor[0],
           this.canvas.cursor[1]
         ))
@@ -682,12 +682,12 @@ export class SelectToolState extends CanvasToolState {
     } else if (
       this.#selectedShape &&
       (this.#selectedShape.pointOnTopLeftCorner(
-        this.canvas.mainCtx,
+        this.canvas.shapeCtx,
         this.canvas.cursor[0],
         this.canvas.cursor[1]
       ) ||
         this.#selectedShape.pointOnBottomRightCorner(
-          this.canvas.mainCtx,
+          this.canvas.shapeCtx,
           this.canvas.cursor[0],
           this.canvas.cursor[1]
         ))
@@ -703,12 +703,12 @@ export class SelectToolState extends CanvasToolState {
     } else if (
       this.#selectedShape &&
       (this.#selectedShape.pointOnTopRightCorner(
-        this.canvas.mainCtx,
+        this.canvas.shapeCtx,
         this.canvas.cursor[0],
         this.canvas.cursor[1]
       ) ||
         this.#selectedShape.pointOnBottomLeftCorner(
-          this.canvas.mainCtx,
+          this.canvas.shapeCtx,
           this.canvas.cursor[0],
           this.canvas.cursor[1]
         ))
@@ -730,12 +730,9 @@ export class SelectToolState extends CanvasToolState {
 
   private findSelectedShape(p: Point): Shape | null {
     for (let i = this.canvas.shapes.length - 1; i >= 0; i--) {
-      const ctx = this.canvas.shapes[i].properties[ShapePropertyName.edited]
-        ? this.canvas.tmpCtx
-        : this.canvas.mainCtx;
       if (
         this.canvas.shapeInside(this.canvas.shapes[i]) &&
-        this.canvas.shapes[i].pointInside(ctx, p[0], p[1])
+        this.canvas.shapes[i].pointInside(this.canvas.shapeCtx, p[0], p[1])
       ) {
         return this.canvas.shapes[i];
       }

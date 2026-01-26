@@ -12,7 +12,7 @@ export class PenToolState extends CanvasToolState {
   constructor(canvas: CanvasComponent) {
     super(canvas);
     this.canvas.changeStyle(new LineStyle(this.canvas.style));
-    if (this.canvas.tmpCtx) {
+    if (this.canvas.selectFrameCtx) {
       this.canvas.changeCursor('default');
     }
   }
@@ -22,10 +22,10 @@ export class PenToolState extends CanvasToolState {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  override renderMain(): void {}
+  override renderShapes(): void {}
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  override renderTmp(): void {}
+  override renderDrawings(): void {}
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   override remove(): void {}
