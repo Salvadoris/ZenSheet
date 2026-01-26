@@ -211,15 +211,6 @@ export class TextBoxShape extends Shape {
       for (let i = firstOriginalLineIndex; i <= lastOriginalLineIndex; i++) {
         const line = this.textLine(lines[i], i);
         newLines.push(line);
-        const newWidth = Math.max(
-          this.width,
-          this.lineWidth(line) + this.#padding * 2
-        );
-        if (newWidth !== this.width) {
-          this.width = newWidth;
-          this.scaleX = this.width / this.originalWidth;
-          properties[ShapePropertyName.width] = newWidth;
-        }
       }
     }
 
@@ -244,6 +235,18 @@ export class TextBoxShape extends Shape {
       ...newLines,
       ...later,
     ];
+
+    if (!this.wrap) {
+      const newWidth =
+        Math.max(...this.#lines.map(line => this.lineWidth(line))) +
+        this.#padding * 2;
+      if (newWidth !== this.width) {
+        properties = {
+          ...properties,
+          ...super.resizeRight(this.originX + newWidth, false),
+        };
+      }
+    }
 
     for (const line of this.#lines) {
       if (line.originalLineIndex > lastOriginalLineIndex) {
@@ -275,7 +278,7 @@ export class TextBoxShape extends Shape {
     this.applyFontStyle();
     this.#lines = [];
     const lines = this.text.split('\n');
-    const properties: ChangableSerializedShapeProperties = {};
+    let properties: ChangableSerializedShapeProperties = {};
     if (this.wrap) {
       lines.forEach((line, index) => {
         this.#lines = this.#lines.concat(this.wrappedTextLines(line, index));
@@ -283,13 +286,15 @@ export class TextBoxShape extends Shape {
     } else {
       this.#lines = lines.map((line, index) => this.textLine(line, index));
 
-      this.width = Math.max(
-        this.width,
+      const newWidth =
         Math.max(...this.#lines.map(line => this.lineWidth(line))) +
-          this.#padding * 2
-      );
-      properties[ShapePropertyName.width] = this.width;
-      this.scaleX = this.width / this.originalWidth;
+        this.#padding * 2;
+      if (newWidth !== this.width) {
+        properties = {
+          ...properties,
+          ...super.resizeRight(this.originX + newWidth, false),
+        };
+      }
     }
 
     if (minWidthChanged) {
