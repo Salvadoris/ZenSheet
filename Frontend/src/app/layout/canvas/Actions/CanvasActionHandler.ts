@@ -79,38 +79,20 @@ export class CanvasActionHandler {
   }
 
   private addShapes(action: AddShapesAction) {
-    let main = false;
-    let tmp = false;
     const shapes = action.data.shapes.map(s => {
-      if (s.properties[ShapePropertyName.edited] === true) {
-        tmp = true;
-        return this.canvas.shapeSerializer.deserialized(s);
-      } else {
-        main = true;
-        return this.canvas.shapeSerializer.deserialized(s);
-      }
+      return this.canvas.shapeSerializer.deserialized(s);
     });
     this.canvas.shapes = this.canvas.shapes.concat(shapes);
-    this.canvas.renderCanvas(main, tmp);
+    this.canvas.renderCanvas(true, false);
   }
 
   private removeShapes(action: RemoveShapesAction) {
-    let main = false;
-    let tmp = false;
     this.canvas.shapes = this.canvas.shapes.filter(s => {
-      const found = action.data.shapeIdList.includes(
+      return !action.data.shapeIdList.includes(
         s.properties[ShapePropertyName.id]
       );
-      if (found) {
-        if (s.properties[ShapePropertyName.edited] === true) {
-          tmp = true;
-        } else {
-          main = true;
-        }
-      }
-      return !found;
     });
-    this.canvas.renderCanvas(main, tmp);
+    this.canvas.renderCanvas(true, false);
   }
 
   private changeShapesProperties(
@@ -177,7 +159,7 @@ export class CanvasActionHandler {
           action.data.properties[ShapePropertyName.height] < 0;
       }
     });
-    this.canvas.renderCanvas(true, true);
+    this.canvas.renderCanvas(true, false);
   }
 
   private updatedStyle(
@@ -272,7 +254,7 @@ export class CanvasActionHandler {
       groupShape.shapeToLocal(shape);
     }
     this.canvas.shapes.push(groupShape);
-    this.canvas.renderCanvas(true, true);
+    this.canvas.renderCanvas(true, false);
   }
 
   private removeGroupShape(action: RemoveGroupShapeAction) {
@@ -286,7 +268,7 @@ export class CanvasActionHandler {
 
       this.canvas.shapes.splice(idx, 1);
       this.canvas.shapes = this.canvas.shapes.concat(shapes);
-      this.canvas.renderCanvas(true, true);
+      this.canvas.renderCanvas(true, false);
     }
   }
 
@@ -307,7 +289,7 @@ export class CanvasActionHandler {
         const shape = this.canvas.shapes[shapeIdx];
         this.canvas.shapes.splice(shapeIdx, 1);
         groupShape.addShape(shape);
-        this.canvas.renderCanvas(true, true);
+        this.canvas.renderCanvas(true, false);
       }
     }
   }

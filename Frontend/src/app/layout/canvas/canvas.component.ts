@@ -77,8 +77,8 @@ declare global {
   imports: [ShapeContextMenu, CanvasContextMenu],
   template: `<div class="relative">
     <canvas hidden #bufferCanvas class="absolute top-0 left-0"></canvas>
-    <canvas #mainCanvas class="absolute top-0 left-0"></canvas>
-    <canvas #tmpCanvas class="absolute top-0 left-0 "></canvas>
+    <canvas #shapeCanvas class="absolute top-0 left-0"></canvas>
+    <canvas #drawingCanvas class="absolute top-0 left-0 "></canvas>
     <canvas
       #selectFrameCanvas
       (mousedown)="onMouseDown($event)"
@@ -122,10 +122,10 @@ declare global {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CanvasComponent implements AfterViewInit {
-  @ViewChild('mainCanvas', { static: true })
-  private mainCanvasRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('tmpCanvas', { static: true })
-  private tmpCanvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('shapeCanvas', { static: true })
+  private shapeCanvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('drawingCanvas', { static: true })
+  private drawingCanvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('bufferCanvas', { static: true })
   private bufferCanvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('selectFrameCanvas', { static: true })
@@ -133,8 +133,8 @@ export class CanvasComponent implements AfterViewInit {
   @ViewChild('hiddenInput', { static: true })
   private hiddenInputRef!: ElementRef<HTMLTextAreaElement>;
 
-  #mainCtx!: CanvasRenderingContext2D;
-  #tmpCtx!: CanvasRenderingContext2D;
+  #shapeCtx!: CanvasRenderingContext2D;
+  #drawingCtx!: CanvasRenderingContext2D;
   #bufferCtx!: CanvasRenderingContext2D;
   #selectFrameCtx!: CanvasRenderingContext2D;
 
@@ -211,10 +211,10 @@ export class CanvasComponent implements AfterViewInit {
   ngAfterViewInit() {
     const bufferCanvas = this.bufferCanvasRef.nativeElement;
     this.#bufferCtx = bufferCanvas.getContext('2d')!;
-    const mainCanvas = this.mainCanvasRef.nativeElement;
-    this.#mainCtx = mainCanvas.getContext('2d')!;
-    const tmpCanvas = this.tmpCanvasRef.nativeElement;
-    this.#tmpCtx = tmpCanvas.getContext('2d')!;
+    const shapeCanvas = this.shapeCanvasRef.nativeElement;
+    this.#shapeCtx = shapeCanvas.getContext('2d')!;
+    const drawingCanvas = this.drawingCanvasRef.nativeElement;
+    this.#drawingCtx = drawingCanvas.getContext('2d')!;
     const selectFrameCanvas = this.selectFrameCanvasRef.nativeElement;
     this.#selectFrameCtx = selectFrameCanvas.getContext('2d')!;
 
@@ -226,12 +226,12 @@ export class CanvasComponent implements AfterViewInit {
     this.renderCanvas(true, true);
   }
 
-  get mainCtx() {
-    return this.#mainCtx;
+  get shapeCtx() {
+    return this.#shapeCtx;
   }
 
-  get tmpCtx() {
-    return this.#tmpCtx;
+  get drawingCtx() {
+    return this.#drawingCtx;
   }
 
   get bufferCtx() {
@@ -346,8 +346,8 @@ export class CanvasComponent implements AfterViewInit {
     if (zoom !== this.#scale) {
       this.applyZoom(
         zoom,
-        this.mainCtx.canvas.width / 2,
-        this.mainCtx.canvas.height / 2
+        this.#shapeCtx.canvas.width / 2,
+        this.#shapeCtx.canvas.height / 2
       );
       this.scaleChanged.emit(this.scale);
       this.renderCanvas(true, true);
@@ -582,7 +582,7 @@ export class CanvasComponent implements AfterViewInit {
       if (this.#toolState instanceof SelectToolState) {
         this.#toolState.selectSingleShape(textBox);
       }
-      this.renderCanvas(false, true);
+      this.renderCanvas(true, true);
       return;
     }
 
@@ -722,7 +722,7 @@ export class CanvasComponent implements AfterViewInit {
     this.renderCanvas(true, true);
   }
 
-  renderCanvas(main: boolean, tmp: boolean) {
+  renderCanvas(shape: boolean, drawing: boolean) {
     const originX = -this.#origin[0] / this.#scale;
     const originY = -this.#origin[1] / this.#scale;
     const xMax = originX + window.innerWidth / this.#scale;
@@ -739,60 +739,45 @@ export class CanvasComponent implements AfterViewInit {
     this.#bufferCtx.translate(this.#origin[0], this.#origin[1]);
     this.#bufferCtx.scale(this.#scale, this.#scale);
 
-    if (main) {
-      this.#mainCtx.canvas.width = window.innerWidth;
-      this.#mainCtx.canvas.height = window.innerHeight;
-      this.#mainCtx.save();
+    if (shape) {
+      this.#shapeCtx.canvas.width = window.innerWidth;
+      this.#shapeCtx.canvas.height = window.innerHeight;
+      this.#shapeCtx.save();
 
-      this.#mainCtx.clearRect(
+      this.#shapeCtx.clearRect(
         0,
         0,
-        this.#mainCtx.canvas.width,
-        this.#mainCtx.canvas.height
+        this.#shapeCtx.canvas.width,
+        this.#shapeCtx.canvas.height
       );
 
       for (const shape of this.#shapes) {
-        if (
-          !shape.properties[ShapePropertyName.edited] &&
-          this.shapeInside(shape)
-        ) {
-          shape.render(this.#trueRect, this.#mainCtx);
-        }
+        shape.render(this.#trueRect, this.#shapeCtx);
       }
 
-      this.#toolState.renderMain();
+      this.#toolState.renderShapes();
 
-      this.#mainCtx.restore();
+      this.#shapeCtx.restore();
     }
 
-    if (tmp) {
-      this.#tmpCtx.canvas.width = window.innerWidth;
-      this.#tmpCtx.canvas.height = window.innerHeight;
-      this.#tmpCtx.save();
+    if (drawing) {
+      this.#drawingCtx.canvas.width = window.innerWidth;
+      this.#drawingCtx.canvas.height = window.innerHeight;
+      this.#drawingCtx.save();
 
-      this.#tmpCtx.clearRect(
+      this.#drawingCtx.clearRect(
         0,
         0,
-        this.#tmpCtx.canvas.width,
-        this.#tmpCtx.canvas.height
+        this.#drawingCtx.canvas.width,
+        this.#drawingCtx.canvas.height
       );
 
-      for (const shape of this.#shapes) {
-        if (
-          shape.properties[ShapePropertyName.edited] &&
-          !shape.properties[ShapePropertyName.selected] &&
-          this.shapeInside(shape)
-        ) {
-          shape.render(this.#trueRect, this.#tmpCtx);
-        }
-      }
-
       for (const drawing of this.#drawings) {
-        drawing.render(this.#trueRect, this.#tmpCtx, this.#bufferCtx);
+        drawing.render(this.#trueRect, this.#drawingCtx, this.#bufferCtx);
       }
-      this.#toolState.renderTmp();
+      this.#toolState.renderDrawings();
 
-      this.#tmpCtx.restore();
+      this.#drawingCtx.restore();
     }
   }
 
@@ -1119,7 +1104,7 @@ export class CanvasComponent implements AfterViewInit {
   };
 
   onHoveringMouseMove = (event: MouseEvent) => {
-    if (!this.#tmpCtx || this.#mouseDown) {
+    if (this.#mouseDown) {
       return;
     }
     event.preventDefault();

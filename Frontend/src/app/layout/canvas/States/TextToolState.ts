@@ -34,7 +34,7 @@ export class TextToolState extends CanvasToolState {
         [this.#currentTextBox.properties[ShapePropertyName.id]],
         properties
       );
-      this.canvas.renderCanvas(false, true);
+      this.canvas.renderCanvas(true, false);
     }
   }
 
@@ -50,7 +50,7 @@ export class TextToolState extends CanvasToolState {
 
   override remove(): void {
     this.releaseCurrentTextBox();
-    this.canvas.renderCanvas(true, true);
+    this.canvas.renderCanvas(true, false);
   }
 
   private releaseCurrentTextBox() {
@@ -72,14 +72,11 @@ export class TextToolState extends CanvasToolState {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  override renderMain(): void {}
-
-  override renderTmp(): void {
+  override renderShapes(): void {
     if (this.#currentTextBox) {
       this.#currentTextBox.renderEditedShape(
         this.canvas.trueRect,
-        this.canvas.tmpCtx,
+        this.canvas.shapeCtx,
         this.#selectedStart,
         this.#selectedEnd
       );
@@ -89,6 +86,9 @@ export class TextToolState extends CanvasToolState {
       this.drawTextBoxRect(this.#hoveredTextBox);
     }
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  override renderDrawings(): void {}
 
   private drawTextBoxRect(textBox: TextBoxShape) {
     this.canvas.selectFrameCtx.strokeStyle = 'grey';
@@ -106,7 +106,7 @@ export class TextToolState extends CanvasToolState {
     if (
       this.#currentTextBox &&
       this.#currentTextBox.pointInside(
-        this.canvas.tmpCtx,
+        this.canvas.shapeCtx,
         this.canvas.cursor[0],
         this.canvas.cursor[1]
       )
@@ -114,12 +114,13 @@ export class TextToolState extends CanvasToolState {
       textBox = this.#currentTextBox;
     } else {
       for (const shape of this.canvas.shapes) {
-        const ctx = shape.properties[ShapePropertyName.edited]
-          ? this.canvas.tmpCtx
-          : this.canvas.mainCtx;
         if (
           shape instanceof TextBoxShape &&
-          shape.pointInside(ctx, this.canvas.cursor[0], this.canvas.cursor[1])
+          shape.pointInside(
+            this.canvas.shapeCtx,
+            this.canvas.cursor[0],
+            this.canvas.cursor[1]
+          )
         ) {
           textBox = shape;
           break;
@@ -234,7 +235,7 @@ export class TextToolState extends CanvasToolState {
           this.canvas.cursor[1]
         )
       );
-      this.canvas.renderCanvas(false, true);
+      this.canvas.renderCanvas(true, false);
     }
   }
 
@@ -245,7 +246,7 @@ export class TextToolState extends CanvasToolState {
     } else {
       this.#hoveredTextBox = null;
     }
-    this.canvas.renderCanvas(false, true);
+    this.canvas.renderCanvas(true, false);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -258,7 +259,7 @@ export class TextToolState extends CanvasToolState {
       } else {
         this.insertText(event.key);
       }
-      this.canvas.renderCanvas(false, true);
+      this.canvas.renderCanvas(true, false);
     }
   }
 
@@ -358,7 +359,7 @@ export class TextToolState extends CanvasToolState {
           this.moveEditToLineEnd();
           break;
       }
-      this.canvas.renderCanvas(false, true);
+      this.canvas.renderCanvas(true, false);
     }
   }
 
@@ -376,7 +377,7 @@ export class TextToolState extends CanvasToolState {
         [this.#selectedStart, this.#selectedEnd] =
           this.#currentTextBox.lineChunkRangeAtIndex(index);
       }
-      this.canvas.renderCanvas(false, true);
+      this.canvas.renderCanvas(true, false);
     }
   }
 
@@ -416,7 +417,7 @@ export class TextToolState extends CanvasToolState {
     navigator.clipboard.readText().then(text => {
       const inserted = this.insertText(text);
       if (inserted) {
-        this.canvas.renderCanvas(false, true);
+        this.canvas.renderCanvas(true, false);
       }
     });
   }
