@@ -17,13 +17,14 @@
       <button>Duplicate</button>
     </li>
     @if (isMultiShape()) {
+      <div class="h-px bg-gray-300 my-1"></div>
       <li
         tabindex="0"
         (click)="executeAction.emit(ShapeContextMenuAction.Group)">
         <button>Group</button>
       </li>
-    }
-    @if (isGroup()) {
+    } @else if (isGroup()) {
+      <div class="h-px bg-gray-300 my-1"></div>
       <li
         tabindex="0"
         (click)="executeAction.emit(ShapeContextMenuAction.SplitGroup)">
