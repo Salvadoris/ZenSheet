@@ -572,7 +572,6 @@ export class SelectToolState extends CanvasToolState {
       if (shapes.length == 1) {
         this.selectSingleShape(shapes[0]);
       } else {
-        console.log(this.canvas.shapes.length);
         this.canvas.shapes = this.canvas.shapes.filter(
           s => !shapes.includes(s)
         );
@@ -583,7 +582,6 @@ export class SelectToolState extends CanvasToolState {
         );
         this.canvas.addGroupShape(this.#selectedShape.shape as GroupShape);
         this.canvas.changeStyle(this.#selectedShape.shape.style);
-        console.log(this.canvas.shapes.length);
       }
     }
   }
