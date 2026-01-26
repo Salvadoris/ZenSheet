@@ -105,25 +105,6 @@ export class EllipseShape extends Shape {
     return path;
   }
 
-  backgroundPath(
-    centerX: number,
-    centerY: number,
-    radiusX: number,
-    radiusY: number
-  ) {
-    const path = new Path2D();
-    path.ellipse(
-      centerX,
-      centerY,
-      Math.abs(radiusX - this.style[StyleName.LineWidth]),
-      Math.abs(radiusY - this.style[StyleName.LineWidth]),
-      0,
-      0,
-      2 * Math.PI
-    );
-    return path;
-  }
-
   override pointInside(
     ctx: CanvasRenderingContext2D,
     x: number,
@@ -151,7 +132,7 @@ export class EllipseShape extends Shape {
         );
       } else {
         return ctx.isPointInPath(
-          this.backgroundPath(centerX, centerY, radiusX, radiusY),
+          this.borderPath(centerX, centerY, radiusX, radiusY),
           x,
           y
         );
