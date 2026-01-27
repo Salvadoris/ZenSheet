@@ -562,9 +562,6 @@ export class SelectToolState extends CanvasToolState {
 
   selectSingleShape(shape: Shape) {
     this.unSelectShape();
-    this.canvas.shapes.push(
-      this.canvas.shapes.splice(this.canvas.shapes.indexOf(shape), 1)[0]
-    );
     this.#selectedShape = new SelectedShape(shape);
     shape.properties[ShapePropertyName.edited] = true;
     shape.properties[ShapePropertyName.selected] = true;
