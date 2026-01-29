@@ -8,5 +8,4 @@ export enum ActionType {
   DrawingToShape = 'DrawingToShape',
   AddGroupShape = 'AddGroupShape',
   RemoveGroupShape = 'RemoveGroupShape',
-  ShapeToLocal = 'ShapeToLocal',
 }
