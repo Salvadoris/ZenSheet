@@ -399,13 +399,16 @@ export class SelectToolState extends CanvasToolState {
     if (this.#selectedShape) {
       if (this.#selectedShape instanceof SelectedMultiShape) {
         const shapesLength = this.#selectedShape.shape.shapes.length;
-        this.#selectedShape.shape.shapes.forEach((shape, i) => {
+        for (let i = this.#selectedShape.shape.shapes.length - 1; i >= 0; i--) {
+          const shape = this.#selectedShape.shape.shapes[i];
           const idx = this.canvas.shapes.indexOf(shape);
-          if (idx < this.canvas.shapes.length - 1 - (shapesLength - 1 - i)) {
-            this.canvas.shapes[idx] = this.canvas.shapes[idx + 1];
-            this.canvas.shapes[idx + 1] = shape;
+          if (idx !== -1) {
+            if (idx < this.canvas.shapes.length - 1 - (shapesLength - 1 - i)) {
+              this.canvas.shapes[idx] = this.canvas.shapes[idx + 1];
+              this.canvas.shapes[idx + 1] = shape;
+            }
           }
-        });
+        }
       } else {
         const idx = this.canvas.shapes.indexOf(this.#selectedShape.shape);
         if (idx < this.canvas.shapes.length - 1) {
@@ -455,7 +458,7 @@ export class SelectToolState extends CanvasToolState {
         ];
       } else {
         const idx = this.canvas.shapes.indexOf(this.#selectedShape.shape);
-        if (idx < this.canvas.shapes.length - 1) {
+        if (idx !== -1 && idx < this.canvas.shapes.length - 1) {
           this.canvas.shapes.push(this.canvas.shapes.splice(idx, 1)[0]);
         }
       }
