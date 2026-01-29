@@ -31,5 +31,26 @@
         <button>Split Group</button>
       </li>
     }
+    <div class="h-px bg-gray-300 my-1"></div>
+    <li
+      tabindex="0"
+      (click)="executeAction.emit(ShapeContextMenuAction.MoveForward)">
+      <button>Move Forward</button>
+    </li>
+    <li
+      tabindex="0"
+      (click)="executeAction.emit(ShapeContextMenuAction.MoveBackwards)">
+      <button>Move Backwards</button>
+    </li>
+    <li
+      tabindex="0"
+      (click)="executeAction.emit(ShapeContextMenuAction.MoveToFront)">
+      <button>Move to Front</button>
+    </li>
+    <li
+      tabindex="0"
+      (click)="executeAction.emit(ShapeContextMenuAction.MoveToBack)">
+      <button>Move to Back</button>
+    </li>
   </ul>
 </div>

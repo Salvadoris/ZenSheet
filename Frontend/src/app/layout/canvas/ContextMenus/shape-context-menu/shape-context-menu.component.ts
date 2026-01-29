@@ -16,6 +16,10 @@ export enum ShapeContextMenuAction {
   Duplicate = 'Duplicate',
   Group = 'Group',
   SplitGroup = 'SplitGroup',
+  MoveForward = 'MoveForward',
+  MoveBackwards = 'MoveBackwards',
+  MoveToFront = 'MoveToFront',
+  MoveToBack = 'MoveToBack',
 }
 
 @Component({

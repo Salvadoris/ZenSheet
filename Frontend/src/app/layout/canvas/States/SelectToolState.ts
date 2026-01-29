@@ -60,6 +60,18 @@ export class SelectToolState extends CanvasToolState {
       case ShapeContextMenuAction.SplitGroup:
         this.splitGroupShape();
         break;
+      case ShapeContextMenuAction.MoveForward:
+        this.moveSelectedShapeForward();
+        break;
+      case ShapeContextMenuAction.MoveBackwards:
+        this.moveSelectedShapeBackwards();
+        break;
+      case ShapeContextMenuAction.MoveToFront:
+        this.moveSelectedShapeToFront();
+        break;
+      case ShapeContextMenuAction.MoveToBack:
+        this.moveSelectedShapeToBack();
+        break;
     }
   }
 
@@ -380,6 +392,99 @@ export class SelectToolState extends CanvasToolState {
       this.selectMultipleShapes(shapes);
 
       this.canvas.renderCanvas(true, false);
+    }
+  }
+
+  moveSelectedShapeForward() {
+    if (this.#selectedShape) {
+      if (this.#selectedShape instanceof SelectedMultiShape) {
+        const shapesLength = this.#selectedShape.shape.shapes.length;
+        this.#selectedShape.shape.shapes.forEach((shape, i) => {
+          const idx = this.canvas.shapes.indexOf(shape);
+          if (idx < this.canvas.shapes.length - 1 - (shapesLength - 1 - i)) {
+            this.canvas.shapes[idx] = this.canvas.shapes[idx + 1];
+            this.canvas.shapes[idx + 1] = shape;
+          }
+        });
+      } else {
+        const idx = this.canvas.shapes.indexOf(this.#selectedShape.shape);
+        if (idx < this.canvas.shapes.length - 1) {
+          this.canvas.shapes[idx] = this.canvas.shapes[idx + 1];
+          this.canvas.shapes[idx + 1] = this.#selectedShape.shape;
+        }
+      }
+      this.canvas.renderCanvas(true, true);
+    }
+  }
+
+  moveSelectedShapeBackwards() {
+    if (this.#selectedShape) {
+      if (this.#selectedShape instanceof SelectedMultiShape) {
+        this.#selectedShape.shape.shapes.forEach((shape, i) => {
+          const idx = this.canvas.shapes.indexOf(shape);
+          if (idx > i) {
+            this.canvas.shapes[idx] = this.canvas.shapes[idx - 1];
+            this.canvas.shapes[idx - 1] = shape;
+          }
+        });
+      } else {
+        const idx = this.canvas.shapes.indexOf(this.#selectedShape.shape);
+        if (idx > 0) {
+          this.canvas.shapes[idx] = this.canvas.shapes[idx - 1];
+          this.canvas.shapes[idx - 1] = this.#selectedShape.shape;
+        }
+      }
+      this.canvas.renderCanvas(true, true);
+    }
+  }
+
+  moveSelectedShapeToFront() {
+    if (this.#selectedShape) {
+      if (this.#selectedShape instanceof SelectedMultiShape) {
+        const shapeIdList = this.#selectedShape.shape.shapes.map(
+          s => s.properties[ShapePropertyName.id]
+        );
+        this.canvas.shapes = [
+          ...this.canvas.shapes.filter(
+            shape =>
+              !shapeIdList.includes(shape.properties[ShapePropertyName.id])
+          ),
+          ...this.canvas.shapes.filter(shape =>
+            shapeIdList.includes(shape.properties[ShapePropertyName.id])
+          ),
+        ];
+      } else {
+        const idx = this.canvas.shapes.indexOf(this.#selectedShape.shape);
+        if (idx < this.canvas.shapes.length - 1) {
+          this.canvas.shapes.push(this.canvas.shapes.splice(idx, 1)[0]);
+        }
+      }
+      this.canvas.renderCanvas(true, true);
+    }
+  }
+
+  moveSelectedShapeToBack() {
+    if (this.#selectedShape) {
+      if (this.#selectedShape instanceof SelectedMultiShape) {
+        const shapeIdList = this.#selectedShape.shape.shapes.map(
+          s => s.properties[ShapePropertyName.id]
+        );
+        this.canvas.shapes = [
+          ...this.canvas.shapes.filter(shape =>
+            shapeIdList.includes(shape.properties[ShapePropertyName.id])
+          ),
+          ...this.canvas.shapes.filter(
+            shape =>
+              !shapeIdList.includes(shape.properties[ShapePropertyName.id])
+          ),
+        ];
+      } else {
+        const idx = this.canvas.shapes.indexOf(this.#selectedShape.shape);
+        if (idx > 0) {
+          this.canvas.shapes.unshift(this.canvas.shapes.splice(idx, 1)[0]);
+        }
+      }
+      this.canvas.renderCanvas(true, true);
     }
   }
 
