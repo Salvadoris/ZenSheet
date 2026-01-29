@@ -362,9 +362,6 @@ export class SelectToolState extends CanvasToolState {
       this.#selectedShape &&
       this.#selectedShape instanceof SelectedMultiShape
     ) {
-      this.#selectedShape.shape.shapes.sort((a, b) => {
-        return this.canvas.shapes.indexOf(a) - this.canvas.shapes.indexOf(b);
-      });
       this.canvas.addGroupShape(this.#selectedShape.shape);
       this.#selectedShape = new SelectedShape(this.#selectedShape.shape);
       this.canvas.renderCanvas(true, false);
@@ -570,10 +567,18 @@ export class SelectToolState extends CanvasToolState {
       this.#selectedShape instanceof SelectedMultiShape
     ) {
       this.#selectedShape.shape.addShape(shape);
+      this.#selectedShape.shape.shapes.sort((a, b) => {
+        return this.canvas.shapes.indexOf(a) - this.canvas.shapes.indexOf(b);
+      });
       this.changeShapesSelectedProperty([shape], true);
       this.canvas.changeStyle(this.#selectedShape.shape.style);
     } else if (this.#selectedShape) {
       this.selectMultipleShapes([this.#selectedShape.shape, shape]);
+      if (this.#selectedShape instanceof SelectedMultiShape) {
+        this.#selectedShape.shape.shapes.sort((a, b) => {
+          return this.canvas.shapes.indexOf(a) - this.canvas.shapes.indexOf(b);
+        });
+      }
     } else {
       this.selectSingleShape(shape);
     }
