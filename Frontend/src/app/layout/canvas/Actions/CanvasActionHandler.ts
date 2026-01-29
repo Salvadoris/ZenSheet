@@ -99,64 +99,83 @@ export class CanvasActionHandler {
     action: ChangeShapesPropertiesAction,
     localShapes: Shape[]
   ) {
-    const shapes = localShapes.filter(s =>
-      action.data.shapeIdList.includes(s.properties[ShapePropertyName.id])
-    );
-    shapes.forEach(shape => {
-      if (
-        action.data.properties[ShapePropertyName.shapes] !== undefined &&
-        shape instanceof GroupShape
-      ) {
-        action.data.properties[ShapePropertyName.shapes].forEach(
-          ({ id, properties }) => {
-            this.changeShapesProperties(
-              {
-                type: ActionType.ChangeShapesProperties,
-                data: { shapeIdList: [id], properties: properties },
-              } as ChangeShapesPropertiesAction,
-              shape.shapes
-            );
-          }
-        );
-        delete action.data.properties[ShapePropertyName.shapes];
-      }
-      if (
-        action.data.properties[ShapePropertyName.text] !== undefined &&
-        shape instanceof TextBoxShape
-      ) {
-        const textChange = action.data.properties[ShapePropertyName.text];
-        const firstIndex = Math.min(textChange.startIndex, textChange.endIndex);
-        const lastIndex = Math.max(textChange.startIndex, textChange.endIndex);
-        shape.properties[ShapePropertyName.text] =
-          shape.properties[ShapePropertyName.text].slice(0, firstIndex) +
-          textChange.text +
-          shape.properties[ShapePropertyName.text].slice(lastIndex);
-        delete action.data.properties[ShapePropertyName.text];
-      }
-      shape.properties = {
-        ...shape.properties,
-        ...action.data.properties,
-        [ShapePropertyName.style]:
-          action.data.properties[ShapePropertyName.style] !== undefined
-            ? this.updatedStyle(
-                shape.properties[ShapePropertyName.style],
-                action.data.properties[ShapePropertyName.style]
-              )
-            : shape.properties[ShapePropertyName.style],
-      };
-      if (action.data.properties[ShapePropertyName.width] !== undefined) {
-        shape.properties[ShapePropertyName.scaleX] =
-          action.data.properties[ShapePropertyName.width] /
-          shape.properties[ShapePropertyName.originalWidth];
-        shape.properties[ShapePropertyName.horizontalInverted] =
-          action.data.properties[ShapePropertyName.width] < 0;
-      }
-      if (action.data.properties[ShapePropertyName.height] !== undefined) {
-        shape.properties[ShapePropertyName.scaleY] =
-          action.data.properties[ShapePropertyName.height] /
-          shape.properties[ShapePropertyName.originalHeight];
-        shape.properties[ShapePropertyName.verticallyInverted] =
-          action.data.properties[ShapePropertyName.height] < 0;
+    action.data.shapes.forEach(changedShapeProperties => {
+      const idx = localShapes.findIndex(
+        s => s.properties[ShapePropertyName.id] === changedShapeProperties.id
+      );
+      if (idx !== -1) {
+        const shape = this.canvas.shapes[idx];
+        if (
+          changedShapeProperties.properties[ShapePropertyName.shapes] !==
+            undefined &&
+          shape instanceof GroupShape
+        ) {
+          changedShapeProperties.properties[ShapePropertyName.shapes].forEach(
+            ({ id, properties }) => {
+              this.changeShapesProperties(
+                {
+                  type: ActionType.ChangeShapesProperties,
+                  data: { shapes: [{ id: id, properties: properties }] },
+                } as ChangeShapesPropertiesAction,
+                shape.shapes
+              );
+            }
+          );
+          delete changedShapeProperties.properties[ShapePropertyName.shapes];
+        }
+        if (
+          changedShapeProperties.properties[ShapePropertyName.text] !==
+            undefined &&
+          shape instanceof TextBoxShape
+        ) {
+          const textChange =
+            changedShapeProperties.properties[ShapePropertyName.text];
+          const firstIndex = Math.min(
+            textChange.startIndex,
+            textChange.endIndex
+          );
+          const lastIndex = Math.max(
+            textChange.startIndex,
+            textChange.endIndex
+          );
+          shape.properties[ShapePropertyName.text] =
+            shape.properties[ShapePropertyName.text].slice(0, firstIndex) +
+            textChange.text +
+            shape.properties[ShapePropertyName.text].slice(lastIndex);
+          delete changedShapeProperties.properties[ShapePropertyName.text];
+        }
+        shape.properties = {
+          ...shape.properties,
+          ...changedShapeProperties.properties,
+          [ShapePropertyName.style]:
+            changedShapeProperties.properties[ShapePropertyName.style] !==
+            undefined
+              ? this.updatedStyle(
+                  shape.properties[ShapePropertyName.style],
+                  changedShapeProperties.properties[ShapePropertyName.style]
+                )
+              : shape.properties[ShapePropertyName.style],
+        };
+        if (
+          changedShapeProperties.properties[ShapePropertyName.width] !==
+          undefined
+        ) {
+          shape.properties[ShapePropertyName.scaleX] =
+            changedShapeProperties.properties[ShapePropertyName.width] /
+            shape.properties[ShapePropertyName.originalWidth];
+          shape.properties[ShapePropertyName.horizontalInverted] =
+            changedShapeProperties.properties[ShapePropertyName.width] < 0;
+        }
+        if (
+          changedShapeProperties.properties[ShapePropertyName.height] !==
+          undefined
+        ) {
+          shape.properties[ShapePropertyName.scaleY] =
+            changedShapeProperties.properties[ShapePropertyName.height] /
+            shape.properties[ShapePropertyName.originalHeight];
+          shape.properties[ShapePropertyName.verticallyInverted] =
+            changedShapeProperties.properties[ShapePropertyName.height] < 0;
+        }
       }
     });
     this.canvas.renderCanvas(true, false);

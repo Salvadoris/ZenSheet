@@ -1,7 +1,8 @@
-import { Point, Rect } from '../Geometry';
+import { ChangedShapeProperties } from '../Actions/ChangeShapesPropertiesAction';
+import { Point } from '../Geometry';
 import {
-  BaseSerializedShapeProperties,
   ChangableBaseSerializedShapeProperties,
+  ChangableSerializedShapeProperties,
 } from '../ShapeProperties/ShapeProperties';
 import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { Shape } from '../Shapes/Shape';
@@ -18,9 +19,9 @@ export enum Resize {
   BottomRight,
 }
 
-type MoveProperties = Partial<
+export type MoveProperties = Partial<
   Pick<
-    BaseSerializedShapeProperties,
+    ChangableBaseSerializedShapeProperties,
     ShapePropertyName.originX | ShapePropertyName.originY
   >
 >;
@@ -46,13 +47,7 @@ export class SelectedShape {
     this.shape = shape;
   }
 
-  render(
-    canvasScale: number,
-    canvasRect: Rect,
-    selectFrameCtx: CanvasRenderingContext2D,
-    ctx: CanvasRenderingContext2D
-  ): void {
-    this.shape.render(canvasRect, ctx);
+  render(canvasScale: number, selectFrameCtx: CanvasRenderingContext2D): void {
     selectFrameCtx.fillStyle = 'transparent';
     this.setHoverLines(canvasScale);
     selectFrameCtx.fill(this.topLine);
@@ -70,7 +65,7 @@ export class SelectedShape {
     selectFrameCtx.stroke(this.markedLine(selectFrameCtx.lineWidth));
   }
 
-  moveTo(x: number, y: number): MoveProperties {
+  moveTo(x: number, y: number): ChangedShapeProperties[] {
     this.shape.originX = x + this.originFromCursor[0];
     this.shape.originY = y + this.originFromCursor[1];
     const properties: MoveProperties = {};
@@ -80,41 +75,60 @@ export class SelectedShape {
     if (y !== 0) {
       properties[ShapePropertyName.originY] = this.shape.originY;
     }
-    return properties;
+    return [
+      {
+        id: this.shape.properties[ShapePropertyName.id],
+        properties: properties,
+      },
+    ];
   }
 
-  resize(p: Point): ChangableBaseSerializedShapeProperties {
+  resize(p: Point): ChangedShapeProperties[] {
+    let properties: ChangableSerializedShapeProperties = {};
     switch (this.resized) {
       case Resize.Top:
-        return this.shape.resizeTop(p[1]);
+        properties = this.shape.resizeTop(p[1]);
+        break;
       case Resize.Bottom:
-        return this.shape.resizeBottom(p[1]);
+        properties = this.shape.resizeBottom(p[1]);
+        break;
       case Resize.Left:
-        return this.shape.resizeLeft(p[0]);
+        properties = this.shape.resizeLeft(p[0]);
+        break;
       case Resize.Right:
-        return this.shape.resizeRight(p[0]);
+        properties = this.shape.resizeRight(p[0]);
+        break;
       case Resize.TopLeft:
-        return {
+        properties = {
           ...this.shape.resizeLeft(p[0]),
           ...this.shape.resizeTop(p[1]),
         };
+        break;
       case Resize.TopRight:
-        return {
+        properties = {
           ...this.shape.resizeRight(p[0]),
           ...this.shape.resizeTop(p[1]),
         };
+        break;
       case Resize.BottomLeft:
-        return {
+        properties = {
           ...this.shape.resizeLeft(p[0]),
           ...this.shape.resizeBottom(p[1]),
         };
+        break;
       case Resize.BottomRight:
-        return {
+        properties = {
           ...this.shape.resizeRight(p[0]),
           ...this.shape.resizeBottom(p[1]),
         };
+        break;
     }
-    return {};
+    return [
+      {
+        id: this.shape.properties[ShapePropertyName.id],
+        properties: properties,
+      },
+    ];
   }
 
   path() {
