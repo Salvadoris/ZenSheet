@@ -22,7 +22,6 @@ import { DrawingToShapeAction } from './DrawingToShapeAction';
 import { RemoveDrawingsAction } from './RemoveDrawingsAction';
 import { RemoveGroupShapeAction } from './RemoveGroupShapeAction';
 import { RemoveShapesAction } from './RemoveShapesAction';
-import { ShapeToLocalAction } from './ShapeToLocal';
 
 export class CanvasActionHandler {
   constructor(private canvas: CanvasComponent) {}
@@ -65,9 +64,6 @@ export class CanvasActionHandler {
         break;
       case ActionType.RemoveGroupShape:
         this.removeGroupShape(action as RemoveGroupShapeAction);
-        break;
-      case ActionType.ShapeToLocal:
-        this.shapeToLocal(action as ShapeToLocalAction);
         break;
       default:
         throw new Error(`Unknown canvas action type: ${action.type}`);
@@ -288,28 +284,6 @@ export class CanvasActionHandler {
       this.canvas.shapes.splice(idx, 1);
       this.canvas.shapes = this.canvas.shapes.concat(shapes);
       this.canvas.renderCanvas(true, false);
-    }
-  }
-
-  private shapeToLocal(action: ShapeToLocalAction) {
-    const idx = this.canvas.shapes.findIndex(
-      s =>
-        s.properties[ShapePropertyName.id] ===
-        action.data.groupShape[ShapePropertyName.id]
-    );
-    if (idx !== -1) {
-      const groupShape = this.canvas.shapes[idx] as GroupShape;
-      const shapeIdx = this.canvas.shapes.findIndex(
-        s =>
-          s.properties[ShapePropertyName.id] ===
-          action.data.shapeProperties[ShapePropertyName.id]
-      );
-      if (shapeIdx !== -1) {
-        const shape = this.canvas.shapes[shapeIdx];
-        this.canvas.shapes.splice(shapeIdx, 1);
-        groupShape.addShape(shape);
-        this.canvas.renderCanvas(true, false);
-      }
     }
   }
 }

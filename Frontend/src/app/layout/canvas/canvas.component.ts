@@ -25,7 +25,6 @@ import { DrawingToShapeAction } from './Actions/DrawingToShapeAction';
 import { RemoveDrawingsAction } from './Actions/RemoveDrawingsAction';
 import { RemoveGroupShapeAction } from './Actions/RemoveGroupShapeAction';
 import { RemoveShapesAction } from './Actions/RemoveShapesAction';
-import { ShapeToLocalAction } from './Actions/ShapeToLocal';
 import { CanvasContextMenu } from './ContextMenus/canvas-context-menu/canvas-context-menu.component';
 import { ShapeContextMenu } from './ContextMenus/shape-context-menu/shape-context-menu.component';
 import { ChangableDrawingProperties } from './DrawingProperties/DrawingProperties';
@@ -535,36 +534,6 @@ export class CanvasComponent implements AfterViewInit {
         }),
       },
     } as RemoveGroupShapeAction);
-    this.canvasChanged.emit();
-  }
-
-  shapeToLocal(groupShape: GroupShape, shape: Shape) {
-    this.#actionHandler.receiveAction({
-      type: ActionType.ShapeToLocal,
-      data: {
-        groupShape: {
-          [ShapePropertyName.id]: groupShape.properties[ShapePropertyName.id],
-          [ShapePropertyName.originX]:
-            groupShape.properties[ShapePropertyName.originX],
-          [ShapePropertyName.originY]:
-            groupShape.properties[ShapePropertyName.originY],
-          [ShapePropertyName.width]:
-            groupShape.properties[ShapePropertyName.width],
-          [ShapePropertyName.height]:
-            groupShape.properties[ShapePropertyName.height],
-        },
-        shapeProperties: {
-          [ShapePropertyName.id]: shape.properties[ShapePropertyName.id],
-          [ShapePropertyName.originX]:
-            shape.properties[ShapePropertyName.originX],
-          [ShapePropertyName.originY]:
-            shape.properties[ShapePropertyName.originY],
-          [ShapePropertyName.width]: shape.properties[ShapePropertyName.width],
-          [ShapePropertyName.height]:
-            shape.properties[ShapePropertyName.height],
-        },
-      },
-    } as ShapeToLocalAction);
     this.canvasChanged.emit();
   }
 
