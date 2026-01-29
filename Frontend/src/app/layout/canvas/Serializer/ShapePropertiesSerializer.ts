@@ -210,9 +210,6 @@ export class ShapePropertiesSerializer {
         const style = new GroupShapeStyle([
           serializedProperties[ShapePropertyName.style] as GroupShapeStyleType,
         ]);
-        const nonNullStyle = Object.fromEntries(
-          Object.entries(style).filter(([, value]) => value != null)
-        );
         let shapes: Shape[] = [];
         if (
           (serializedProperties as SerializedGroupShapeProperties)[
@@ -224,12 +221,6 @@ export class ShapePropertiesSerializer {
               ShapePropertyName.shapes
             ] as SerializedShape[]
           ).map(s => this.shapeSerializer.deserialized(s, copy));
-          shapes.forEach(s => {
-            s.properties[ShapePropertyName.style] = {
-              ...s.properties[ShapePropertyName.style],
-              ...nonNullStyle,
-            };
-          });
         }
         return {
           ...(serializedProperties as SerializedGroupShapeProperties),

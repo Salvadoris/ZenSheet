@@ -216,6 +216,12 @@ export class GroupShape extends Shape {
     }
   }
 
+  shapesToLocal() {
+    for (const shape of this.shapes) {
+      this.shapeToLocal(shape);
+    }
+  }
+
   clearShapes() {
     this.properties[ShapePropertyName.shapes] = [];
   }
@@ -318,7 +324,7 @@ export class GroupShape extends Shape {
   }
 }
 
-function calcRect(
+export function calcRect(
   shapes: Shape[],
   horizontalInverted: boolean,
   verticallyInverted: boolean

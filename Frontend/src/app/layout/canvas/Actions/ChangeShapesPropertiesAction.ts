@@ -3,10 +3,14 @@ import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProp
 import { ActionType } from './ActionType';
 import { CanvasAction } from './CanvasAction';
 
+export interface ChangedShapeProperties {
+  id: string;
+  properties: ChangableSerializedShapeProperties;
+}
+
 export class ChangeShapesPropertiesAction implements CanvasAction {
   type = ActionType.ChangeShapesProperties;
   data!: {
-    properties: ChangableSerializedShapeProperties;
-    shapeIdList: string[];
+    shapes: ChangedShapeProperties[];
   };
 }

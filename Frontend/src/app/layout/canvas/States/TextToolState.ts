@@ -30,10 +30,12 @@ export class TextToolState extends CanvasToolState {
     this.canvas.style.updateProperty(styleProperty);
     if (this.#currentTextBox) {
       const properties = this.#currentTextBox.setStyleProperty(styleProperty);
-      this.canvas.changeShapesProperties(
-        [this.#currentTextBox.properties[ShapePropertyName.id]],
-        properties
-      );
+      this.canvas.changeShapesProperties([
+        {
+          id: this.#currentTextBox.properties[ShapePropertyName.id],
+          properties: properties,
+        },
+      ]);
       this.canvas.renderCanvas(true, false);
     }
   }
@@ -61,10 +63,12 @@ export class TextToolState extends CanvasToolState {
         ]);
       } else {
         this.#currentTextBox.properties[ShapePropertyName.edited] = false;
-        this.canvas.changeShapesProperties(
-          [this.#currentTextBox.properties[ShapePropertyName.id]],
-          { [ShapePropertyName.edited]: false }
-        );
+        this.canvas.changeShapesProperties([
+          {
+            id: this.#currentTextBox.properties[ShapePropertyName.id],
+            properties: { [ShapePropertyName.edited]: false },
+          },
+        ]);
       }
       this.#currentTextBox = null;
       this.#selectedStart = null;
@@ -165,18 +169,22 @@ export class TextToolState extends CanvasToolState {
     }
     this.#currentTextBox = textBox;
     this.#currentTextBox.properties[ShapePropertyName.edited] = true;
-    this.canvas.changeShapesProperties(
-      [this.#currentTextBox.properties[ShapePropertyName.id]],
-      { [ShapePropertyName.edited]: true }
-    );
+    this.canvas.changeShapesProperties([
+      {
+        id: this.#currentTextBox.properties[ShapePropertyName.id],
+        properties: { [ShapePropertyName.edited]: true },
+      },
+    ]);
   }
 
   private callChangeAction(properties: ChangableSerializedShapeProperties) {
     if (this.#currentTextBox && Object.keys(properties).length !== 0) {
-      this.canvas.changeShapesProperties(
-        [this.#currentTextBox.properties[ShapePropertyName.id]],
-        properties
-      );
+      this.canvas.changeShapesProperties([
+        {
+          id: this.#currentTextBox.properties[ShapePropertyName.id],
+          properties: properties,
+        },
+      ]);
     }
   }
 

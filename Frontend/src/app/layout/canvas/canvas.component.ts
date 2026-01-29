@@ -17,7 +17,10 @@ import { AddGroupShapeAction } from './Actions/AddGroupShapeAction';
 import { AddShapesAction } from './Actions/AddShapesAction';
 import { CanvasActionHandler } from './Actions/CanvasActionHandler';
 import { ChangeDrawingsPropertiesAction } from './Actions/ChangeDrawingPropertiesAction';
-import { ChangeShapesPropertiesAction } from './Actions/ChangeShapesPropertiesAction';
+import {
+  ChangedShapeProperties,
+  ChangeShapesPropertiesAction,
+} from './Actions/ChangeShapesPropertiesAction';
 import { DrawingToShapeAction } from './Actions/DrawingToShapeAction';
 import { RemoveDrawingsAction } from './Actions/RemoveDrawingsAction';
 import { RemoveGroupShapeAction } from './Actions/RemoveGroupShapeAction';
@@ -384,16 +387,10 @@ export class CanvasComponent implements AfterViewInit {
     this.canvasChanged.emit();
   }
 
-  changeShapesProperties(
-    shapeIdList: string[],
-    properties: ChangableSerializedShapeProperties
-  ) {
+  changeShapesProperties(changedShapeProperties: ChangedShapeProperties[]) {
     this.#actionHandler.receiveAction({
       type: ActionType.ChangeShapesProperties,
-      data: {
-        shapeIdList: shapeIdList,
-        properties: properties,
-      },
+      data: { shapes: changedShapeProperties },
     } as ChangeShapesPropertiesAction);
     this.canvasChanged.emit();
   }
@@ -751,8 +748,14 @@ export class CanvasComponent implements AfterViewInit {
         this.#shapeCtx.canvas.height
       );
 
+      if (this.#toolState instanceof SelectToolState) {
+        this.#toolState.selectedShapesToGlobal();
+      }
       for (const shape of this.#shapes) {
         shape.render(this.#trueRect, this.#shapeCtx);
+      }
+      if (this.#toolState instanceof SelectToolState) {
+        this.#toolState.selectedShapesToLocal();
       }
 
       this.#toolState.renderShapes();
