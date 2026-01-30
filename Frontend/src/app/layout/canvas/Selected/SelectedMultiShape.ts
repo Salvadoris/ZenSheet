@@ -57,23 +57,23 @@ export class SelectedMultiShape extends SelectedShape {
 
   override moveTo(x: number, y: number): ChangedShapeProperties[] {
     const properties: ChangedShapeProperties[] = [];
+    this.shape.originX = x + this.originFromCursor[0];
+    this.shape.originY = y + this.originFromCursor[1];
     for (const shape of this.shape.shapes) {
       const shapeProperties: MoveProperties = {};
       if (x !== 0) {
         shapeProperties[ShapePropertyName.originX] =
-          x + this.originFromCursor[0] + (shape.originX - this.shape.originX);
+          this.shape.originX + shape.originX;
       }
       if (y !== 0) {
         shapeProperties[ShapePropertyName.originY] =
-          y + this.originFromCursor[1] + (shape.originY - this.shape.originY);
+          this.shape.originY + shape.originY;
       }
       properties.push({
         [ShapePropertyName.id]: shape.properties[ShapePropertyName.id],
         properties: shapeProperties,
       });
     }
-    this.shape.originX = x + this.originFromCursor[0];
-    this.shape.originY = y + this.originFromCursor[1];
     return properties;
   }
 
