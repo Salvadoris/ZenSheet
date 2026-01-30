@@ -18,6 +18,10 @@ import { AddShapesAction } from './Actions/AddShapesAction';
 import { CanvasActionHandler } from './Actions/CanvasActionHandler';
 import { ChangeDrawingsPropertiesAction } from './Actions/ChangeDrawingPropertiesAction';
 import {
+  ChangeShapesLayerAction,
+  ShapeLayerMove,
+} from './Actions/ChangeShapesLayerAction';
+import {
   ChangedShapeProperties,
   ChangeShapesPropertiesAction,
 } from './Actions/ChangeShapesPropertiesAction';
@@ -534,6 +538,14 @@ export class CanvasComponent implements AfterViewInit {
         }),
       },
     } as RemoveGroupShapeAction);
+    this.canvasChanged.emit();
+  }
+
+  changeShapesLayer(shapes: ShapeLayerMove[]) {
+    this.#actionHandler.receiveAction({
+      type: ActionType.ChangeShapesLayer,
+      data: { shapes: shapes },
+    } as ChangeShapesLayerAction);
     this.canvasChanged.emit();
   }
 

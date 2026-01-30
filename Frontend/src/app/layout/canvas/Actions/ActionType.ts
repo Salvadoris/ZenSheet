@@ -8,4 +8,5 @@ export enum ActionType {
   DrawingToShape = 'DrawingToShape',
   AddGroupShape = 'AddGroupShape',
   RemoveGroupShape = 'RemoveGroupShape',
+  ChangeShapesLayer = 'ChangeShapesLayer',
 }
