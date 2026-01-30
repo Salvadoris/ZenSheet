@@ -17,6 +17,7 @@ import { AddGroupShapeAction } from './AddGroupShapeAction';
 import { AddShapesAction } from './AddShapesAction';
 import { CanvasAction } from './CanvasAction';
 import { ChangeDrawingsPropertiesAction } from './ChangeDrawingPropertiesAction';
+import { ChangeShapesLayerAction } from './ChangeShapesLayerAction';
 import { ChangeShapesPropertiesAction } from './ChangeShapesPropertiesAction';
 import { DrawingToShapeAction } from './DrawingToShapeAction';
 import { RemoveDrawingsAction } from './RemoveDrawingsAction';
@@ -64,6 +65,9 @@ export class CanvasActionHandler {
         break;
       case ActionType.RemoveGroupShape:
         this.removeGroupShape(action as RemoveGroupShapeAction);
+        break;
+      case ActionType.ChangeShapesLayer:
+        this.changeShapesLayer(action as ChangeShapesLayerAction);
         break;
       default:
         throw new Error(`Unknown canvas action type: ${action.type}`);
@@ -285,5 +289,41 @@ export class CanvasActionHandler {
       this.canvas.shapes = this.canvas.shapes.concat(shapes);
       this.canvas.renderCanvas(true, false);
     }
+  }
+
+  private changeShapesLayer(action: ChangeShapesLayerAction) {
+    action.data.shapes.sort((a, b) => {
+      return a.newIndex > b.newIndex ? -1 : 1;
+    });
+    for (const { id, newIndex } of action.data.shapes) {
+      const idx = this.canvas.shapes.findIndex(
+        s => s.properties[ShapePropertyName.id] === id
+      );
+      if (
+        idx === -1 ||
+        newIndex < 0 ||
+        newIndex >= this.canvas.shapes.length ||
+        idx === newIndex
+      ) {
+        break;
+      }
+
+      if (newIndex === idx - 1 || newIndex === idx + 1) {
+        const tmp = this.canvas.shapes[idx];
+        this.canvas.shapes[idx] = this.canvas.shapes[newIndex];
+        this.canvas.shapes[newIndex] = tmp;
+      } else if (newIndex === 0) {
+        this.canvas.shapes.unshift(this.canvas.shapes.splice(idx, 1)[0]);
+      } else if (newIndex === this.canvas.shapes.length - 1) {
+        this.canvas.shapes.push(this.canvas.shapes.splice(idx, 1)[0]);
+      } else {
+        this.canvas.shapes.splice(
+          newIndex,
+          0,
+          this.canvas.shapes.splice(idx, 1)[0]
+        );
+      }
+    }
+    this.canvas.renderCanvas(true, false);
   }
 }

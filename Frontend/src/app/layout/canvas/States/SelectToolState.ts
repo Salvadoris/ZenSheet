@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 
+import { ShapeLayerMove } from '../Actions/ChangeShapesLayerAction';
 import { ChangedShapeProperties } from '../Actions/ChangeShapesPropertiesAction';
 import { CanvasComponent } from '../canvas.component';
 import { CanvasContextMenuAction } from '../ContextMenus/canvas-context-menu/canvas-context-menu.component';
@@ -399,6 +400,7 @@ export class SelectToolState extends CanvasToolState {
     if (this.#selectedShape) {
       if (this.#selectedShape instanceof SelectedMultiShape) {
         const shapesLength = this.#selectedShape.shape.shapes.length;
+        const shapeLayerMoves: ShapeLayerMove[] = [];
         for (let i = this.#selectedShape.shape.shapes.length - 1; i >= 0; i--) {
           const shape = this.#selectedShape.shape.shapes[i];
           const idx = this.canvas.shapes.indexOf(shape);
@@ -406,14 +408,25 @@ export class SelectToolState extends CanvasToolState {
             if (idx < this.canvas.shapes.length - 1 - (shapesLength - 1 - i)) {
               this.canvas.shapes[idx] = this.canvas.shapes[idx + 1];
               this.canvas.shapes[idx + 1] = shape;
+              shapeLayerMoves.push({
+                id: shape.properties[ShapePropertyName.id],
+                newIndex: idx + 1,
+              });
             }
           }
         }
+        this.canvas.changeShapesLayer(shapeLayerMoves);
       } else {
         const idx = this.canvas.shapes.indexOf(this.#selectedShape.shape);
         if (idx < this.canvas.shapes.length - 1) {
           this.canvas.shapes[idx] = this.canvas.shapes[idx + 1];
           this.canvas.shapes[idx + 1] = this.#selectedShape.shape;
+          this.canvas.changeShapesLayer([
+            {
+              id: this.#selectedShape.shape.properties[ShapePropertyName.id],
+              newIndex: idx + 1,
+            },
+          ]);
         }
       }
       this.canvas.renderCanvas(true, true);
@@ -423,18 +436,30 @@ export class SelectToolState extends CanvasToolState {
   moveSelectedShapeBackwards() {
     if (this.#selectedShape) {
       if (this.#selectedShape instanceof SelectedMultiShape) {
+        const shapeLayerMoves: ShapeLayerMove[] = [];
         this.#selectedShape.shape.shapes.forEach((shape, i) => {
           const idx = this.canvas.shapes.indexOf(shape);
           if (idx > i) {
             this.canvas.shapes[idx] = this.canvas.shapes[idx - 1];
             this.canvas.shapes[idx - 1] = shape;
+            shapeLayerMoves.push({
+              id: shape.properties[ShapePropertyName.id],
+              newIndex: idx - 1,
+            });
           }
         });
+        this.canvas.changeShapesLayer(shapeLayerMoves);
       } else {
         const idx = this.canvas.shapes.indexOf(this.#selectedShape.shape);
         if (idx > 0) {
           this.canvas.shapes[idx] = this.canvas.shapes[idx - 1];
           this.canvas.shapes[idx - 1] = this.#selectedShape.shape;
+          this.canvas.changeShapesLayer([
+            {
+              id: this.#selectedShape.shape.properties[ShapePropertyName.id],
+              newIndex: idx - 1,
+            },
+          ]);
         }
       }
       this.canvas.renderCanvas(true, true);
@@ -456,10 +481,23 @@ export class SelectToolState extends CanvasToolState {
             shapeIdList.includes(shape.properties[ShapePropertyName.id])
           ),
         ];
+        const shapeLayerMoves = shapeIdList.map((id, i): ShapeLayerMove => {
+          return {
+            id: id,
+            newIndex: this.canvas.shapes.length - (shapeIdList.length - i),
+          };
+        });
+        this.canvas.changeShapesLayer(shapeLayerMoves);
       } else {
         const idx = this.canvas.shapes.indexOf(this.#selectedShape.shape);
         if (idx !== -1 && idx < this.canvas.shapes.length - 1) {
           this.canvas.shapes.push(this.canvas.shapes.splice(idx, 1)[0]);
+          this.canvas.changeShapesLayer([
+            {
+              id: this.#selectedShape.shape.properties[ShapePropertyName.id],
+              newIndex: this.canvas.shapes.length - 1,
+            },
+          ]);
         }
       }
       this.canvas.renderCanvas(true, true);
@@ -481,10 +519,23 @@ export class SelectToolState extends CanvasToolState {
               !shapeIdList.includes(shape.properties[ShapePropertyName.id])
           ),
         ];
+        const shapeLayerMoves = shapeIdList.map((id, i): ShapeLayerMove => {
+          return {
+            id: id,
+            newIndex: i,
+          };
+        });
+        this.canvas.changeShapesLayer(shapeLayerMoves);
       } else {
         const idx = this.canvas.shapes.indexOf(this.#selectedShape.shape);
         if (idx > 0) {
           this.canvas.shapes.unshift(this.canvas.shapes.splice(idx, 1)[0]);
+          this.canvas.changeShapesLayer([
+            {
+              id: this.#selectedShape.shape.properties[ShapePropertyName.id],
+              newIndex: 0,
+            },
+          ]);
         }
       }
       this.canvas.renderCanvas(true, true);
