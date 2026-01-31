@@ -36,7 +36,7 @@ export class TextToolState extends CanvasToolState {
           properties: properties,
         },
       ]);
-      this.canvas.renderCanvas(true, false);
+      this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
     }
   }
 
@@ -52,7 +52,7 @@ export class TextToolState extends CanvasToolState {
 
   override remove(): void {
     this.releaseCurrentTextBox();
-    this.canvas.renderCanvas(true, false);
+    this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
   }
 
   private releaseCurrentTextBox() {
@@ -76,7 +76,7 @@ export class TextToolState extends CanvasToolState {
     }
   }
 
-  override renderShapes(): void {
+  renderTextBoxRect(): void {
     if (this.#currentTextBox) {
       this.#currentTextBox.renderEditedShape(
         this.canvas.trueRect,
@@ -86,13 +86,10 @@ export class TextToolState extends CanvasToolState {
       );
       this.drawTextBoxRect(this.#currentTextBox);
     }
-    if (this.#hoveredTextBox) {
+    if (this.#hoveredTextBox && this.#hoveredTextBox !== this.#currentTextBox) {
       this.drawTextBoxRect(this.#hoveredTextBox);
     }
   }
-
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  override renderDrawings(): void {}
 
   private drawTextBoxRect(textBox: TextBoxShape) {
     this.canvas.selectFrameCtx.strokeStyle = 'grey';
@@ -243,7 +240,7 @@ export class TextToolState extends CanvasToolState {
           this.canvas.cursor[1]
         )
       );
-      this.canvas.renderCanvas(true, false);
+      this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
     }
   }
 
@@ -254,7 +251,7 @@ export class TextToolState extends CanvasToolState {
     } else {
       this.#hoveredTextBox = null;
     }
-    this.canvas.renderCanvas(true, false);
+    this.canvas.renderCanvas({ shapesEdited: true });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -267,7 +264,7 @@ export class TextToolState extends CanvasToolState {
       } else {
         this.insertText(event.key);
       }
-      this.canvas.renderCanvas(true, false);
+      this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
     }
   }
 
@@ -367,7 +364,7 @@ export class TextToolState extends CanvasToolState {
           this.moveEditToLineEnd();
           break;
       }
-      this.canvas.renderCanvas(true, false);
+      this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
     }
   }
 
@@ -385,7 +382,7 @@ export class TextToolState extends CanvasToolState {
         [this.#selectedStart, this.#selectedEnd] =
           this.#currentTextBox.lineChunkRangeAtIndex(index);
       }
-      this.canvas.renderCanvas(true, false);
+      this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
     }
   }
 
@@ -425,7 +422,7 @@ export class TextToolState extends CanvasToolState {
     navigator.clipboard.readText().then(text => {
       const inserted = this.insertText(text);
       if (inserted) {
-        this.canvas.renderCanvas(true, false);
+        this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
       }
     });
   }
