@@ -83,7 +83,7 @@ export class CanvasActionHandler {
       return this.canvas.shapeSerializer.deserialized(s);
     });
     this.canvas.shapes = this.canvas.shapes.concat(shapes);
-    this.canvas.renderCanvas(true, false);
+    this.canvas.renderCanvas({ shapesChanged: true });
   }
 
   private removeShapes(action: RemoveShapesAction) {
@@ -92,7 +92,7 @@ export class CanvasActionHandler {
         s.properties[ShapePropertyName.id]
       );
     });
-    this.canvas.renderCanvas(true, false);
+    this.canvas.renderCanvas({ shapesChanged: true });
   }
 
   private changeShapesProperties(
@@ -178,7 +178,7 @@ export class CanvasActionHandler {
         }
       }
     });
-    this.canvas.renderCanvas(true, false);
+    this.canvas.renderCanvas({ shapesChanged: true });
   }
 
   private updatedStyle(
@@ -205,7 +205,7 @@ export class CanvasActionHandler {
       this.canvas.drawingSerializer.deserialized(d)
     );
     this.canvas.drawings = this.canvas.drawings.concat(drawings);
-    this.canvas.renderCanvas(false, true);
+    this.canvas.renderCanvas({ drawingsChanged: true });
   }
 
   private removeDrawings(action: RemoveDrawingsAction) {
@@ -215,7 +215,7 @@ export class CanvasActionHandler {
           d.properties[DrawingPropertyName.id]
         )
     );
-    this.canvas.renderCanvas(false, true);
+    this.canvas.renderCanvas({ drawingsChanged: true });
   }
 
   private changeDrawingsProperties(action: ChangeDrawingsPropertiesAction) {
@@ -236,7 +236,7 @@ export class CanvasActionHandler {
             : drawing.properties[DrawingPropertyName.points],
       };
     });
-    this.canvas.renderCanvas(false, true);
+    this.canvas.renderCanvas({ drawingsChanged: true });
   }
 
   private drawingToShape(action: DrawingToShapeAction) {
@@ -249,7 +249,7 @@ export class CanvasActionHandler {
     this.canvas.shapes.push(
       this.canvas.shapeSerializer.deserialized(action.data.shape)
     );
-    this.canvas.renderCanvas(true, true);
+    this.canvas.renderCanvas({ drawingsChanged: true, shapesChanged: true });
   }
 
   private addGroupShape(action: AddGroupShapeAction) {
@@ -273,7 +273,7 @@ export class CanvasActionHandler {
       groupShape.shapeToLocal(shape);
     }
     this.canvas.shapes.push(groupShape);
-    this.canvas.renderCanvas(true, false);
+    this.canvas.renderCanvas({ shapesChanged: true });
   }
 
   private removeGroupShape(action: RemoveGroupShapeAction) {
@@ -287,7 +287,7 @@ export class CanvasActionHandler {
 
       this.canvas.shapes.splice(idx, 1);
       this.canvas.shapes = this.canvas.shapes.concat(shapes);
-      this.canvas.renderCanvas(true, false);
+      this.canvas.renderCanvas({ shapesChanged: true });
     }
   }
 
@@ -324,6 +324,6 @@ export class CanvasActionHandler {
         );
       }
     }
-    this.canvas.renderCanvas(true, false);
+    this.canvas.renderCanvas({ shapesChanged: true });
   }
 }

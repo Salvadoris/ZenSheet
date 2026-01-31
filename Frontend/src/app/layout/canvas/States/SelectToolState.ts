@@ -35,9 +35,7 @@ export class SelectToolState extends CanvasToolState {
   constructor(canvas: CanvasComponent) {
     super(canvas);
     this.canvas.removeCurrentStyle();
-    if (this.canvas.selectFrameCtx) {
-      this.canvas.changeCursor('default');
-    }
+    this.canvas.changeCursor('default');
   }
 
   executeShapeContextMenuAction(action: ShapeContextMenuAction) {
@@ -118,11 +116,11 @@ export class SelectToolState extends CanvasToolState {
           properties: properties,
         },
       ]);
-      this.canvas.renderCanvas(true, false);
+      this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
     }
   }
 
-  override renderShapes(): void {
+  renderSelectedFrame(): void {
     if (this.#selectedShape) {
       this.#selectedShape.render(this.canvas.scale, this.canvas.selectFrameCtx);
     }
@@ -155,12 +153,9 @@ export class SelectToolState extends CanvasToolState {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  override renderDrawings() {}
-
   override remove(): void {
     this.unSelectShape();
-    this.canvas.renderCanvas(true, false);
+    this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
   }
 
   override onMouseDown(event: MouseEvent): void {
@@ -215,7 +210,7 @@ export class SelectToolState extends CanvasToolState {
       } else if (this.#selectRect) {
         this.#selectRect.update(this.canvas.cursor[0], this.canvas.cursor[1]);
       }
-      this.canvas.renderCanvas(true, false);
+      this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
     }
   }
 
@@ -249,12 +244,12 @@ export class SelectToolState extends CanvasToolState {
           } else {
             this.unSelectShape();
           }
-          this.canvas.renderCanvas(true, false);
+          this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
         }
       }
       if (this.#selectRect) {
         this.selectFromRect();
-        this.canvas.renderCanvas(true, false);
+        this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
       }
       this.#selectedAction = false;
     }
@@ -298,7 +293,7 @@ export class SelectToolState extends CanvasToolState {
         ]);
       }
       this.#selectedShape = null;
-      this.canvas.renderCanvas(true, false);
+      this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
       this.hoverSelectedShape();
     }
   }
@@ -344,7 +339,7 @@ export class SelectToolState extends CanvasToolState {
       (this.contextMenuPosition[0] - this.canvas.origin[0]) / this.canvas.scale,
       (this.contextMenuPosition[1] - this.canvas.origin[1]) / this.canvas.scale,
     ]).then(() => {
-      this.canvas.renderCanvas(true, false);
+      this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
     });
   }
 
@@ -358,7 +353,7 @@ export class SelectToolState extends CanvasToolState {
       }
       this.#pastePosition[0] += 20 / this.canvas.scale;
       this.#pastePosition[1] += 20 / this.canvas.scale;
-      this.canvas.renderCanvas(true, false);
+      this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
     });
   }
 
@@ -377,7 +372,7 @@ export class SelectToolState extends CanvasToolState {
     ) {
       this.canvas.addGroupShape(this.#selectedShape.shape);
       this.#selectedShape = new SelectedShape(this.#selectedShape.shape);
-      this.canvas.renderCanvas(true, false);
+      this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
     }
   }
 
@@ -392,7 +387,7 @@ export class SelectToolState extends CanvasToolState {
       this.canvas.removeGroupShape(this.#selectedShape.shape);
       this.selectMultipleShapes(shapes);
 
-      this.canvas.renderCanvas(true, false);
+      this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
     }
   }
 
@@ -429,7 +424,7 @@ export class SelectToolState extends CanvasToolState {
           ]);
         }
       }
-      this.canvas.renderCanvas(true, true);
+      this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
     }
   }
 
@@ -462,7 +457,7 @@ export class SelectToolState extends CanvasToolState {
           ]);
         }
       }
-      this.canvas.renderCanvas(true, true);
+      this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
     }
   }
 
@@ -500,7 +495,7 @@ export class SelectToolState extends CanvasToolState {
           ]);
         }
       }
-      this.canvas.renderCanvas(true, true);
+      this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
     }
   }
 
@@ -538,7 +533,7 @@ export class SelectToolState extends CanvasToolState {
           ]);
         }
       }
-      this.canvas.renderCanvas(true, true);
+      this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
     }
   }
 
@@ -573,7 +568,7 @@ export class SelectToolState extends CanvasToolState {
         )
       ) {
         this.selectSingleShape(shape);
-        this.canvas.renderCanvas(true, false);
+        this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
       }
       this.showShapeContextMenu(screenX, screenY);
     } else {
@@ -799,7 +794,7 @@ export class SelectToolState extends CanvasToolState {
         this.canvas.cursor[1]
       )
     ) {
-      this.canvas.selectFrameCtx.canvas.style.cursor = 'move';
+      this.canvas.changeCursor('move');
     } else if (
       this.#selectedShape &&
       (this.#selectedShape.pointOnTopLine(
@@ -813,7 +808,7 @@ export class SelectToolState extends CanvasToolState {
           this.canvas.cursor[1]
         ))
     ) {
-      this.canvas.selectFrameCtx.canvas.style.cursor = 'ns-resize';
+      this.canvas.changeCursor('ns-resize');
     } else if (
       this.#selectedShape &&
       (this.#selectedShape.pointOnLeftLine(
@@ -827,7 +822,7 @@ export class SelectToolState extends CanvasToolState {
           this.canvas.cursor[1]
         ))
     ) {
-      this.canvas.selectFrameCtx.canvas.style.cursor = 'ew-resize';
+      this.canvas.changeCursor('ew-resize');
     } else if (
       this.#selectedShape &&
       (this.#selectedShape.pointOnTopLeftCorner(
@@ -845,9 +840,9 @@ export class SelectToolState extends CanvasToolState {
         this.#selectedShape.shape.horizontalInverted !==
         this.#selectedShape.shape.verticallyInverted
       ) {
-        this.canvas.selectFrameCtx.canvas.style.cursor = 'nesw-resize';
+        this.canvas.changeCursor('nesw-resize');
       } else {
-        this.canvas.selectFrameCtx.canvas.style.cursor = 'nwse-resize';
+        this.canvas.changeCursor('nwse-resize');
       }
     } else if (
       this.#selectedShape &&

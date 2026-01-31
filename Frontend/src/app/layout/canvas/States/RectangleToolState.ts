@@ -22,12 +22,6 @@ export class RectangleToolState extends CanvasToolState {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  override renderShapes(): void {}
-
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  override renderDrawings(): void {}
-
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   override remove(): void {}
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -61,7 +55,7 @@ export class RectangleToolState extends CanvasToolState {
         changeProperties
       );
     }
-    this.canvas.renderCanvas(false, true);
+    this.canvas.renderCanvas({ drawingsChanged: true });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -71,7 +65,7 @@ export class RectangleToolState extends CanvasToolState {
     if (this.#currentDrawing) {
       this.canvas.drawingToShape(this.#currentDrawing);
       this.#currentDrawing = null;
-      this.canvas.renderCanvas(true, true);
+      this.canvas.renderCanvas({ drawingsChanged: true, shapesChanged: true });
     }
   }
 

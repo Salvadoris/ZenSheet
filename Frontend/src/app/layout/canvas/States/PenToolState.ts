@@ -22,12 +22,6 @@ export class PenToolState extends CanvasToolState {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  override renderShapes(): void {}
-
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  override renderDrawings(): void {}
-
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   override remove(): void {}
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -58,7 +52,7 @@ export class PenToolState extends CanvasToolState {
           changeProperties
         );
       }
-      this.canvas.renderCanvas(false, true);
+      this.canvas.renderCanvas({ drawingsChanged: true });
     }
   }
 
@@ -79,7 +73,10 @@ export class PenToolState extends CanvasToolState {
         }
         this.canvas.drawingToShape(this.#currentDrawing);
         this.#currentDrawing = null;
-        this.canvas.renderCanvas(true, true);
+        this.canvas.renderCanvas({
+          drawingsChanged: true,
+          shapesChanged: true,
+        });
       }
     }
   }
