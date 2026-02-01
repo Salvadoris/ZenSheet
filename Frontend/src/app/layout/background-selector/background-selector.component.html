@@ -1,0 +1,60 @@
+<div class="flex p-1 rounded-lg text-xl text-gray-500 bg-gray-100 shadow-md">
+  <div
+    class="tile"
+    (click)="changeIsGrid()"
+    tabindex="0"
+    [ngClass]="{
+      'tile-selected': isGrid,
+    }">
+    <svg class="tile-content" viewBox="0 0 12 12">
+      <line
+        x1="3"
+        y1="1"
+        x2="3"
+        y2="11"
+        stroke="#606060"
+        stroke-width="1"
+        stroke-linecap="round" />
+      <line
+        x1="6"
+        y1="1"
+        x2="6"
+        y2="11"
+        stroke="#606060"
+        stroke-width="1"
+        stroke-linecap="round" />
+      <line
+        x1="9"
+        y1="1"
+        x2="9"
+        y2="11"
+        stroke="#606060"
+        stroke-width="1"
+        stroke-linecap="round" />
+      <line
+        x1="1"
+        y1="3"
+        x2="11"
+        y2="3"
+        stroke="#606060"
+        stroke-width="1"
+        stroke-linecap="round" />
+      <line
+        x1="1"
+        y1="6"
+        x2="11"
+        y2="6"
+        stroke="#606060"
+        stroke-width="1"
+        stroke-linecap="round" />
+      <line
+        x1="1"
+        y1="9"
+        x2="11"
+        y2="9"
+        stroke="#606060"
+        stroke-width="1"
+        stroke-linecap="round" />
+    </svg>
+  </div>
+</div>

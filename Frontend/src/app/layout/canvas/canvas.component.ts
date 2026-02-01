@@ -83,6 +83,7 @@ export interface CanvasRenderType {
   shapesChanged?: boolean;
   drawingsChanged?: boolean;
   shapesEdited?: boolean;
+  backgroundChanged?: boolean;
 }
 
 @Component({
@@ -90,6 +91,7 @@ export interface CanvasRenderType {
   imports: [ShapeContextMenu, CanvasContextMenu],
   template: `<div class="relative">
     <canvas hidden #bufferCanvas class="absolute top-0 left-0"></canvas>
+    <canvas #backgroundCanvas class="absolute top-0 left-0"></canvas>
     <canvas #shapeCanvas class="absolute top-0 left-0"></canvas>
     <canvas #drawingCanvas class="absolute top-0 left-0 "></canvas>
     <canvas #selectFrameCanvas class="absolute top-0 left-0"></canvas>
@@ -144,6 +146,8 @@ export class CanvasComponent implements AfterViewInit {
   private bufferCanvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('selectFrameCanvas', { static: true })
   private selectFrameCanvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('backgroundCanvas', { static: true })
+  private backgroundCanvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('hiddenInput', { static: true })
   private hiddenInputRef!: ElementRef<HTMLTextAreaElement>;
   @ViewChild('inputElement', { static: true })
@@ -153,6 +157,7 @@ export class CanvasComponent implements AfterViewInit {
   #drawingCtx!: CanvasRenderingContext2D;
   #bufferCtx!: CanvasRenderingContext2D;
   #selectFrameCtx!: CanvasRenderingContext2D;
+  #backgroundCtx!: CanvasRenderingContext2D;
 
   #toolState!: CanvasToolState;
   modeChange = output<Mode>();
@@ -170,6 +175,8 @@ export class CanvasComponent implements AfterViewInit {
   #minScale = 0.1;
   #maxScale = 5;
   scaleChanged = output<number>();
+
+  #backgroundIsGrid = true;
 
   #origin: Point = [0, 0];
 
@@ -233,6 +240,8 @@ export class CanvasComponent implements AfterViewInit {
     this.#drawingCtx = drawingCanvas.getContext('2d')!;
     const selectFrameCanvas = this.selectFrameCanvasRef.nativeElement;
     this.#selectFrameCtx = selectFrameCanvas.getContext('2d')!;
+    const backgroundCanvas = this.backgroundCanvasRef.nativeElement;
+    this.#backgroundCtx = backgroundCanvas.getContext('2d')!;
 
     this.#shapeSerializer = new ShapeSerializer(this.#bufferCtx);
     this.#drawingSerializer = new DrawingSerializer(this.#bufferCtx);
@@ -255,6 +264,10 @@ export class CanvasComponent implements AfterViewInit {
 
   get selectFrameCtx() {
     return this.#selectFrameCtx;
+  }
+
+  get backgroundCtx() {
+    return this.#backgroundCtx;
   }
 
   get shapeSerializer() {
@@ -558,6 +571,11 @@ export class CanvasComponent implements AfterViewInit {
     this.canvasChanged.emit();
   }
 
+  changeBackground(grid: boolean) {
+    this.#backgroundIsGrid = grid;
+    this.renderCanvas({ backgroundChanged: true });
+  }
+
   changeMode(mode: Mode) {
     if (
       this.#toolState instanceof TextToolState &&
@@ -716,6 +734,24 @@ export class CanvasComponent implements AfterViewInit {
     const yMax = originY + window.innerHeight / this.#scale;
     this.#trueRect = [originX, originY, xMax, yMax];
 
+    if (renderType.backgroundChanged || renderType.transformed) {
+      this.#backgroundCtx.canvas.width = window.innerWidth;
+      this.#backgroundCtx.canvas.height = window.innerHeight;
+      this.#backgroundCtx.translate(this.#origin[0], this.#origin[1]);
+      this.#backgroundCtx.scale(this.#scale, this.#scale);
+
+      this.#backgroundCtx.clearRect(
+        0,
+        0,
+        this.#backgroundCtx.canvas.width,
+        this.#backgroundCtx.canvas.height
+      );
+
+      if (this.#backgroundIsGrid) {
+        this.drawGrid();
+      }
+    }
+
     if (renderType.shapesChanged || renderType.transformed) {
       this.#bufferCtx.canvas.width = window.innerWidth;
       this.#bufferCtx.canvas.height = window.innerHeight;
@@ -777,6 +813,44 @@ export class CanvasComponent implements AfterViewInit {
 
       this.#drawingCtx.restore();
     }
+  }
+
+  private drawGrid() {
+    const smallChunkSize = this.scaleToSmallGridChunkSize();
+    const bigChunkSize = smallChunkSize * 5;
+    this.drawGridChunksBySize(smallChunkSize, '#d0d0d0');
+    this.drawGridChunksBySize(bigChunkSize, '#808080');
+  }
+
+  private scaleToSmallGridChunkSize(): number {
+    if (this.scale <= 0) return 0;
+    const index = Math.floor(Math.log2(this.scale / 0.1));
+    return 256 / Math.pow(2, index);
+  }
+
+  private drawGridChunksBySize(chunkSize: number, color: string) {
+    this.backgroundCtx.strokeStyle = color;
+    this.backgroundCtx.lineWidth = 1 / this.scale;
+
+    const path = new Path2D();
+
+    // vertical lines
+    const startX = Math.ceil(this.trueRect[0] / chunkSize) * chunkSize;
+    const countX = Math.ceil((this.trueRect[2] - startX) / chunkSize);
+    for (let x = startX; x < startX + countX * chunkSize; x += chunkSize) {
+      path.moveTo(x, this.trueRect[1]);
+      path.lineTo(x, this.trueRect[3]);
+    }
+
+    // horizontal lines
+    const startY = Math.ceil(this.trueRect[1] / chunkSize) * chunkSize;
+    const countY = Math.ceil((this.trueRect[3] - startY) / chunkSize);
+    for (let y = startY; y < startY + countY * chunkSize; y += chunkSize) {
+      path.moveTo(this.trueRect[0], y);
+      path.lineTo(this.trueRect[2], y);
+    }
+
+    this.backgroundCtx.stroke(path);
   }
 
   private zoomWithWheel(event: WheelEvent) {

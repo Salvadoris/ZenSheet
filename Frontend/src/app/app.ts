@@ -3,6 +3,7 @@ import { Component, signal, inject, OnInit, viewChild } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs';
 
+import { BackgroundSelectorComponent } from './layout/background-selector/background-selector.component';
 import { CanvasComponent } from './layout/canvas/canvas.component';
 import { DetailSidebar } from './layout/detail-sidebar/detail-sidebar.component';
 import { SidebarComponent } from './layout/sidebar/sidebar.component';
@@ -20,6 +21,7 @@ import { NotesService } from './services/notes.service';
     CanvasComponent,
     DetailSidebar,
     ZoomIndicatorComponent,
+    BackgroundSelectorComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
@@ -87,19 +89,19 @@ export class App implements OnInit {
       this.selectedNote.set(null);
       await this.sidebar()?.navigateToFolder(folder.id);
     } else if (!isFolderUrl && note) {
-       if (this.selectedNote()?.id !== note.id) {
+      if (this.selectedNote()?.id !== note.id) {
         this.selectedFolderId.set(note.parentFolderId);
         await this.loadNote(note);
         await this.sidebar()?.navigateToFolder(note.parentFolderId, note);
-       }
+      }
     } else if (!isFolderUrl && folder) {
-       // URL looks like note but matches folder. 
-       // If matched note not found, but folder found -> redirect to folder URL
-       // This handles user typing "/folder" manually without slash
-       await this.onFolderSelected(folder.id);
+      // URL looks like note but matches folder.
+      // If matched note not found, but folder found -> redirect to folder URL
+      // This handles user typing "/folder" manually without slash
+      await this.onFolderSelected(folder.id);
     } else {
-       // Nothing found
-       await this.#loadDefaultNote();
+      // Nothing found
+      await this.#loadDefaultNote();
     }
   }
 
@@ -171,14 +173,14 @@ export class App implements OnInit {
     this.selectedFolderId.set(folderId);
     const path = await this.#notesService.getFolderPath(folderId);
     const targetUrl = '/' + path.join('/') + '/';
-    
+
     const currentUrl = decodeURIComponent(this.#router.url.split('?')[0]);
     if (currentUrl === targetUrl || currentUrl === targetUrl.slice(0, -1)) {
-       if (currentUrl !== targetUrl) {
-         await this.#router.navigateByUrl(targetUrl);
-       }
+      if (currentUrl !== targetUrl) {
+        await this.#router.navigateByUrl(targetUrl);
+      }
     } else {
-       await this.#router.navigateByUrl(targetUrl);
+      await this.#router.navigateByUrl(targetUrl);
     }
   }
 
