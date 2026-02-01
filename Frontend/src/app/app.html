@@ -1,26 +1,29 @@
 <div class="flex h-screen relative overflow-hidden">
   @if (!selectedNote() && !isLoadingNote() && !lastActiveNote()) {
-    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 animate-in fade-in duration-700">
-       <div class="absolute left-[300px] flex flex-col items-start gap-3 text-white animate-in slide-in-from-left duration-1000"
-            [class.top-18]="!hasFolders() || (hasFolders() && selectedFolderId())"
-            [class.top-34]="hasFolders() && !selectedFolderId()">
-          <div class="flex items-center gap-6">
-            @if (!hasNotes()) {
-            <div class="flex items-center justify-center w-12 h-12 bg-white/10 backdrop-blur-md rounded-full border border-white/20 animate-bounce-x">
+    <div
+      class="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 animate-in fade-in duration-700">
+      <div
+        class="absolute left-[300px] flex flex-col items-start gap-3 text-white animate-in slide-in-from-left duration-1000"
+        [class.top-18]="!hasFolders() || (hasFolders() && selectedFolderId())"
+        [class.top-34]="hasFolders() && !selectedFolderId()">
+        <div class="flex items-center gap-6">
+          @if (!hasNotes()) {
+            <div
+              class="flex items-center justify-center w-12 h-12 bg-white/10 backdrop-blur-md rounded-full border border-white/20 animate-bounce-x">
               <i class="fas fa-arrow-left text-xl"></i>
             </div>
-              <h2 class="text-4xl font-light tracking-tight drop-shadow-lg">
-                @if (!hasFolders()) {
-                  Create your first folder
-                } @else if (!selectedFolderId()) {
-                  Click on the folder
-                } @else {
-                  Create first note
-                }
-              </h2>
-            }
-          </div>
-       </div>
+            <h2 class="text-4xl font-light tracking-tight drop-shadow-lg">
+              @if (!hasFolders()) {
+                Create your first folder
+              } @else if (!selectedFolderId()) {
+                Click on the folder
+              } @else {
+                Create first note
+              }
+            </h2>
+          }
+        </div>
+      </div>
     </div>
   }
 
@@ -56,6 +59,11 @@
       #zoomindicator
       (zoomChanged)="canvas.zoomInCenter($event)"
       class="fixed left-4 bottom-4 z-1"></app-zoom-indicator>
+    <app-background-selector
+      class="fixed right-4 bottom-4 z-1"
+      (isGridChanged)="
+        canvas.changeBackground($event)
+      "></app-background-selector>
 
     @if (isLoadingNote()) {
       <div
