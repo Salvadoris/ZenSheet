@@ -112,13 +112,8 @@ export class EllipseShape extends Shape {
   ): boolean {
     ctx.lineWidth = this.style[StyleName.LineWidth];
     const backgroundTransparent =
-      this.style[StyleName.BackgroundColor].length === 9 &&
-      this.style[StyleName.BackgroundColor][7] === '0' &&
-      this.style[StyleName.BackgroundColor][8] === '0';
-    const borderTransparent =
-      this.style[StyleName.Color].length === 9 &&
-      this.style[StyleName.Color][7] === '0' &&
-      this.style[StyleName.Color][8] === '0';
+      this.style[StyleName.BackgroundColor] === 'transparent';
+    const borderTransparent = this.style[StyleName.Color] === 'transparent';
     if (backgroundTransparent !== borderTransparent) {
       const centerX = this.originX + this.width / 2;
       const centerY = this.originY + this.height / 2;
