@@ -212,7 +212,7 @@ export class TextToolState extends CanvasToolState {
         this.canvas.showKeyboard();
       }
       if (this.#currentTextBox) {
-        this.canvas.changeStyle(this.#currentTextBox.style);
+        this.canvas.changeStyle({ ...this.#currentTextBox.style });
 
         const index = this.#currentTextBox.indexFromPosition(
           this.canvas.cursor[0],
