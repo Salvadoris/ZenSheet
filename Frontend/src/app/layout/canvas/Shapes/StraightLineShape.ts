@@ -67,22 +67,28 @@ export class StraightLineShape extends Shape {
 
   override path(): Path2D {
     const path = new Path2D();
-    const lineWidth = this.style[StyleName.LineWidth];
-    const x = this.horizontalInverted
-      ? this.originX - lineWidth / 2
-      : this.originX + lineWidth / 2;
-    const y = this.verticallyInverted
-      ? this.originY - lineWidth / 2
-      : this.originY + lineWidth / 2;
-    const width = this.horizontalInverted
-      ? this.width + lineWidth
-      : this.width - lineWidth;
-    const height = this.verticallyInverted
-      ? this.height + lineWidth
-      : this.height - lineWidth;
-    path.moveTo(x, y);
-    path.lineTo(x + width, y + height);
+    path.moveTo(this.originX, this.originY);
+    path.lineTo(this.originX + this.width, this.originY + this.height);
     return path;
+  }
+
+  override offsetPath(): Path2D {
+    return this.path();
+  }
+
+  override offset(): number {
+    return this.style[StyleName.LineWidth] / 2;
+  }
+
+  override offsetRect(): Rect {
+    const trueRect = this.trueRect();
+    const offset = this.offset();
+    return [
+      trueRect[0] - offset,
+      trueRect[1] - offset,
+      trueRect[2] + offset,
+      trueRect[3] + offset,
+    ];
   }
 
   override pointInside(

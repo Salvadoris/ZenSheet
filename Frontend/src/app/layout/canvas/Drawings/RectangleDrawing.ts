@@ -56,26 +56,17 @@ export class RectangleDrawing implements Drawing {
 
   render(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
     this.bufferCtx.save();
-    const horizontalInverted = this.p1[0] < this.p0[0];
-    const verticallyInverted = this.p1[1] < this.p0[1];
     const lineWidth = this.style[StyleName.LineWidth];
     this.bufferCtx.lineWidth = lineWidth;
     this.bufferCtx.strokeStyle = this.style[StyleName.Color];
     this.bufferCtx.fillStyle = this.style[StyleName.BackgroundColor];
 
-    const offsetX = horizontalInverted
-      ? -this.style[StyleName.LineWidth] / 2
-      : this.style[StyleName.LineWidth] / 2;
-    const offsetY = verticallyInverted
-      ? -this.style[StyleName.LineWidth] / 2
-      : this.style[StyleName.LineWidth] / 2;
-
     const path = new Path2D();
     path.rect(
-      this.p0[0] + offsetX,
-      this.p0[1] + offsetY,
-      this.p1[0] - this.p0[0] - offsetX * 2,
-      this.p1[1] - this.p0[1] - offsetY * 2
+      this.p0[0],
+      this.p0[1],
+      this.p1[0] - this.p0[0],
+      this.p1[1] - this.p0[1]
     );
 
     this.bufferCtx.fill(path);

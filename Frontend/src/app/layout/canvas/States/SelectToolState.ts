@@ -8,11 +8,13 @@ import { ShapeContextMenuAction } from '../ContextMenus/shape-context-menu/shape
 import { Point, Rect } from '../Geometry';
 import { SelectedMultiShape } from '../Selected/SelectedMultiShape';
 import { Resize, SelectedShape } from '../Selected/SelectedShape';
+import { SelectedStraightLineShape } from '../Selected/SelectedStraightLineShape';
 import { SelectRect } from '../Selected/SelectRect';
 import { SerializedShape } from '../Serializer/ShapeSerializer';
 import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { GroupShape } from '../Shapes/GroupShape';
 import { Shape } from '../Shapes/Shape';
+import { StraightLineShape } from '../Shapes/StraightLineShape';
 import { TextBoxShape } from '../Shapes/TextBoxShape';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { TextBoxStyle } from '../ShapeStyles/TextBoxStyle';
@@ -108,8 +110,7 @@ export class SelectToolState extends CanvasToolState {
 
   override setStyleProperty(styleProperty: ShapeStyleProperty): void {
     if (this.#selectedShape) {
-      const properties =
-        this.#selectedShape.shape.setStyleProperty(styleProperty);
+      const properties = this.#selectedShape.setStyleProperty(styleProperty);
       this.canvas.changeShapesProperties([
         {
           id: this.#selectedShape.shape.properties[ShapePropertyName.id],
@@ -188,18 +189,18 @@ export class SelectToolState extends CanvasToolState {
   override onPressedMouseMove(_event: MouseEvent): void {
     if (this.canvas.leftmouseDown) {
       if (this.#selectedShape && this.#selectedShape.dragged) {
-        const moveProperties = this.#selectedShape.moveTo(
-          this.canvas.cursor[0],
-          this.canvas.cursor[1]
-        );
+        const moveProperties = this.#selectedShape.moveTo([
+          this.canvas.cursor[0] + this.#selectedShape.originFromCursor[0],
+          this.canvas.cursor[1] + this.#selectedShape.originFromCursor[1],
+        ]);
         this.canvas.changeShapesProperties(moveProperties);
       } else if (
         this.#selectedShape &&
         this.#selectedShape.resized != Resize.None
       ) {
         const resizeProperties = this.#selectedShape.resize([
-          this.canvas.cursor[0],
-          this.canvas.cursor[1],
+          this.canvas.cursor[0] + this.#selectedShape.originFromCursor[0],
+          this.canvas.cursor[1] + this.#selectedShape.originFromCursor[1],
         ]);
         this.canvas.changeShapesProperties(resizeProperties);
       } else if (this.canvas.firstMove) {
@@ -301,16 +302,8 @@ export class SelectToolState extends CanvasToolState {
   copySelectedShape() {
     if (this.#selectedShape) {
       this.#pastePosition = [
-        this.#selectedShape.shape.horizontalInverted
-          ? this.#selectedShape.shape.originX +
-            this.#selectedShape.shape.width +
-            20 / this.canvas.scale
-          : this.#selectedShape.shape.originX + 20 / this.canvas.scale,
-        this.#selectedShape.shape.verticallyInverted
-          ? this.#selectedShape.shape.originY +
-            this.#selectedShape.shape.height +
-            20 / this.canvas.scale
-          : this.#selectedShape.shape.originY + 20 / this.canvas.scale,
+        this.#selectedShape.shape.originX + 20 / this.canvas.scale,
+        this.#selectedShape.shape.originY + 20 / this.canvas.scale,
       ];
       let serializedShapes: SerializedShape[] = [];
       if (this.#selectedShape instanceof SelectedMultiShape) {
@@ -579,16 +572,100 @@ export class SelectToolState extends CanvasToolState {
   private mouseDownSelectedShape(): boolean {
     if (this.#selectedShape) {
       if (
-        this.#selectedShape.pointInside(
+        this.#selectedShape instanceof SelectedStraightLineShape &&
+        this.#selectedShape.pointOnFirstPoint(
           this.canvas.shapeCtx,
           this.canvas.cursor[0],
           this.canvas.cursor[1]
         )
       ) {
-        this.#selectedShape.dragged = true;
+        this.#selectedShape.resized = Resize.StraightLineFirstPoint;
         this.#selectedShape.originFromCursor = [
           this.#selectedShape.shape.originX - this.canvas.startCursor[0],
           this.#selectedShape.shape.originY - this.canvas.startCursor[1],
+        ];
+        return true;
+      }
+      if (
+        this.#selectedShape instanceof SelectedStraightLineShape &&
+        this.#selectedShape.pointOnSecondPoint(
+          this.canvas.shapeCtx,
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        )
+      ) {
+        this.#selectedShape.resized = Resize.StraightLineLastPoint;
+        this.#selectedShape.originFromCursor = [
+          this.#selectedShape.shape.originX +
+            this.#selectedShape.shape.width -
+            this.canvas.startCursor[0],
+          this.#selectedShape.shape.originY +
+            this.#selectedShape.shape.height -
+            this.canvas.startCursor[1],
+        ];
+        return true;
+      }
+      if (
+        this.#selectedShape.pointOnTopLeftCorner(
+          this.canvas.shapeCtx,
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        )
+      ) {
+        this.#selectedShape.resized = Resize.TopLeft;
+        this.#selectedShape.originFromCursor = [
+          this.#selectedShape.shape.originX - this.canvas.startCursor[0],
+          this.#selectedShape.shape.originY - this.canvas.startCursor[1],
+        ];
+        return true;
+      }
+      if (
+        this.#selectedShape.pointOnTopRightCorner(
+          this.canvas.shapeCtx,
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        )
+      ) {
+        this.#selectedShape.resized = Resize.TopRight;
+        this.#selectedShape.originFromCursor = [
+          this.#selectedShape.shape.originX +
+            this.#selectedShape.shape.width -
+            this.canvas.startCursor[0],
+          this.#selectedShape.shape.originY - this.canvas.startCursor[1],
+        ];
+        return true;
+      }
+      if (
+        this.#selectedShape.pointOnBottomLeftCorner(
+          this.canvas.shapeCtx,
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        )
+      ) {
+        this.#selectedShape.resized = Resize.BottomLeft;
+        this.#selectedShape.originFromCursor = [
+          this.#selectedShape.shape.originX - this.canvas.startCursor[0],
+          this.#selectedShape.shape.originY +
+            this.#selectedShape.shape.height -
+            this.canvas.startCursor[1],
+        ];
+        return true;
+      }
+      if (
+        this.#selectedShape.pointOnBottomRightCorner(
+          this.canvas.shapeCtx,
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        )
+      ) {
+        this.#selectedShape.resized = Resize.BottomRight;
+        this.#selectedShape.originFromCursor = [
+          this.#selectedShape.shape.originX +
+            this.#selectedShape.shape.width -
+            this.canvas.startCursor[0],
+          this.#selectedShape.shape.originY +
+            this.#selectedShape.shape.height -
+            this.canvas.startCursor[1],
         ];
         return true;
       }
@@ -600,6 +677,8 @@ export class SelectToolState extends CanvasToolState {
         )
       ) {
         this.#selectedShape.resized = Resize.Top;
+        this.#selectedShape.originFromCursor[1] =
+          this.#selectedShape.shape.originY - this.canvas.startCursor[1];
         return true;
       }
       if (
@@ -610,6 +689,10 @@ export class SelectToolState extends CanvasToolState {
         )
       ) {
         this.#selectedShape.resized = Resize.Bottom;
+        this.#selectedShape.originFromCursor[1] =
+          this.#selectedShape.shape.originY +
+          this.#selectedShape.shape.height -
+          this.canvas.startCursor[1];
         return true;
       }
       if (
@@ -620,6 +703,8 @@ export class SelectToolState extends CanvasToolState {
         )
       ) {
         this.#selectedShape.resized = Resize.Left;
+        this.#selectedShape.originFromCursor[0] =
+          this.#selectedShape.shape.originX - this.canvas.startCursor[0];
         return true;
       }
       if (
@@ -630,46 +715,24 @@ export class SelectToolState extends CanvasToolState {
         )
       ) {
         this.#selectedShape.resized = Resize.Right;
+        this.#selectedShape.originFromCursor[0] =
+          this.#selectedShape.shape.originX +
+          this.#selectedShape.shape.width -
+          this.canvas.startCursor[0];
         return true;
       }
       if (
-        this.#selectedShape.pointOnTopLeftCorner(
+        this.#selectedShape.pointInside(
           this.canvas.shapeCtx,
           this.canvas.cursor[0],
           this.canvas.cursor[1]
         )
       ) {
-        this.#selectedShape.resized = Resize.TopLeft;
-        return true;
-      }
-      if (
-        this.#selectedShape.pointOnTopRightCorner(
-          this.canvas.shapeCtx,
-          this.canvas.cursor[0],
-          this.canvas.cursor[1]
-        )
-      ) {
-        this.#selectedShape.resized = Resize.TopRight;
-        return true;
-      }
-      if (
-        this.#selectedShape.pointOnBottomLeftCorner(
-          this.canvas.shapeCtx,
-          this.canvas.cursor[0],
-          this.canvas.cursor[1]
-        )
-      ) {
-        this.#selectedShape.resized = Resize.BottomLeft;
-        return true;
-      }
-      if (
-        this.#selectedShape.pointOnBottomRightCorner(
-          this.canvas.shapeCtx,
-          this.canvas.cursor[0],
-          this.canvas.cursor[1]
-        )
-      ) {
-        this.#selectedShape.resized = Resize.BottomRight;
+        this.#selectedShape.dragged = true;
+        this.#selectedShape.originFromCursor = [
+          this.#selectedShape.shape.originX - this.canvas.startCursor[0],
+          this.#selectedShape.shape.originY - this.canvas.startCursor[1],
+        ];
         return true;
       }
     }
@@ -710,7 +773,10 @@ export class SelectToolState extends CanvasToolState {
 
   selectSingleShape(shape: Shape) {
     this.unSelectShape();
-    this.#selectedShape = new SelectedShape(shape);
+    this.#selectedShape =
+      shape instanceof StraightLineShape
+        ? new SelectedStraightLineShape(shape)
+        : new SelectedShape(shape);
     this.changeShapesSelectedProperty([shape], true);
     this.canvas.changeStyle({ ...this.#selectedShape.shape.style });
   }
@@ -720,7 +786,7 @@ export class SelectToolState extends CanvasToolState {
       this.#selectedShape &&
       this.#selectedShape instanceof SelectedMultiShape
     ) {
-      this.#selectedShape.shape.addShape(shape);
+      this.#selectedShape.addShape(shape);
       this.#selectedShape.shape.shapes.sort((a, b) => {
         return this.canvas.shapes.indexOf(a) - this.canvas.shapes.indexOf(b);
       });
@@ -788,43 +854,6 @@ export class SelectToolState extends CanvasToolState {
   private hoverSelectedShape() {
     if (
       this.#selectedShape &&
-      this.#selectedShape.pointInside(
-        this.canvas.shapeCtx,
-        this.canvas.cursor[0],
-        this.canvas.cursor[1]
-      )
-    ) {
-      this.canvas.changeCursor('move');
-    } else if (
-      this.#selectedShape &&
-      (this.#selectedShape.pointOnTopLine(
-        this.canvas.shapeCtx,
-        this.canvas.cursor[0],
-        this.canvas.cursor[1]
-      ) ||
-        this.#selectedShape.pointOnBottomLine(
-          this.canvas.shapeCtx,
-          this.canvas.cursor[0],
-          this.canvas.cursor[1]
-        ))
-    ) {
-      this.canvas.changeCursor('ns-resize');
-    } else if (
-      this.#selectedShape &&
-      (this.#selectedShape.pointOnLeftLine(
-        this.canvas.shapeCtx,
-        this.canvas.cursor[0],
-        this.canvas.cursor[1]
-      ) ||
-        this.#selectedShape.pointOnRightLine(
-          this.canvas.shapeCtx,
-          this.canvas.cursor[0],
-          this.canvas.cursor[1]
-        ))
-    ) {
-      this.canvas.changeCursor('ew-resize');
-    } else if (
-      this.#selectedShape &&
       (this.#selectedShape.pointOnTopLeftCorner(
         this.canvas.shapeCtx,
         this.canvas.cursor[0],
@@ -834,7 +863,18 @@ export class SelectToolState extends CanvasToolState {
           this.canvas.shapeCtx,
           this.canvas.cursor[0],
           this.canvas.cursor[1]
-        ))
+        ) ||
+        (this.#selectedShape instanceof SelectedStraightLineShape &&
+          (this.#selectedShape.pointOnFirstPoint(
+            this.canvas.shapeCtx,
+            this.canvas.cursor[0],
+            this.canvas.cursor[1]
+          ) ||
+            this.#selectedShape.pointOnSecondPoint(
+              this.canvas.shapeCtx,
+              this.canvas.cursor[0],
+              this.canvas.cursor[1]
+            ))))
     ) {
       if (
         this.#selectedShape.shape.horizontalInverted !==
@@ -865,10 +905,53 @@ export class SelectToolState extends CanvasToolState {
       } else {
         this.canvas.changeCursor('nesw-resize');
       }
-    } else if (this.findSelectedShape(this.canvas.cursor)) {
+    } else if (
+      this.#selectedShape &&
+      (this.#selectedShape.pointOnTopLine(
+        this.canvas.shapeCtx,
+        this.canvas.cursor[0],
+        this.canvas.cursor[1]
+      ) ||
+        this.#selectedShape.pointOnBottomLine(
+          this.canvas.shapeCtx,
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        ))
+    ) {
+      this.canvas.changeCursor('ns-resize');
+    } else if (
+      this.#selectedShape &&
+      (this.#selectedShape.pointOnLeftLine(
+        this.canvas.shapeCtx,
+        this.canvas.cursor[0],
+        this.canvas.cursor[1]
+      ) ||
+        this.#selectedShape.pointOnRightLine(
+          this.canvas.shapeCtx,
+          this.canvas.cursor[0],
+          this.canvas.cursor[1]
+        ))
+    ) {
+      this.canvas.changeCursor('ew-resize');
+    } else if (
+      this.#selectedShape &&
+      this.#selectedShape.pointInside(
+        this.canvas.shapeCtx,
+        this.canvas.cursor[0],
+        this.canvas.cursor[1]
+      )
+    ) {
       this.canvas.changeCursor('move');
     } else {
-      this.canvas.changeCursor('default');
+      const shape = this.findSelectedShape(this.canvas.cursor);
+      if (
+        (this.#selectedShape && shape && shape !== this.#selectedShape.shape) ||
+        (shape && !this.#selectedShape)
+      ) {
+        this.canvas.changeCursor('move');
+      } else {
+        this.canvas.changeCursor('default');
+      }
     }
   }
 
@@ -927,7 +1010,7 @@ export class SelectToolState extends CanvasToolState {
             this.unSelectShape();
             this.selectMultipleShapes(shapes);
           }
-          this.#selectedShape?.moveTo(position[0], position[1]);
+          this.#selectedShape?.moveTo([position[0], position[1]]);
         } else {
           const shape = this.textToShape(text, position);
           this.canvas.addShapes([shape]);

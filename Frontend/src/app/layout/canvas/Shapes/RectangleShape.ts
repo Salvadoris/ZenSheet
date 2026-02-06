@@ -50,7 +50,7 @@ export class RectangleShape extends Shape {
     this.bufferCtx.strokeStyle = this.style[StyleName.Color];
     this.bufferCtx.fillStyle = this.style[StyleName.BackgroundColor];
 
-    const path = this.borderPath();
+    const path = this.path();
     this.bufferCtx.fill(path);
     this.bufferCtx.stroke(path);
     this.bufferCtx.restore();
@@ -74,22 +74,28 @@ export class RectangleShape extends Shape {
     return path;
   }
 
-  private borderPath() {
-    const offsetX = this.horizontalInverted
-      ? -this.style[StyleName.LineWidth] / 2
-      : this.style[StyleName.LineWidth] / 2;
-    const offsetY = this.verticallyInverted
-      ? -this.style[StyleName.LineWidth] / 2
-      : this.style[StyleName.LineWidth] / 2;
-
+  override offsetPath(): Path2D {
     const path = new Path2D();
-    path.rect(
-      this.originX + offsetX,
-      this.originY + offsetY,
-      this.width - offsetX * 2,
-      this.height - offsetY * 2
-    );
+    const rect = this.offsetRect();
+    path.rect(rect[0], rect[1], rect[2] - rect[0], rect[3] - rect[1]);
     return path;
+  }
+
+  override offsetRect(): Rect {
+    const trueRect = this.trueRect();
+    const offset = this.offset();
+    return [
+      trueRect[0] - offset,
+      trueRect[1] - offset,
+      trueRect[2] + offset,
+      trueRect[3] + offset,
+    ];
+  }
+
+  override offset(): number {
+    return this.style[StyleName.Color] === 'transparent'
+      ? 0
+      : this.style[StyleName.LineWidth] / 2;
   }
 
   override pointInside(
@@ -102,11 +108,11 @@ export class RectangleShape extends Shape {
       this.style[StyleName.BackgroundColor] === 'transparent';
     const borderTransparent = this.style[StyleName.Color] === 'transparent';
     if (backgroundTransparent && !borderTransparent) {
-      return ctx.isPointInStroke(this.borderPath(), x, y);
+      return ctx.isPointInStroke(this.path(), x, y);
     } else if (borderTransparent && !backgroundTransparent) {
-      return ctx.isPointInPath(this.borderPath(), x, y);
-    } else {
       return ctx.isPointInPath(this.path(), x, y);
+    } else {
+      return ctx.isPointInPath(this.offsetPath(), x, y);
     }
   }
 

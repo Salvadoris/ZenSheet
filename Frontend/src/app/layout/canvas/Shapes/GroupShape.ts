@@ -104,6 +104,69 @@ export class GroupShape extends Shape {
     return path;
   }
 
+  override offsetPath(): Path2D {
+    const path = new Path2D();
+    const rect = this.offsetRect();
+    path.rect(rect[0], rect[1], rect[2] - rect[0], rect[3] - rect[1]);
+    return path;
+  }
+
+  override offset(): number {
+    return Math.max(...this.shapes.map(s => s.offset()));
+  }
+
+  override offsetRect(): Rect {
+    const rects = this.shapes.map(s => this.shapeGlobalOffsetRect(s));
+    return [
+      this.horizontalInverted
+        ? Math.min(...rects.map(r => r[2]))
+        : Math.min(...rects.map(r => r[0])),
+      this.verticallyInverted
+        ? Math.min(...rects.map(r => r[3]))
+        : Math.min(...rects.map(r => r[1])),
+      this.horizontalInverted
+        ? Math.max(...rects.map(r => r[0]))
+        : Math.max(...rects.map(r => r[2])),
+      this.verticallyInverted
+        ? Math.max(...rects.map(r => r[1]))
+        : Math.max(...rects.map(r => r[3])),
+    ];
+  }
+
+  shapeGlobalOffsetRect(shape: Shape): Rect {
+    if (shape instanceof GroupShape) {
+      this.shapeToGlobal(shape);
+      const rect = shape.offsetRect();
+      this.shapeToLocal(shape);
+      return [
+        this.horizontalInverted ? rect[2] : rect[0],
+        this.verticallyInverted ? rect[3] : rect[1],
+        this.horizontalInverted ? rect[0] : rect[2],
+        this.verticallyInverted ? rect[1] : rect[3],
+      ];
+    }
+    const offset = shape.offset();
+    const rect = shape.trueRect();
+    return [
+      this.originX +
+        (this.horizontalInverted
+          ? rect[2] * this.scaleX + offset
+          : rect[0] * this.scaleX - offset),
+      this.originY +
+        (this.verticallyInverted
+          ? rect[3] * this.scaleY + offset
+          : rect[1] * this.scaleY - offset),
+      this.originX +
+        (this.horizontalInverted
+          ? rect[0] * this.scaleX - offset
+          : rect[2] * this.scaleX + offset),
+      this.originY +
+        (this.verticallyInverted
+          ? rect[1] * this.scaleY - offset
+          : rect[3] * this.scaleY + offset),
+    ];
+  }
+
   override pointInside(
     ctx: CanvasRenderingContext2D,
     x: number,

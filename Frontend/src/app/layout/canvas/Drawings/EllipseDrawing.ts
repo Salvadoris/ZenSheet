@@ -66,15 +66,7 @@ export class EllipseDrawing implements Drawing {
     const radiusY = Math.abs(this.p1[1] - this.p0[1]) / 2;
 
     const path = new Path2D();
-    path.ellipse(
-      centerX,
-      centerY,
-      Math.abs(radiusX - this.bufferCtx.lineWidth / 2),
-      Math.abs(radiusY - this.bufferCtx.lineWidth / 2),
-      0,
-      0,
-      2 * Math.PI
-    );
+    path.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
 
     this.bufferCtx.fill(path);
     this.bufferCtx.stroke(path);

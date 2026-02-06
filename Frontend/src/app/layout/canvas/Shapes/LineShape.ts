@@ -196,6 +196,20 @@ export class LineShape extends Shape {
     return path;
   }
 
+  override offsetPath(): Path2D {
+    const path = new Path2D();
+    path.rect(this.originX, this.originY, this.width, this.height);
+    return path;
+  }
+
+  override offset(): number {
+    return 0;
+  }
+
+  override offsetRect(): Rect {
+    return this.trueRect();
+  }
+
   override pointInside(
     ctx: CanvasRenderingContext2D,
     x: number,

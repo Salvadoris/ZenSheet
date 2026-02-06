@@ -36,24 +36,14 @@ export class StraightLineDrawing implements Drawing {
   }
 
   toShape(): Shape {
-    const horizontalInverted = this.p1[0] < this.p0[0];
-    const verticallyInverted = this.p1[1] < this.p0[1];
     return new StraightLineShape(
       {
         [ShapePropertyName.id]: crypto.randomUUID(),
         [ShapePropertyName.style]: this.style,
-        [ShapePropertyName.originX]: horizontalInverted
-          ? this.p0[0] + this.style[StyleName.LineWidth] / 2
-          : this.p0[0] - this.style[StyleName.LineWidth] / 2,
-        [ShapePropertyName.originY]: verticallyInverted
-          ? this.p0[1] + this.style[StyleName.LineWidth] / 2
-          : this.p0[1] - this.style[StyleName.LineWidth] / 2,
-        [ShapePropertyName.originalWidth]: horizontalInverted
-          ? this.p1[0] - this.p0[0] - this.style[StyleName.LineWidth]
-          : this.p1[0] - this.p0[0] + this.style[StyleName.LineWidth],
-        [ShapePropertyName.originalHeight]: verticallyInverted
-          ? this.p1[1] - this.p0[1] - this.style[StyleName.LineWidth]
-          : this.p1[1] - this.p0[1] + this.style[StyleName.LineWidth],
+        [ShapePropertyName.originX]: Math.min(this.p0[0], this.p1[0]),
+        [ShapePropertyName.originY]: Math.min(this.p0[1], this.p1[1]),
+        [ShapePropertyName.originalWidth]: Math.abs(this.p1[0] - this.p0[0]),
+        [ShapePropertyName.originalHeight]: Math.abs(this.p1[1] - this.p0[1]),
         [ShapePropertyName.edited]: false,
         [ShapePropertyName.selected]: false,
       },

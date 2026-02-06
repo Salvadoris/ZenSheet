@@ -86,6 +86,18 @@ export class TextBoxShape extends Shape {
     return path;
   }
 
+  override offsetPath(): Path2D {
+    return this.path();
+  }
+
+  override offset(): number {
+    return 0;
+  }
+
+  override offsetRect(): Rect {
+    return this.trueRect();
+  }
+
   override setStyleProperty(
     styleProperty: ShapeStyleProperty
   ): ChangableSerializedShapeProperties {

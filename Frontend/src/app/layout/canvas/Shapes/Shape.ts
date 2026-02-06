@@ -217,6 +217,12 @@ export abstract class Shape {
 
   abstract path(): Path2D;
 
+  abstract offsetPath(): Path2D;
+
+  abstract offsetRect(): Rect;
+
+  abstract offset(): number;
+
   abstract setStyleProperty(
     styleProperty: ShapeStyleProperty
   ): ChangableSerializedShapeProperties;
