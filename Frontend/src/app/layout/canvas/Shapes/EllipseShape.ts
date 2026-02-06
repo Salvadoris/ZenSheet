@@ -50,11 +50,7 @@ export class EllipseShape extends Shape {
     this.bufferCtx.strokeStyle = this.style[StyleName.Color];
     this.bufferCtx.fillStyle = this.style[StyleName.BackgroundColor];
 
-    const centerX = this.originX + this.width / 2;
-    const centerY = this.originY + this.height / 2;
-    const radiusX = Math.abs(this.width) / 2;
-    const radiusY = Math.abs(this.height) / 2;
-    const path = this.borderPath(centerX, centerY, radiusX, radiusY);
+    const path = this.path();
     this.bufferCtx.fill(path);
     this.bufferCtx.stroke(path);
     this.bufferCtx.restore();
@@ -86,23 +82,36 @@ export class EllipseShape extends Shape {
     return path;
   }
 
-  borderPath(
-    centerX: number,
-    centerY: number,
-    radiusX: number,
-    radiusY: number
-  ) {
+  override offsetPath(): Path2D {
     const path = new Path2D();
+    const rect = this.offsetRect();
     path.ellipse(
-      centerX,
-      centerY,
-      Math.abs(radiusX - this.style[StyleName.LineWidth] / 2),
-      Math.abs(radiusY - this.style[StyleName.LineWidth] / 2),
+      (rect[0] + rect[2]) / 2,
+      (rect[1] + rect[3]) / 2,
+      Math.abs(rect[0] - rect[2]) / 2,
+      Math.abs(rect[1] - rect[3]) / 2,
       0,
       0,
       2 * Math.PI
     );
     return path;
+  }
+
+  override offset(): number {
+    return this.style[StyleName.Color] === 'transparent'
+      ? 0
+      : this.style[StyleName.LineWidth] / 2;
+  }
+
+  override offsetRect(): Rect {
+    const trueRect = this.trueRect();
+    const offset = this.offset();
+    return [
+      trueRect[0] - offset,
+      trueRect[1] - offset,
+      trueRect[2] + offset,
+      trueRect[3] + offset,
+    ];
   }
 
   override pointInside(
@@ -114,26 +123,12 @@ export class EllipseShape extends Shape {
     const backgroundTransparent =
       this.style[StyleName.BackgroundColor] === 'transparent';
     const borderTransparent = this.style[StyleName.Color] === 'transparent';
-    if (backgroundTransparent !== borderTransparent) {
-      const centerX = this.originX + this.width / 2;
-      const centerY = this.originY + this.height / 2;
-      const radiusX = Math.abs(this.width) / 2;
-      const radiusY = Math.abs(this.height) / 2;
-      if (backgroundTransparent) {
-        return ctx.isPointInStroke(
-          this.borderPath(centerX, centerY, radiusX, radiusY),
-          x,
-          y
-        );
-      } else {
-        return ctx.isPointInPath(
-          this.borderPath(centerX, centerY, radiusX, radiusY),
-          x,
-          y
-        );
-      }
-    } else {
+    if (backgroundTransparent && !borderTransparent) {
+      return ctx.isPointInStroke(this.path(), x, y);
+    } else if (borderTransparent && !backgroundTransparent) {
       return ctx.isPointInPath(this.path(), x, y);
+    } else {
+      return ctx.isPointInPath(this.offsetPath(), x, y);
     }
   }
 

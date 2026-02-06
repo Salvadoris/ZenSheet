@@ -1,5 +1,5 @@
 import { ChangedShapeProperties } from '../Actions/ChangeShapesPropertiesAction';
-import { Point } from '../Geometry';
+import { Point, Rect } from '../Geometry';
 import {
   ChangableBaseSerializedShapeProperties,
   ChangableSerializedShape,
@@ -9,7 +9,7 @@ import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { GroupShape } from '../Shapes/GroupShape';
 import { Shape } from '../Shapes/Shape';
 
-import { MoveProperties, Resize, SelectedShape } from './SelectedShape';
+import { Resize, SelectedShape } from './SelectedShape';
 
 type ShapeTransformProperties = Required<
   Pick<
@@ -23,6 +23,7 @@ type ShapeTransformProperties = Required<
 
 export class SelectedMultiShape extends SelectedShape {
   declare shape: GroupShape;
+  #childShapeOffsetRects!: Rect[];
 
   constructor(shapes: Shape[], bufferCtx: CanvasRenderingContext2D) {
     const groupShape = new GroupShape(
@@ -35,46 +36,54 @@ export class SelectedMultiShape extends SelectedShape {
       bufferCtx
     );
     super(groupShape);
+    this.#childShapeOffsetRects = this.shape.shapes.map(s =>
+      this.shape.shapeGlobalOffsetRect(s)
+    );
+  }
+
+  addShape(shape: Shape) {
+    this.shape.addShape(shape);
+    this.updateOffsetRect();
+  }
+
+  override updateOffsetRect(): void {
+    super.updateOffsetRect();
+    this.#childShapeOffsetRects = this.shape.shapes.map(s =>
+      this.shape.shapeGlobalOffsetRect(s)
+    );
   }
 
   override render(
     canvasScale: number,
     selectFramectx: CanvasRenderingContext2D
   ): void {
-    super.render(canvasScale, selectFramectx);
     selectFramectx.lineWidth = 2 / canvasScale;
     selectFramectx.lineCap = 'square';
     selectFramectx.strokeStyle = this.color;
-    for (const shape of this.shape.shapes) {
+    for (const rect of this.#childShapeOffsetRects) {
       selectFramectx.strokeRect(
-        this.shape.originX + shape.originX * this.shape.scaleX,
-        this.shape.originY + shape.originY * this.shape.scaleY,
-        shape.width * this.shape.scaleX,
-        shape.height * this.shape.scaleY
+        rect[0],
+        rect[1],
+        rect[2] - rect[0],
+        rect[3] - rect[1]
       );
     }
+    super.render(canvasScale, selectFramectx);
   }
 
-  override moveTo(x: number, y: number): ChangedShapeProperties[] {
-    const properties: ChangedShapeProperties[] = [];
-    this.shape.originX = x + this.originFromCursor[0];
-    this.shape.originY = y + this.originFromCursor[1];
-    for (const shape of this.shape.shapes) {
-      const shapeProperties: MoveProperties = {};
-      if (x !== 0) {
-        shapeProperties[ShapePropertyName.originX] =
-          this.shape.originX + shape.originX;
-      }
-      if (y !== 0) {
-        shapeProperties[ShapePropertyName.originY] =
-          this.shape.originY + shape.originY;
-      }
-      properties.push({
+  override moveTo(newOrigin: Point): ChangedShapeProperties[] {
+    this.shape.originX = newOrigin[0];
+    this.shape.originY = newOrigin[1];
+    this.updateOffsetRect();
+    return this.shape.shapes.map((shape): ChangedShapeProperties => {
+      return {
         [ShapePropertyName.id]: shape.properties[ShapePropertyName.id],
-        properties: shapeProperties,
-      });
-    }
-    return properties;
+        properties: {
+          [ShapePropertyName.originX]: this.shape.originX + shape.originX,
+          [ShapePropertyName.originY]: this.shape.originY + shape.originY,
+        },
+      };
+    });
   }
 
   override resize(p: Point): ChangedShapeProperties[] {
@@ -105,6 +114,7 @@ export class SelectedMultiShape extends SelectedShape {
         properties = this.resizeBottomRight(p[0], p[1]);
         break;
     }
+    this.updateOffsetRect();
     this.shape.properties[ShapePropertyName.horizontalInverted] =
       this.shape.width < 0;
     this.shape.properties[ShapePropertyName.verticallyInverted] =
