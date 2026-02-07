@@ -1,6 +1,6 @@
 import { CanvasComponent } from '../canvas.component';
 import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
-import { LineDrawing, smoothLine } from '../Drawings/LineDrawing';
+import { LineDrawing, simplifyLine, smoothLine } from '../Drawings/LineDrawing';
 import { LineStyle } from '../ShapeStyles/LineStyle';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 
@@ -47,10 +47,12 @@ export class PenToolState extends CanvasToolState {
           this.canvas.cursor[0],
           this.canvas.cursor[1],
         ]);
-        this.canvas.changeDrawingsProperties(
-          [this.#currentDrawing.properties[DrawingPropertyName.id]],
-          changeProperties
-        );
+        if (changeProperties) {
+          this.canvas.changeDrawingsProperties(
+            [this.#currentDrawing.properties[DrawingPropertyName.id]],
+            changeProperties
+          );
+        }
       }
       this.canvas.renderCanvas({ drawingsChanged: true });
     }
@@ -69,6 +71,11 @@ export class PenToolState extends CanvasToolState {
           this.#currentDrawing.points = smoothLine(
             this.#currentDrawing.points,
             this.canvas.smoothLineFactor
+          );
+
+          this.#currentDrawing.points = simplifyLine(
+            this.#currentDrawing.points,
+            0.3
           );
         }
         this.canvas.drawingToShape(this.#currentDrawing);
