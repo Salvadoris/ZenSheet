@@ -53,7 +53,19 @@ export class LineDrawing implements Drawing {
 
   update(
     p: Point
-  ): Required<Pick<ChangableDrawingProperties, DrawingPropertyName.points>> {
+  ): Required<
+    Pick<ChangableDrawingProperties, DrawingPropertyName.points>
+  > | null {
+    const lastPoint = this.points[this.points.length - 1];
+    const dx = p[0] - lastPoint[0];
+    const dy = p[1] - lastPoint[1];
+    const distanceSq = dx * dx + dy * dy;
+
+    // 0.25 pixel distance squared
+    if (distanceSq < 0.25) {
+      return null;
+    }
+
     this.points.push([p[0], p[1]]);
     return {
       [DrawingPropertyName.points]: { lastPoint: [p[0], p[1]] },
@@ -110,4 +122,42 @@ export function smoothLine(points: LinePoints, windowSize: number): LinePoints {
 
   //   smoothedPoints.push(points[points.length - 1]); // Keep last point
   return [points[0], ...smoothedPoints, points[points.length - 1]];
+}
+
+export function simplifyLine(points: Point[], epsilon: number): LinePoints {
+  if (points.length <= 2) return points as LinePoints;
+
+  let maxDistance = 0;
+  let index = 0;
+
+  const start = points[0];
+  const end = points[points.length - 1];
+
+  for (let i = 1; i < points.length - 1; i++) {
+    const distance = perpendicularDistance(points[i], start, end);
+    if (distance > maxDistance) {
+      index = i;
+      maxDistance = distance;
+    }
+  }
+
+  if (maxDistance > epsilon) {
+    const left = simplifyLine(points.slice(0, index + 1), epsilon);
+    const right = simplifyLine(points.slice(index), epsilon);
+    return [...left.slice(0, left.length - 1), ...right] as LinePoints;
+  } else {
+    return [start, end] as LinePoints;
+  }
+}
+
+function perpendicularDistance(p: Point, p1: Point, p2: Point): number {
+  const dx = p2[0] - p1[0];
+  const dy = p2[1] - p1[1];
+  const mag = Math.sqrt(dx * dx + dy * dy);
+
+  if (mag === 0) {
+    return Math.sqrt((p[0] - p1[0]) ** 2 + (p[1] - p1[1]) ** 2);
+  }
+
+  return Math.abs(dy * p[0] - dx * p[1] + p2[0] * p1[1] - p2[1] * p1[0]) / mag;
 }
