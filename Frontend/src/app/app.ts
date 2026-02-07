@@ -3,7 +3,6 @@ import { Component, signal, inject, OnInit, viewChild } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs';
 
-import { BackgroundSelectorComponent } from './layout/background-selector/background-selector.component';
 import { CanvasComponent } from './layout/canvas/canvas.component';
 import { DetailSidebar } from './layout/detail-sidebar/detail-sidebar.component';
 import { SidebarComponent } from './layout/sidebar/sidebar.component';
@@ -21,7 +20,6 @@ import { NotesService } from './services/notes.service';
     CanvasComponent,
     DetailSidebar,
     ZoomIndicatorComponent,
-    BackgroundSelectorComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
