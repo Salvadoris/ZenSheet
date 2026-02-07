@@ -343,16 +343,20 @@ export class GroupShape extends Shape {
 
   private calcMinWidth() {
     return Math.max(
-      ...this.shapes.map(
-        s => s.minWidth * (this.originalWidth / (s.originalWidth * s.scaleX))
+      ...this.shapes.map(s =>
+        s.minWidth === 0 && s.originalWidth === 0
+          ? 0
+          : s.minWidth * (this.originalWidth / (s.originalWidth * s.scaleX))
       )
     );
   }
 
   private calcMinHeight() {
     return Math.max(
-      ...this.shapes.map(
-        s => s.minHeight * (this.originalHeight / (s.originalHeight * s.scaleY))
+      ...this.shapes.map(s =>
+        s.minHeight === 0 && s.originalHeight === 0
+          ? 0
+          : s.minHeight * (this.originalHeight / (s.originalHeight * s.scaleY))
       )
     );
   }

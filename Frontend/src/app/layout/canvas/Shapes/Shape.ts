@@ -15,13 +15,16 @@ export abstract class Shape {
   #bufferCtx: CanvasRenderingContext2D;
   constructor(
     properties: BaseShapeProperties,
-    bufferCtx: CanvasRenderingContext2D
+    bufferCtx: CanvasRenderingContext2D,
+    zeroSize = false
   ) {
-    if (properties[ShapePropertyName.originalWidth] == 0) {
-      throw new Error('Shape width cannot be zero');
-    }
-    if (properties[ShapePropertyName.originalWidth] == 0) {
-      throw new Error('Shape height cannot be zero');
+    if (!zeroSize) {
+      if (properties[ShapePropertyName.originalWidth] == 0) {
+        throw new Error('Shape width cannot be zero');
+      }
+      if (properties[ShapePropertyName.originalWidth] == 0) {
+        throw new Error('Shape height cannot be zero');
+      }
     }
     this.#bufferCtx = bufferCtx;
     const width =
@@ -273,8 +276,9 @@ export abstract class Shape {
     }
     const properties: ChangableSerializedShapeProperties = {};
     if (
-      (!this.verticallyInvertable && newHeight >= this.minHeight) ||
-      (this.verticallyInvertable && Math.abs(newHeight) >= this.minHeight)
+      ((!this.verticallyInvertable && newHeight >= this.minHeight) ||
+        (this.verticallyInvertable && Math.abs(newHeight) >= this.minHeight)) &&
+      newHeight !== this.height
     ) {
       this.height = newHeight;
       this.originY = y;
@@ -305,8 +309,9 @@ export abstract class Shape {
     }
     const properties: ChangableSerializedShapeProperties = {};
     if (
-      (!this.verticallyInvertable && newHeight >= this.minHeight) ||
-      (this.verticallyInvertable && Math.abs(newHeight) >= this.minHeight)
+      ((!this.verticallyInvertable && newHeight >= this.minHeight) ||
+        (this.verticallyInvertable && Math.abs(newHeight) >= this.minHeight)) &&
+      newHeight !== this.height
     ) {
       this.height = newHeight;
       this.scaleY = this.height / this.originalHeight;
@@ -335,8 +340,9 @@ export abstract class Shape {
     }
     const properties: ChangableSerializedShapeProperties = {};
     if (
-      (!this.horizontallyInvertable && newWidth > this.minWidth) ||
-      (this.horizontallyInvertable && Math.abs(newWidth) >= this.minWidth)
+      ((!this.horizontallyInvertable && newWidth > this.minWidth) ||
+        (this.horizontallyInvertable && Math.abs(newWidth) >= this.minWidth)) &&
+      newWidth !== this.width
     ) {
       this.width = newWidth;
       this.originX = x;
@@ -367,8 +373,9 @@ export abstract class Shape {
     }
     const properties: ChangableSerializedShapeProperties = {};
     if (
-      (!this.horizontallyInvertable && newWidth >= this.minWidth) ||
-      (this.horizontallyInvertable && Math.abs(newWidth) >= this.minWidth)
+      ((!this.horizontallyInvertable && newWidth >= this.minWidth) ||
+        (this.horizontallyInvertable && Math.abs(newWidth) >= this.minWidth)) &&
+      newWidth !== this.width
     ) {
       this.width = newWidth;
       this.scaleX = this.width / this.originalWidth;

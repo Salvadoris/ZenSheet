@@ -28,34 +28,47 @@ export class RectangleToolState extends CanvasToolState {
   override onMouseDown(_event: MouseEvent): void {}
 
   override onPressedMouseMove(_event: MouseEvent): void {
-    if (this.canvas.firstMove) {
-      this.#currentDrawing = new RectangleDrawing(
-        {
-          [DrawingPropertyName.id]: crypto.randomUUID(),
-          [DrawingPropertyName.p0]: [
-            this.canvas.startCursor[0],
-            this.canvas.startCursor[1],
-          ],
-          [DrawingPropertyName.p1]: [
-            this.canvas.cursor[0],
-            this.canvas.cursor[1],
-          ],
-          [DrawingPropertyName.style]: new RectangleStyle(this.canvas.style),
-        },
-        this.canvas.bufferCtx
-      );
-      this.canvas.addDrawings([this.#currentDrawing]);
-    } else if (this.#currentDrawing) {
-      const changeProperties = this.#currentDrawing.update([
-        this.canvas.cursor[0],
-        this.canvas.cursor[1],
-      ]);
-      this.canvas.changeDrawingsProperties(
-        [this.#currentDrawing.properties[DrawingPropertyName.id]],
-        changeProperties
-      );
+    if (this.canvas.leftmouseDown) {
+      if (!this.#currentDrawing) {
+        const startOrigin = this.canvas.pointToGrid(this.canvas.startCursor);
+        const newPoint = this.canvas.pointToGrid(this.canvas.cursor);
+        if (startOrigin[0] !== newPoint[0] && startOrigin[1] !== newPoint[1]) {
+          this.#currentDrawing = new RectangleDrawing(
+            {
+              [DrawingPropertyName.id]: crypto.randomUUID(),
+              [DrawingPropertyName.p0]: startOrigin,
+              [DrawingPropertyName.p1]: newPoint,
+              [DrawingPropertyName.style]: new RectangleStyle(
+                this.canvas.style
+              ),
+            },
+            this.canvas.bufferCtx
+          );
+          this.canvas.addDrawings([this.#currentDrawing]);
+        }
+      } else {
+        const newPoint = this.canvas.pointToGrid(this.canvas.cursor);
+        if (
+          !(
+            (newPoint[0] ===
+              this.#currentDrawing.properties[DrawingPropertyName.p1][0] &&
+              newPoint[1] ===
+                this.#currentDrawing.properties[DrawingPropertyName.p1][1]) ||
+            (newPoint[0] ===
+              this.#currentDrawing.properties[DrawingPropertyName.p0][0] &&
+              newPoint[1] ===
+                this.#currentDrawing.properties[DrawingPropertyName.p0][1])
+          )
+        ) {
+          const changeProperties = this.#currentDrawing.update(newPoint);
+          this.canvas.changeDrawingsProperties(
+            [this.#currentDrawing.properties[DrawingPropertyName.id]],
+            changeProperties
+          );
+        }
+      }
+      this.canvas.renderCanvas({ drawingsChanged: true });
     }
-    this.canvas.renderCanvas({ drawingsChanged: true });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function

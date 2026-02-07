@@ -72,18 +72,28 @@ export class SelectedMultiShape extends SelectedShape {
   }
 
   override moveTo(newOrigin: Point): ChangedShapeProperties[] {
-    this.shape.originX = newOrigin[0];
-    this.shape.originY = newOrigin[1];
-    this.updateOffsetRect();
-    return this.shape.shapes.map((shape): ChangedShapeProperties => {
-      return {
-        [ShapePropertyName.id]: shape.properties[ShapePropertyName.id],
-        properties: {
-          [ShapePropertyName.originX]: this.shape.originX + shape.originX,
-          [ShapePropertyName.originY]: this.shape.originY + shape.originY,
-        },
-      };
-    });
+    const properties: ChangableSerializedShapeProperties = {};
+    if (this.shape.originX !== newOrigin[0]) {
+      this.shape.originX = newOrigin[0];
+      properties[ShapePropertyName.originX] = this.shape.originX;
+    }
+    if (this.shape.originY !== newOrigin[1]) {
+      this.shape.originY = newOrigin[1];
+      properties[ShapePropertyName.originY] = this.shape.originY;
+    }
+    if (Object.keys(properties).length > 0) {
+      this.updateOffsetRect();
+      return this.shape.shapes.map((shape): ChangedShapeProperties => {
+        return {
+          [ShapePropertyName.id]: shape.properties[ShapePropertyName.id],
+          properties: {
+            [ShapePropertyName.originX]: this.shape.originX + shape.originX,
+            [ShapePropertyName.originY]: this.shape.originY + shape.originY,
+          },
+        };
+      });
+    }
+    return [];
   }
 
   override resize(p: Point): ChangedShapeProperties[] {

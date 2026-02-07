@@ -15,7 +15,9 @@ export class StraightLineShape extends Shape {
     properties: StraightLineShapeProperties,
     bufferCtx: CanvasRenderingContext2D
   ) {
-    super(properties, bufferCtx);
+    super(properties, bufferCtx, true);
+    this.properties[ShapePropertyName.minWidth] = 0;
+    this.properties[ShapePropertyName.minHeight] = 0;
   }
 
   override set properties(properties: Required<StraightLineShapeProperties>) {
