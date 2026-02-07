@@ -59,12 +59,15 @@ export class SelectedStraightLineShape extends SelectedShape {
         };
         break;
     }
-    return [
-      {
-        id: this.shape.properties[ShapePropertyName.id],
-        properties: properties,
-      },
-    ];
+    if (Object.keys(properties).length > 0) {
+      return [
+        {
+          id: this.shape.properties[ShapePropertyName.id],
+          properties: properties,
+        },
+      ];
+    }
+    return [];
   }
 
   override path() {

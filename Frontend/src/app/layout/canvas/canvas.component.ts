@@ -177,6 +177,8 @@ export class CanvasComponent implements AfterViewInit {
   scaleChanged = output<number>();
 
   #backgroundIsGrid = true;
+  #smallChunkSize = 1;
+  #snapByGrid = true;
 
   #origin: Point = [0, 0];
 
@@ -734,6 +736,8 @@ export class CanvasComponent implements AfterViewInit {
     const yMax = originY + window.innerHeight / this.#scale;
     this.#trueRect = [originX, originY, xMax, yMax];
 
+    this.#smallChunkSize = this.scaleToSmallGridChunkSize();
+
     if (renderType.backgroundChanged || renderType.transformed) {
       this.#backgroundCtx.canvas.width = window.innerWidth;
       this.#backgroundCtx.canvas.height = window.innerHeight;
@@ -816,9 +820,8 @@ export class CanvasComponent implements AfterViewInit {
   }
 
   private drawGrid() {
-    const smallChunkSize = this.scaleToSmallGridChunkSize();
-    const bigChunkSize = smallChunkSize * 5;
-    this.drawGridChunksBySize(smallChunkSize, '#d0d0d0');
+    const bigChunkSize = this.#smallChunkSize * 5;
+    this.drawGridChunksBySize(this.#smallChunkSize, '#d0d0d0');
     this.drawGridChunksBySize(bigChunkSize, '#808080');
   }
 
@@ -851,6 +854,15 @@ export class CanvasComponent implements AfterViewInit {
     }
 
     this.backgroundCtx.stroke(path);
+  }
+
+  pointToGrid(p: Point): Point {
+    return this.#snapByGrid
+      ? [
+          Math.round(p[0] / this.#smallChunkSize) * this.#smallChunkSize,
+          Math.round(p[1] / this.#smallChunkSize) * this.#smallChunkSize,
+        ]
+      : [p[0], p[1]];
   }
 
   private zoomWithWheel(event: WheelEvent) {

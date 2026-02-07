@@ -52,18 +52,25 @@ export class SelectedShape {
   }
 
   moveTo(newOrigin: Point): ChangedShapeProperties[] {
-    this.shape.originX = newOrigin[0];
-    this.shape.originY = newOrigin[1];
-    this.updateOffsetRect();
-    return [
-      {
-        id: this.shape.properties[ShapePropertyName.id],
-        properties: {
-          [ShapePropertyName.originX]: this.shape.originX,
-          [ShapePropertyName.originY]: this.shape.originY,
+    const properties: ChangableSerializedShapeProperties = {};
+    if (this.shape.originX !== newOrigin[0]) {
+      this.shape.originX = newOrigin[0];
+      properties[ShapePropertyName.originX] = this.shape.originX;
+    }
+    if (this.shape.originY !== newOrigin[1]) {
+      this.shape.originY = newOrigin[1];
+      properties[ShapePropertyName.originY] = this.shape.originY;
+    }
+    if (Object.keys(properties).length > 0) {
+      this.updateOffsetRect();
+      return [
+        {
+          id: this.shape.properties[ShapePropertyName.id],
+          properties: properties,
         },
-      },
-    ];
+      ];
+    }
+    return [];
   }
 
   resize(p: Point): ChangedShapeProperties[] {
@@ -106,13 +113,16 @@ export class SelectedShape {
         };
         break;
     }
-    this.updateOffsetRect();
-    return [
-      {
-        id: this.shape.properties[ShapePropertyName.id],
-        properties: properties,
-      },
-    ];
+    if (Object.keys(properties).length > 0) {
+      this.updateOffsetRect();
+      return [
+        {
+          id: this.shape.properties[ShapePropertyName.id],
+          properties: properties,
+        },
+      ];
+    }
+    return [];
   }
 
   path() {

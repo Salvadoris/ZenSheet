@@ -189,20 +189,20 @@ export class SelectToolState extends CanvasToolState {
   override onPressedMouseMove(_event: MouseEvent): void {
     if (this.canvas.leftmouseDown) {
       if (this.#selectedShape && this.#selectedShape.dragged) {
-        const moveProperties = this.#selectedShape.moveTo([
-          this.canvas.cursor[0] + this.#selectedShape.originFromCursor[0],
-          this.canvas.cursor[1] + this.#selectedShape.originFromCursor[1],
-        ]);
-        this.canvas.changeShapesProperties(moveProperties);
+        this.moveSelectedShape();
       } else if (
         this.#selectedShape &&
         this.#selectedShape.resized != Resize.None
       ) {
-        const resizeProperties = this.#selectedShape.resize([
-          this.canvas.cursor[0] + this.#selectedShape.originFromCursor[0],
-          this.canvas.cursor[1] + this.#selectedShape.originFromCursor[1],
-        ]);
-        this.canvas.changeShapesProperties(resizeProperties);
+        const resizeProperties = this.#selectedShape.resize(
+          this.canvas.pointToGrid([
+            this.canvas.cursor[0] + this.#selectedShape.originFromCursor[0],
+            this.canvas.cursor[1] + this.#selectedShape.originFromCursor[1],
+          ])
+        );
+        if (resizeProperties.length > 0) {
+          this.canvas.changeShapesProperties(resizeProperties);
+        }
       } else if (this.canvas.firstMove) {
         this.#selectRect = new SelectRect(
           [this.canvas.startCursor[0], this.canvas.startCursor[1]],
@@ -212,6 +212,40 @@ export class SelectToolState extends CanvasToolState {
         this.#selectRect.update(this.canvas.cursor[0], this.canvas.cursor[1]);
       }
       this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
+    }
+  }
+
+  private moveSelectedShape() {
+    if (this.#selectedShape) {
+      const p1: Point = [
+        this.canvas.cursor[0] + this.#selectedShape.originFromCursor[0],
+        this.canvas.cursor[1] + this.#selectedShape.originFromCursor[1],
+      ];
+      const p2: Point = [
+        p1[0] + this.#selectedShape.shape.width,
+        p1[1] + this.#selectedShape.shape.height,
+      ];
+
+      const p1ToGrid = this.canvas.pointToGrid(p1);
+      const p2ToGrid = this.canvas.pointToGrid(p2);
+      const p2ToGridOrigin: Point = [
+        p2ToGrid[0] - this.#selectedShape.shape.width,
+        p2ToGrid[1] - this.#selectedShape.shape.height,
+      ];
+
+      const pX =
+        Math.abs(p1[0] - p1ToGrid[0]) < Math.abs(p1[0] - p2ToGridOrigin[0])
+          ? p1ToGrid[0]
+          : p2ToGridOrigin[0];
+      const pY =
+        Math.abs(p1[1] - p1ToGrid[1]) < Math.abs(p1[1] - p2ToGridOrigin[1])
+          ? p1ToGrid[1]
+          : p2ToGridOrigin[1];
+
+      const moveProperties = this.#selectedShape.moveTo([pX, pY]);
+      if (moveProperties.length > 0) {
+        this.canvas.changeShapesProperties(moveProperties);
+      }
     }
   }
 
