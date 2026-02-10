@@ -42,6 +42,7 @@ export class EllipseToolState extends CanvasToolState {
           this.canvas.bufferCtx
         );
         this.canvas.addDrawings([this.#currentDrawing]);
+        this.canvas.renderCanvas({ drawingsChanged: true });
       }
     } else {
       const newPoint = this.canvas.pointToGrid(this.canvas.cursor);
@@ -58,13 +59,13 @@ export class EllipseToolState extends CanvasToolState {
         )
       ) {
         const changeProperties = this.#currentDrawing.update(newPoint);
+        this.canvas.renderCanvas({ drawingsChanged: true });
         this.canvas.changeDrawingsProperties(
           [this.#currentDrawing.properties[DrawingPropertyName.id]],
           changeProperties
         );
       }
     }
-    this.canvas.renderCanvas({ drawingsChanged: true });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function

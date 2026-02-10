@@ -777,7 +777,9 @@ export class CanvasComponent implements AfterViewInit {
         this.#toolState.selectedShapesToGlobal();
       }
       for (const shape of this.#shapes) {
-        shape.render(this.#trueRect, this.#shapeCtx);
+        if (this.shapeInside(shape)) {
+          shape.render(this.#trueRect, this.#shapeCtx);
+        }
       }
       if (this.#toolState instanceof SelectToolState) {
         this.#toolState.selectedShapesToLocal();

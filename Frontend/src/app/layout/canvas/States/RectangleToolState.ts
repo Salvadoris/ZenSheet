@@ -45,6 +45,7 @@ export class RectangleToolState extends CanvasToolState {
             this.canvas.bufferCtx
           );
           this.canvas.addDrawings([this.#currentDrawing]);
+          this.canvas.renderCanvas({ drawingsChanged: true });
         }
       } else {
         const newPoint = this.canvas.pointToGrid(this.canvas.cursor);
@@ -61,13 +62,13 @@ export class RectangleToolState extends CanvasToolState {
           )
         ) {
           const changeProperties = this.#currentDrawing.update(newPoint);
+          this.canvas.renderCanvas({ drawingsChanged: true });
           this.canvas.changeDrawingsProperties(
             [this.#currentDrawing.properties[DrawingPropertyName.id]],
             changeProperties
           );
         }
       }
-      this.canvas.renderCanvas({ drawingsChanged: true });
     }
   }
 
