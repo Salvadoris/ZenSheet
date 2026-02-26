@@ -1,20 +1,26 @@
+import { CommonModule } from '@angular/common';
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  effect,
   ElementRef,
-  ViewChild,
-  AfterViewInit,
   HostListener,
+  inject,
+  OnDestroy,
   output,
+  ViewChild,
 } from '@angular/core';
 
 import { NoteContent } from '../../models/note.model';
+import { CanvasConnectionService, CursorPosition, CursorUpdate } from '../../services/canvas-connection.service';
 import { Mode } from '../toolbar/toolbar.component';
 
 import { ActionType } from './Actions/ActionType';
 import { AddDrawingsAction } from './Actions/AddDrawingsAction';
 import { AddGroupShapeAction } from './Actions/AddGroupShapeAction';
 import { AddShapesAction } from './Actions/AddShapesAction';
+import { CanvasAction } from './Actions/CanvasAction';
 import { CanvasActionHandler } from './Actions/CanvasActionHandler';
 import { ChangeDrawingsPropertiesAction } from './Actions/ChangeDrawingPropertiesAction';
 import { ChangeShapesPropertiesAction } from './Actions/ChangeShapesPropertiesAction';
@@ -27,6 +33,7 @@ import { ChangableDrawingProperties } from './DrawingProperties/DrawingPropertie
 import { DrawingPropertyName } from './DrawingProperties/DrawingPropertyName';
 import { Drawing } from './Drawings/Drawing';
 import { Point, Rect } from './Geometry';
+import { getClientLabel, getColorFromClientId, RemoteCursor, renderOffScreenIndicator, renderRemoteCursor } from './RemoteCursor';
 import {
   DrawingSerializer,
   SerializedDrawing,
@@ -72,7 +79,7 @@ declare global {
 
 @Component({
   selector: 'app-canvas',
-  imports: [],
+  imports: [CommonModule],
   template: `<div class="relative">
     <canvas #mainCanvas class="absolute top-0 left-0"></canvas>
     <canvas
@@ -99,7 +106,7 @@ declare global {
   </div>`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CanvasComponent implements AfterViewInit {
+export class CanvasComponent implements AfterViewInit, OnDestroy {
   @ViewChild('mainCanvas', { static: true })
   private mainCanvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('tmpCanvas', { static: true })
@@ -107,12 +114,20 @@ export class CanvasComponent implements AfterViewInit {
   @ViewChild('hiddenInput', { static: true })
   private hiddenInputRef!: ElementRef<HTMLTextAreaElement>;
 
+  #canvasConnection = inject(CanvasConnectionService);
+  #remoteCursors = new Map<string, RemoteCursor>();
+  #remoteSelections = new Map<string, string[]>();
+  #lastCursorSendTime = 0;
+  #cursorThrottleMs = 30;
+  #currentNoteId: string | null = null;
+
   #mainCtx!: CanvasRenderingContext2D;
   #tmpCtx!: CanvasRenderingContext2D;
 
   #toolState!: CanvasToolState;
   modeChange = output<Mode>();
   canvasChanged = output<void>();
+  actionReceived = output<CanvasAction>();
 
   #shapeSerializer!: ShapeSerializer;
   #drawingSerializer!: DrawingSerializer;
@@ -126,8 +141,17 @@ export class CanvasComponent implements AfterViewInit {
   #minScale = 0.1;
   #maxScale = 5;
   scaleChanged = output<number>();
+  #animationFrameId: number | null = null;
 
-  #origin: Point = [0, 0];
+  constructor() {
+    this.#watchCursorUpdates();
+    this.#watchInitialCursors();
+    this.#watchClientLeft();
+    this.#watchCursorRemoved();
+    this.#watchSelectionUpdates();
+  }
+
+  #origin: Point = [window.innerWidth / 2, window.innerHeight / 2];
 
   #cursor: Point = [0, 0];
 
@@ -189,6 +213,103 @@ export class CanvasComponent implements AfterViewInit {
 
     this.changeToHover();
     this.renderCanvas(true, true);
+    
+    // Start smoothing loop
+    this.#startAnimationLoop();
+  }
+
+  ngOnDestroy() {
+    // Clean up cursor tracking
+    this.#remoteCursors.clear();
+    if (this.#animationFrameId !== null) {
+      cancelAnimationFrame(this.#animationFrameId);
+    }
+  }
+
+  /**
+   * Set the current note ID for cursor tracking
+   */
+  setNoteId(noteId: string) {
+    this.#currentNoteId = noteId;
+    this.#remoteCursors.clear();
+  }
+
+  get currentNoteId(): string | null {
+    return this.#currentNoteId;
+  }
+
+
+  /**
+   * Handle cursor update from remote client
+   */
+  #handleCursorUpdate(update: CursorUpdate) {
+    const existing = this.#remoteCursors.get(update.clientId);
+    if (existing) {
+      existing.targetCursorPosition.x = update.cursorPosition.x;
+      existing.targetCursorPosition.y = update.cursorPosition.y;
+      if (update.username) {
+        existing.label = update.username;
+      }
+    } else {
+      this.#remoteCursors.set(update.clientId, {
+        clientId: update.clientId,
+        cursorPosition: { ...update.cursorPosition },
+        targetCursorPosition: { ...update.cursorPosition },
+        color: getColorFromClientId(update.clientId),
+        label: update.username || getClientLabel(update.clientId),
+      });
+    }
+  }
+
+  /**
+   * Animation loop for smoothing and real-time updates
+   */
+  #startAnimationLoop() {
+    const loop = () => {
+      let needsRender = false;
+      const lerpFactor = 0.5; // Catch up faster (was 0.2)
+
+      for (const cursor of this.#remoteCursors.values()) {
+        const dx = cursor.targetCursorPosition.x - cursor.cursorPosition.x;
+        const dy = cursor.targetCursorPosition.y - cursor.cursorPosition.y;
+
+        if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+          cursor.cursorPosition.x += dx * lerpFactor;
+          cursor.cursorPosition.y += dy * lerpFactor;
+          needsRender = true;
+        }
+
+        // Center on tracked user
+        const trackedId = this.#canvasConnection.trackedClientId();
+        if (trackedId === cursor.clientId) {
+          this.#origin[0] = window.innerWidth / 2 - cursor.cursorPosition.x * this.#scale;
+          this.#origin[1] = window.innerHeight / 2 - cursor.cursorPosition.y * this.#scale;
+          needsRender = true;
+        }
+      }
+
+      if (needsRender) {
+        this.renderCanvas(true, true); // Must render main too if origin changed
+      }
+
+      this.#animationFrameId = requestAnimationFrame(loop);
+    };
+    this.#animationFrameId = requestAnimationFrame(loop);
+  }
+
+  /**
+   * Send cursor position to other clients (throttled)
+   */
+  #sendCursorPosition(cursorPosition: CursorPosition) {
+    if (!this.#currentNoteId) return;
+
+    const now = Date.now();
+    if (now - this.#lastCursorSendTime < this.#cursorThrottleMs) {
+      return; // Throttle
+    }
+
+    this.#lastCursorSendTime = now;
+    this.#canvasConnection.sendCursorPosition(this.#currentNoteId, cursorPosition);
   }
 
   get mainCtx() {
@@ -291,6 +412,27 @@ export class CanvasComponent implements AfterViewInit {
     return this.#toolState;
   }
 
+  get selectedShape(): Shape | null {
+    if (this.#toolState instanceof SelectToolState) {
+      return this.#toolState.selectedShape?.shape ?? null;
+    }
+    return null;
+  }
+
+  get selectedShapeJson(): string {
+    if (this.#toolState instanceof SelectToolState) {
+      const selected = this.#toolState.selectedShape;
+      if (selected && selected.shape) {
+        return JSON.stringify(
+          this.#shapeSerializer.serialized(selected.shape),
+          null,
+          2
+        );
+      }
+    }
+    return '';
+  }
+
   zoomInCenter(zoom: number) {
     if (zoom !== this.#scale) {
       this.applyZoom(
@@ -301,6 +443,11 @@ export class CanvasComponent implements AfterViewInit {
       this.scaleChanged.emit(this.scale);
       this.renderCanvas(true, true);
     }
+  }
+
+  resetOrigin() {
+    this.#origin = [window.innerWidth / 2, window.innerHeight / 2];
+    this.renderCanvas(true, true);
   }
 
   addShapes(shapes: Shape[]) {
@@ -527,7 +674,7 @@ export class CanvasComponent implements AfterViewInit {
       this.#toolState.currentTextBox
     ) {
       const textBox = this.#toolState.currentTextBox;
-      this.#toolState = new SelectToolState(this);
+      this.#toolState = new SelectToolState(this, this.#canvasConnection);
       if (this.#toolState instanceof SelectToolState) {
         this.#toolState.selectSingleShape(textBox);
       }
@@ -543,7 +690,7 @@ export class CanvasComponent implements AfterViewInit {
         this.#toolState = new HandToolState(this);
         break;
       case Mode.Select:
-        this.#toolState = new SelectToolState(this);
+        this.#toolState = new SelectToolState(this, this.#canvasConnection);
         break;
       case Mode.Pen:
         this.#toolState = new PenToolState(this);
@@ -645,6 +792,8 @@ export class CanvasComponent implements AfterViewInit {
       return;
     }
 
+    this.#canvasConnection.trackedClientId.set(null);
+
     const scaleRatio = clampedScale / this.#scale;
 
     this.#origin[0] = focusX - (focusX - this.#origin[0]) * scaleRatio;
@@ -659,6 +808,8 @@ export class CanvasComponent implements AfterViewInit {
     if (deltaX === 0 && deltaY === 0) {
       return;
     }
+
+    this.#canvasConnection.trackedClientId.set(null);
 
     this.#origin[0] -= deltaX;
     this.#origin[1] -= deltaY;
@@ -736,8 +887,63 @@ export class CanvasComponent implements AfterViewInit {
       }
       this.#toolState.renderTmp();
 
+      // Render remote cursors
+      for (const cursor of this.#remoteCursors.values()) {
+        renderRemoteCursor(this.#tmpCtx, cursor, this.#scale);
+      }
+
+      this.renderRemoteSelections();
+
+      this.#tmpCtx.restore();
+
+      // Render off-screen indicators (in screen space)
+      const { width, height } = this.#tmpCtx.canvas;
+      for (const cursor of this.#remoteCursors.values()) {
+        renderOffScreenIndicator(
+          this.#tmpCtx,
+          cursor,
+          this.#origin,
+          this.#scale,
+          width,
+          height
+        );
+      }
+    }
+  }
+
+  private renderRemoteSelections() {
+    for (const [clientId, shapeIds] of this.#remoteSelections.entries()) {
+      if (clientId === this.#canvasConnection.clientId()) continue;
+
+      const color = getColorFromClientId(clientId);
+      this.#tmpCtx.save();
+      this.#tmpCtx.strokeStyle = color;
+      this.#tmpCtx.lineWidth = 2 / this.#scale;
+      this.#tmpCtx.setLineDash([5 / this.#scale, 5 / this.#scale]);
+
+      for (const shapeId of shapeIds) {
+        const shape = this.#shapes.find(s => s.properties[ShapePropertyName.id] === shapeId);
+        if (shape) {
+          const rect = shape.trueRect();
+          this.#tmpCtx.strokeRect(rect[0], rect[1], rect[2] - rect[0], rect[3] - rect[1]);
+          
+          // Draw user label tag
+          this.#tmpCtx.fillStyle = color;
+          this.#tmpCtx.font = `600 ${10 / this.#scale}px "Inter"`;
+          this.#tmpCtx.fillText(getClientLabel(clientId), rect[0], rect[1] - 5 / this.#scale);
+        }
+      }
       this.#tmpCtx.restore();
     }
+  }
+
+  isShapeLocked(shapeId: string): boolean {
+    for (const [clientId, shapeIds] of this.#remoteSelections.entries()) {
+      if (clientId !== this.#canvasConnection.clientId() && shapeIds.includes(shapeId)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private zoomWithWheel(event: WheelEvent) {
@@ -993,6 +1199,9 @@ export class CanvasComponent implements AfterViewInit {
     if (this.pressedMouseMoved) {
       return;
     }
+    
+    this.#canvasConnection.trackedClientId.set(null);
+    
     event.preventDefault();
     this.focusCanvas();
     this.#leftMouseDown = event.button == 0;
@@ -1007,6 +1216,9 @@ export class CanvasComponent implements AfterViewInit {
     this.#startCursor[0] = this.#cursor[0];
     this.#startCursor[1] = this.#cursor[1];
     this.#firstMove = true;
+
+    // Send cursor position on mouse down
+    this.#sendCursorPosition({ x: this.#cursor[0], y: this.#cursor[1] });
 
     if (this.#leftMouseDown && event.ctrlKey) {
       this.#isPanning = true;
@@ -1056,6 +1268,10 @@ export class CanvasComponent implements AfterViewInit {
     this.#toolState.onMouseUp(event);
     this.#firstMove = false;
     this.#pressedMouseMoved = false;
+    
+    // Send cursor position on mouse up to update remote cursors
+    this.#sendCursorPosition({ x: this.#cursor[0], y: this.#cursor[1] });
+    
     this.changeToHover();
   };
 
@@ -1069,6 +1285,9 @@ export class CanvasComponent implements AfterViewInit {
     this.#prevCursor[1] = this.#cursor[1];
     this.#cursor[0] = (screenX - this.#origin[0]) / this.#scale;
     this.#cursor[1] = (screenY - this.#origin[1]) / this.#scale;
+    
+    // Send cursor position to other clients
+    this.#sendCursorPosition({ x: this.#cursor[0], y: this.#cursor[1] });
   }
 
   shapeInside(shape: Shape) {
@@ -1084,11 +1303,12 @@ export class CanvasComponent implements AfterViewInit {
   async loadCanvasData(
     shapes: SerializedShape[] = [],
     drawings: SerializedDrawing[] = [],
-    origin: Point = [0, 0],
+    origin: Point = [window.innerWidth / 2, window.innerHeight / 2],
     scale = 1
   ): Promise<void> {
     this.#origin = origin;
     this.#scale = scale;
+    this.scaleChanged.emit(this.#scale);
 
     this.#shapes = shapes.map(s =>
       this.#shapeSerializer.deserialized(s, this.mainCtx)
@@ -1099,6 +1319,19 @@ export class CanvasComponent implements AfterViewInit {
     this.renderCanvas(true, true);
   }
 
+  /**
+   * Apply a remote action received from another client
+   * Used to synchronize canvas state in real-time
+   */
+  applyRemoteAction(action: CanvasAction) {
+    this.#actionHandler.executeAction(action);
+    this.renderCanvas(true, true);
+  }
+
+  async emitAction(action: CanvasAction) {
+    this.actionReceived.emit(action);
+  }
+
   getCanvasData(): NoteContent {
     return new NoteContent({
       shapes: this.#shapes.map(shape =>
@@ -1107,8 +1340,63 @@ export class CanvasComponent implements AfterViewInit {
       drawings: this.#drawings.map(drawing =>
         this.#drawingSerializer.serialized(drawing)
       ),
-      origin: this.#origin,
-      scale: this.#scale,
+    });
+  }
+
+    #watchCursorUpdates() {
+    effect(() => {
+      const update = this.#canvasConnection.cursorUpdate();
+      if (
+        update && 
+        update.noteId === this.#currentNoteId && 
+        update.clientId !== this.#canvasConnection.clientId()
+      ) {
+        this.#handleCursorUpdate(update);
+      }
+    });
+  }
+
+  #watchInitialCursors() {
+    effect(() => {
+      const cursors = this.#canvasConnection.initialCursors();
+      if (cursors) {
+        cursors.forEach(cursor => this.#handleCursorUpdate(cursor));
+      }
+    });
+  }
+
+  #watchClientLeft() {
+    effect(() => {
+      const clientLeft = this.#canvasConnection.clientLeft();
+      if (clientLeft) {
+        this.#remoteCursors.delete(clientLeft.clientId);
+        this.renderCanvas(false, true);
+      }
+    });
+  }
+
+  #watchCursorRemoved() {
+    effect(() => {
+      const removedClientId = this.#canvasConnection.cursorRemoved();
+      if (removedClientId) {
+        this.#remoteCursors.delete(removedClientId);
+        this.#remoteSelections.delete(removedClientId);
+        this.renderCanvas(false, true);
+      }
+    });
+  }
+
+  #watchSelectionUpdates() {
+    effect(() => {
+      const update = this.#canvasConnection.selectionUpdate();
+      if (update) {
+        if (update.shapeIdList.length === 0) {
+          this.#remoteSelections.delete(update.clientId);
+        } else {
+          this.#remoteSelections.set(update.clientId, update.shapeIdList);
+        }
+        this.renderCanvas(false, true);
+      }
     });
   }
 }

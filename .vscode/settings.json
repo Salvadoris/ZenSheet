@@ -11,6 +11,9 @@
     "css": "css"
   },
   "editor.quickSuggestions": {
-    "strings": true
+    "strings": "on"
+  },
+  "files.associations": {
+    "*.css": "tailwindcss"
   }
 }

@@ -10,7 +10,6 @@ export interface HeaderButton {
   action?: () => void;
   menuItems?: DropdownMenuItem[];
   title: string;
-  variant?: 'primary' | 'default';
 }
 
 @Component({
@@ -19,14 +18,14 @@ export interface HeaderButton {
   template: `
     <div class="flex justify-between items-center">
       @if (showBackButton()) {
-        <button class="btn btn-square" (click)="onBackClick()">
+        <button class="btn btn-square shadow-sm" (click)="onBackClick()">
           <i class="fa fa-arrow-left"></i>
         </button>
       }
 
       @if (titleWithColor()) {
         <div
-          class="rounded-sm h-10 p-1 mx-2 w-full text-center"
+          class="rounded-sm h-10 p-1 mx-2 w-full flex items-center justify-center"
           [style.backgroundColor]="titleColor()"
           [style.color]="getContrastingTextColor(titleColor())">
           <h2 class="text-xl select-none">{{ title() }}</h2>
@@ -42,11 +41,7 @@ export interface HeaderButton {
               <div
                 tabindex="0"
                 role="button"
-                [class]="
-                  'btn ' +
-                  (button.variant === 'primary' ? 'btn-primary' : '') +
-                  ' btn-square'
-                "
+                class="btn btn-primary btn-square shadow-sm"
                 [title]="button.title">
                 <i class="fa {{ button.icon }}"></i>
               </div>
@@ -66,11 +61,7 @@ export interface HeaderButton {
             </div>
           } @else {
             <button
-              [class]="
-                'btn ' +
-                (button.variant === 'primary' ? 'btn-primary' : '') +
-                ' btn-square'
-              "
+              class="btn btn-primary btn-square shadow-sm"
               (click)="button.action ? button.action() : null"
               [title]="button.title">
               <i class="fa {{ button.icon }}"></i>

@@ -1,0 +1,89 @@
+<div
+  class="flex items-start transition-transform duration-300 ease-in-out rounded-l-lg w-fit pointer-events-auto"
+  [ngClass]="{
+    'translate-x-[calc(100%-2.5rem)]': isHidden(),
+    'translate-x-0': !isHidden(),
+  }">
+
+  <!-- Side Toggle Button -->
+  <div>
+    <button
+      class="cursor-pointer w-10 h-10 bg-white/80 backdrop-blur-md border border-slate-200/80 border-r rounded-l-lg text-slate-400 hover:text-blue-500 transition-all hover:w-12 z-20 -mr-px"
+      (click)="toggleVisibility()"
+      [title]="isHidden() ? 'Show JSON Viewer' : 'Hide JSON Viewer'">
+      <i
+        class="fa-solid"
+        [ngClass]="{
+          'fa-code': isHidden(),
+          'fa-chevron-right': !isHidden(),
+        }"></i>
+    </button>
+  </div>
+
+  <!-- Main Container -->
+  <div
+    class="flex flex-col relative w-[400px] bg-white/80 backdrop-blur-md border border-l-0 border-slate-200/80 rounded-lg rounded-tl-none overflow-hidden mr-5"
+    [ngClass]="{
+      'translate-x-[calc(100%-1rem)]': isHidden(),
+      'translate-x-0': !isHidden(),
+    }"
+    [style.height.px]="height() || 400">
+    
+    <div
+      class="absolute top-0 left-0 right-0 h-1.5 cursor-ns-resize z-1 bg-transparent hover:bg-blue-500/20 transition-colors"
+      (mousedown)="onResizeStart($event)"></div>
+
+    <div
+      class="px-4 py-2 flex items-center justify-between border-b border-slate-100/50 select-none"
+      (click)="toggleVisibility()"
+      tabindex="0"
+      (keydown.enter)="toggleVisibility()"
+      (keydown.space)="toggleVisibility()">
+      <div class="flex items-center gap-2 flex-1 cursor-pointer py-1">
+        <i class="fa-solid fa-code text-blue-500"></i>
+        <span class="text-xs font-bold uppercase tracking-widest text-slate-600"
+          >JSON Viewer</span
+        >
+      </div>
+
+      <div class="flex items-center gap-1">
+        <button
+          class="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 transition-all cursor-pointer border-none bg-transparent hover:bg-slate-100/50 hover:text-slate-600"
+          [title]="isCopying() ? 'Copied!' : 'Copy JSON'"
+          (click)="$event.stopPropagation(); copyToClipboard()">
+          <i
+            class="fa-solid text-[14px]"
+            [ngClass]="{
+              'fa-check': isCopying(),
+              'fa-copy': !isCopying(),
+              'text-green-500': isCopying(),
+            }"></i>
+        </button>
+      </div>
+    </div>
+
+    <div
+      class="flex-1 overflow-y-auto p-3 font-mono text-[11px] custom-scrollbar">
+      @if (lines().length > 0) {
+        <div
+          class="m-0 bg-slate-300/20 p-3 rounded-xl border border-slate-200/20 min-h-full whitespace-pre font-mono text-slate-700 text-[12px] leading-snug overflow-x-hidden">
+          @for (line of lines(); track $index) {
+            <div 
+              class="flex items-start transition-all duration-700 ease-out rounded px-1 -mx-1 break-all whitespace-pre-wrap"
+              [class.bg-blue-400/30]="line.isHighlighted"
+              [class.text-blue-700]="line.isHighlighted"
+              [style.padding-left.px]="line.indent * 12">
+              {{line.text}}
+            </div>
+          }
+        </div>
+      } @else {
+        <div
+          class="select-none flex flex-col items-center justify-center h-full text-slate-400 gap-2">
+          <i class="fa-solid fa-mouse-pointer text-2xl opacity-20"></i>
+          <span class="text-xs">Select a shape</span>
+        </div>
+      }
+    </div>
+  </div>
+</div>

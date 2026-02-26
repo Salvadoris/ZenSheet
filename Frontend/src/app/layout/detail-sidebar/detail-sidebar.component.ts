@@ -5,6 +5,7 @@ import {
   Component,
   inject,
   output,
+  signal,
 } from '@angular/core';
 
 import { LineAlignment } from '../canvas/ShapeStyles/LineAlignment';
@@ -49,15 +50,21 @@ export class DetailSidebar {
   stylePropertyChange = output<ShapeStyleProperty>();
 
   visible = false;
+  isHidden = signal<boolean>(false);
 
   setStyle(style: NullableShapeStyle | null) {
     if (style) {
       this.style = style;
       this.visible = true;
+      this.isHidden.set(false);
     } else {
       this.visible = false;
     }
     this.#cdr.markForCheck();
+  }
+
+  toggle() {
+    this.isHidden.update((v: boolean) => !v);
   }
 
   changeStyle(styleProperty: ShapeStyleProperty) {

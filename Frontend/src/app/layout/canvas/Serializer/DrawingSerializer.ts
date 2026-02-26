@@ -123,7 +123,7 @@ export class DrawingSerializer {
           ),
         } as RectangleDrawingProperties);
       case DrawingType.Ellipse:
-        return new RectangleDrawing({
+        return new EllipseDrawing({
           ...serializedDrawing.properties,
           [DrawingPropertyName.style]: new EllipseStyle(
             serializedDrawing.properties[

@@ -1,0 +1,76 @@
+@if (!isOfflineMode()) {
+  <div class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+    <!-- Active Users List -->
+    <div class="flex flex-row-reverse -space-x-2 space-x-reverse">
+      @for (user of presenceList(); track user.clientId) {
+        <div 
+          class="relative group cursor-pointer transition-transform hover:-translate-y-1 active:scale-95"
+          tabindex="0"
+          role="button"
+          [attr.aria-label]="'Teleport to ' + getLabel(user)"
+          (click)="onUserClick(user)"
+          (mousedown)="onUserMouseDown(user)"
+          (mouseup)="onUserMouseUp()"
+          (mouseleave)="onUserMouseLeave()"
+          (keydown.enter)="onUserClick(user)"
+          (keydown.space)="onUserClick(user)">
+           
+          <!-- Tracking indicator ring -->
+          @if (trackedClientId() === user.clientId) {
+            <div class="absolute inset-0 -m-1 rounded-full border-2 border-emerald-400 animate-ping opacity-75 z-0"></div>
+            <div class="absolute inset-0 -m-1 rounded-full border-2 border-emerald-500 z-0"></div>
+          }
+          
+          <!-- User Avatar -->
+          <div 
+            class="w-10 h-10 rounded-full border-2 shadow-lg flex items-center justify-center text-white font-bold text-sm relative z-10"
+            [ngClass]="{
+              'border-primary border-4': user.clientId === myClientId(),
+              'border-white': user.clientId !== myClientId()
+            }"
+            [style.backgroundColor]="getColor(user.clientId)">
+            <span class="select-none">{{ getInitial(user) }}</span>
+            
+            <!-- Indicator if in different note -->
+            @if (user.noteId !== currentNoteId()) {
+              <div class="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border border-white z-20"></div>
+            } @else {
+              <div class="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border border-white z-20"></div>
+            }
+          </div>
+
+          <!-- Tooltip -->
+          <div class="absolute bottom-full right-0 mb-3 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 min-w-[120px]">
+            <div class="bg-slate-900/90 backdrop-blur-md text-white px-3 py-2 rounded-xl border border-white/10 shadow-2xl flex flex-col">
+              <span class="text-xs font-bold">{{ getLabel(user) }} {{ user.clientId === myClientId() ? '(You)' : '' }}</span>
+              <span class="text-[10px] text-white/70">{{ getStatusText(user.noteId) }}</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+    
+    <!-- Session Stats Overlay -->
+    <div class="flex flex-col items-end gap-2">
+      <!-- @if (trackedClientId()) {
+        <div class="bg-emerald-500/20 backdrop-blur-md px-3 py-1 rounded-full border border-emerald-500/30 shadow-lg animate-pulse flex items-center gap-2">
+          <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
+          <span class="text-emerald-400 text-[10px] font-bold tracking-tight select-none">
+            Now spectating {{ getLabel(trackedClientId()!) }}
+          </span>
+          <button (click)="$event.stopPropagation(); trackedClientId.set(null)" class="text-emerald-400 hover:text-emerald-200 transition-colors ml-1">
+            <i class="fa-solid fa-xmark text-[10px]"></i>
+          </button>
+        </div>
+      } -->
+
+      @if (presenceList().length > 0) {
+        <div class="bg-black/50 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 shadow-lg animate-in fade-in slide-in-from-right-4 duration-500">
+           <span class="text-white/80 text-[10px] font-medium tracking-widest uppercase select-none">
+            {{ presenceList().length }} {{ presenceList().length === 1 ? 'Collaborator' : 'Collaborators' }} Live
+           </span>
+        </div>
+      }
+    </div>
+  </div>
+}

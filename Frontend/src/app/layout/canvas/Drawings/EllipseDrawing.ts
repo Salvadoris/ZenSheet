@@ -1,3 +1,4 @@
+import { generateUuid } from '../../../utils/uuid';
 import { ChangableDrawingProperties } from '../DrawingProperties/DrawingProperties';
 import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { EllipseDrawingProperties } from '../DrawingProperties/EllipseDrawingProperties';
@@ -28,7 +29,7 @@ export class EllipseDrawing implements Drawing {
   toShape(ctx: CanvasRenderingContext2D): Shape {
     return new EllipseShape(
       {
-        [ShapePropertyName.id]: crypto.randomUUID(),
+        [ShapePropertyName.id]: generateUuid(),
         [ShapePropertyName.style]: this.style,
         [ShapePropertyName.originX]: Math.min(this.p0[0], this.p1[0]),
         [ShapePropertyName.originY]: Math.min(this.p0[1], this.p1[1]),

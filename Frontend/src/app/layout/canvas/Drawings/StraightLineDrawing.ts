@@ -1,3 +1,4 @@
+import { generateUuid } from '../../../utils/uuid';
 import { ChangableDrawingProperties } from '../DrawingProperties/DrawingProperties';
 import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { StraightLineDrawingProperties } from '../DrawingProperties/StraightLineDrawingProperties';
@@ -37,7 +38,7 @@ export class StraightLineDrawing implements Drawing {
     const verticallyInverted = this.p1[1] < this.p0[1];
     return new StraightLineShape(
       {
-        [ShapePropertyName.id]: crypto.randomUUID(),
+        [ShapePropertyName.id]: generateUuid(),
         [ShapePropertyName.style]: this.style,
         [ShapePropertyName.originX]: horizontalInverted
           ? this.p0[0] + this.style[StyleName.LineWidth] / 2

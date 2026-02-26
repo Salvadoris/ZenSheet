@@ -1,3 +1,4 @@
+import { generateUuid } from '../../../utils/uuid';
 import {
   EllipseShapeProperties,
   SerializedEllipseShapeProperties,
@@ -147,7 +148,7 @@ export class ShapePropertiesSerializer {
             serializedProperties[ShapePropertyName.style] as LineStyleType
           ),
           [ShapePropertyName.id]: copy
-            ? crypto.randomUUID()
+            ? generateUuid()
             : serializedProperties[ShapePropertyName.id],
         } as Required<LineShapeProperties>;
       case ShapeType.StraightLine:
@@ -160,7 +161,7 @@ export class ShapePropertiesSerializer {
             ] as StraightLineStyleType
           ),
           [ShapePropertyName.id]: copy
-            ? crypto.randomUUID()
+            ? generateUuid()
             : serializedProperties[ShapePropertyName.id],
         } as Required<StraightLineShapeProperties>;
       case ShapeType.Rectangle:
@@ -171,7 +172,7 @@ export class ShapePropertiesSerializer {
             serializedProperties[ShapePropertyName.style] as RectangleStyleType
           ),
           [ShapePropertyName.id]: copy
-            ? crypto.randomUUID()
+            ? generateUuid()
             : serializedProperties[ShapePropertyName.id],
         } as Required<RectangleShapeProperties>;
       case ShapeType.Ellipse:
@@ -182,7 +183,7 @@ export class ShapePropertiesSerializer {
             serializedProperties[ShapePropertyName.style] as EllipseStyleType
           ),
           [ShapePropertyName.id]: copy
-            ? crypto.randomUUID()
+            ? generateUuid()
             : serializedProperties[ShapePropertyName.id],
         } as Required<EllipseShapeProperties>;
       case ShapeType.Image:
@@ -193,7 +194,7 @@ export class ShapePropertiesSerializer {
             serializedProperties[ShapePropertyName.style] as ImageStyleType
           ),
           [ShapePropertyName.id]: copy
-            ? crypto.randomUUID()
+            ? generateUuid()
             : serializedProperties[ShapePropertyName.id],
         } as Required<ImageShapeProperties>;
       case ShapeType.Text:
@@ -204,7 +205,7 @@ export class ShapePropertiesSerializer {
             serializedProperties[ShapePropertyName.style] as TextBoxStyleType
           ),
           [ShapePropertyName.id]: copy
-            ? crypto.randomUUID()
+            ? generateUuid()
             : serializedProperties[ShapePropertyName.id],
         } as Required<TextBoxShapeProperties>;
       case ShapeType.Group: {
@@ -237,7 +238,7 @@ export class ShapePropertiesSerializer {
           ...properties,
           [ShapePropertyName.style]: style,
           [ShapePropertyName.id]: copy
-            ? crypto.randomUUID()
+            ? generateUuid()
             : serializedProperties[ShapePropertyName.id],
           [ShapePropertyName.shapes]: shapes,
         } as Required<GroupShapeProperties>;

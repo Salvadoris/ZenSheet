@@ -1,322 +1,349 @@
 <div
-  #detailsidebar
-  class="bg-gray-100 p-4 flex flex-col rounded-lg gap-4 shadow-md"
-  [hidden]="!visible">
-  @if (style[StyleName.Color] !== undefined) {
-    <div>
-      <div class="text-md pb-0.5">Color</div>
-      <div class="flex flex-row gap-3">
-        @if (isColorTransparent(style[StyleName.Color])) {
-          <div tabindex="0" class="tile m-px relative">
-            <svg class="tile-content absolute top-0 left-0" viewBox="0 0 3 3">
-              <rect x="0" y="0" width="3" height="3" fill="#e0e0e0" />
-              <rect x="1" y="0" width="1" height="1" fill="#bdbdbd" />
-              <rect x="0" y="1" width="1" height="1" fill="#bdbdbd" />
-              <rect x="2" y="1" width="1" height="1" fill="#bdbdbd" />
-              <rect x="1" y="2" width="1" height="1" fill="#bdbdbd" />
-            </svg>
-            <input
-              #colorpicker
-              type="color"
-              class="opacity-0 absolute top-0 left-0"
-              [value]="style[StyleName.Color]"
-              (change)="
-                changeStyle({ name: StyleName.Color, value: colorpicker.value })
-              " />
-          </div>
-        } @else {
-          <div
-            tabindex="0"
-            class="tile m-px"
-            [style.background-color]="style[StyleName.Color]">
-            <input
-              #colorpicker
-              type="color"
-              class="opacity-0"
-              [value]="style[StyleName.Color]"
-              (change)="
-                changeStyle({ name: StyleName.Color, value: colorpicker.value })
-              " />
-          </div>
-        }
-        <hr class="m-0.5 h-8 w-0.5 bg-gray-400 border-none" />
-        <div class="flex flex-row gap-2">
-          @for (color of colors; track $index) {
-            <div
-              (click)="changeStyle({ name: StyleName.Color, value: color })"
-              tabindex="0"
-              [ngClass]="{
-                'tile-selected': color === style[StyleName.Color],
-              }"
-              class="tile">
-              @if (color.length === 9 && color[7] === '0' && color[8] === '0') {
-                <svg class="tile-content" viewBox="0 0 3 3">
-                  <rect x="0" y="0" width="3" height="3" fill="#e0e0e0" />
-                  <rect x="1" y="0" width="1" height="1" fill="#bdbdbd" />
-                  <rect x="0" y="1" width="1" height="1" fill="#bdbdbd" />
-                  <rect x="2" y="1" width="1" height="1" fill="#bdbdbd" />
-                  <rect x="1" y="2" width="1" height="1" fill="#bdbdbd" />
-                </svg>
-              } @else {
-                <div
-                  class="tile-content"
-                  [style.background-color]="color"></div>
-              }
-            </div>
-          }
-        </div>
-      </div>
-    </div>
-  }
-  @if (style[StyleName.BackgroundColor] !== undefined) {
-    <div>
-      <div class="text-md pb-0.5">Background Color</div>
-      <div class="flex flex-row gap-3">
-        @if (isColorTransparent(style[StyleName.BackgroundColor])) {
-          <div tabindex="0" class="tile m-px relative">
-            <svg class="tile-content absolute top-0 left-0" viewBox="0 0 3 3">
-              <rect x="0" y="0" width="3" height="3" fill="#e0e0e0" />
-              <rect x="1" y="0" width="1" height="1" fill="#bdbdbd" />
-              <rect x="0" y="1" width="1" height="1" fill="#bdbdbd" />
-              <rect x="2" y="1" width="1" height="1" fill="#bdbdbd" />
-              <rect x="1" y="2" width="1" height="1" fill="#bdbdbd" />
-            </svg>
-            <input
-              #colorpicker
-              type="color"
-              class="opacity-0 absolute top-0 left-0"
-              [value]="style[StyleName.BackgroundColor]"
-              (change)="
-                changeStyle({
-                  name: StyleName.BackgroundColor,
-                  value: colorpicker.value,
-                })
-              " />
-          </div>
-        } @else {
-          <div
-            tabindex="0"
-            class="tile m-px"
-            [style.background-color]="style[StyleName.BackgroundColor]">
-            <input
-              #colorpicker
-              type="color"
-              class="opacity-0"
-              [value]="style[StyleName.BackgroundColor]"
-              (change)="
-                changeStyle({
-                  name: StyleName.BackgroundColor,
-                  value: colorpicker.value,
-                })
-              " />
-          </div>
-        }
-        <hr class="m-0.5 h-8 w-0.5 bg-gray-400 border-none" />
-        <div class="flex flex-row gap-2">
-          @for (color of colors; track $index) {
-            <div
-              (click)="
-                changeStyle({ name: StyleName.BackgroundColor, value: color })
-              "
-              tabindex="0"
-              [ngClass]="{
-                'tile-selected': color === style[StyleName.BackgroundColor],
-              }"
-              class="tile">
-              @if (color.length === 9 && color[7] === '0' && color[8] === '0') {
-                <svg class="tile-content" viewBox="0 0 3 3">
-                  <rect x="0" y="0" width="3" height="3" fill="#e0e0e0" />
-                  <rect x="1" y="0" width="1" height="1" fill="#bdbdbd" />
-                  <rect x="0" y="1" width="1" height="1" fill="#bdbdbd" />
-                  <rect x="2" y="1" width="1" height="1" fill="#bdbdbd" />
-                  <rect x="1" y="2" width="1" height="1" fill="#bdbdbd" />
-                </svg>
-              } @else {
-                <div
-                  class="tile-content"
-                  [style.background-color]="color"></div>
-              }
-            </div>
-          }
-        </div>
-      </div>
-    </div>
-  }
-  @if (style[StyleName.LineWidth] !== undefined) {
-    <div>
-      <div class="text-md pb-0.5">Line Width</div>
-      <div class="flex flex-row gap-1">
-        @for (lineWidth of lineWidths; track $index) {
-          <div
-            (click)="
-              changeStyle({ name: StyleName.LineWidth, value: lineWidth })
-            "
-            tabindex="0"
-            [ngClass]="{
-              'tile-selected': lineWidth === style[StyleName.LineWidth],
-            }"
-            class="tile">
-            <div class="tile-content">
-              <svg height="100%" width="100%" viewBox="0 0 10 10">
-                <line
-                  x1="2"
-                  y1="5"
-                  x2="8"
-                  y2="5"
-                  stroke="black"
-                  [attr.stroke-width]="
-                    1 + $index * (3 / (lineWidths.length - 1))
-                  "
-                  stroke-linecap="round" />
-              </svg>
-            </div>
-          </div>
-        }
-      </div>
-    </div>
-  }
-  @if (style[StyleName.Opacity] !== undefined) {
-    <div>
-      <div class="text-md pb-0.5">Opacity</div>
-      <form class="flex flex-row gap-2">
-        <input
-          #opacityslider
-          type="range"
-          name="amountRange"
-          min="0"
-          max="255"
-          [value]="style[StyleName.Opacity]"
-          (input)="
-            changeStyle({
-              name: StyleName.Opacity,
-              value: +opacityslider.value,
-            });
-            opacityvalue.value = opacityslider.value
-          " />
-        <input
-          #opacityvalue
-          type="number"
-          name="amountInput"
-          min="0"
-          max="255"
-          [value]="style[StyleName.Opacity]"
-          (input)="
-            changeStyle({
-              name: StyleName.Opacity,
-              value: +opacityvalue.value,
-            });
-            opacityslider.value = opacityvalue.value
-          " />
-      </form>
-    </div>
-  }
-  @if (
-    style[StyleName.FontName] !== undefined &&
-    style[StyleName.FontSize] !== undefined &&
-    style[StyleName.FontBold] !== undefined &&
-    style[StyleName.FontItalic] !== undefined &&
-    style[StyleName.FontAlignment] !== undefined
-  ) {
-    <div>
-      <div class="text-md pb-0.5">Font</div>
-      <div class="flex flex-col gap-4">
+  class="flex items-start relative transition-transform duration-300 ease-in-out pointer-events-auto"
+  [hidden]="!visible"
+  [ngClass]="isHidden() ? 'translate-x-[calc(100%-1rem)]' : 'translate-x-0'">
+  <button
+    class="btn btn-ghost btn-square bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-l-lg rounded-r-none z-20 -mr-px hover:bg-gray-200 h-10 w-10 min-h-0"
+    (click)="toggle()"
+    [title]="isHidden() ? 'Show details' : 'Hide details'">
+    <i
+      class="fas fa-chevron-right transition-transform duration-300"
+      [ngClass]="isHidden() ? 'rotate-180' : 'rotate-0'">
+    </i>
+  </button>
+
+  <div
+    #detailsidebar
+    class="bg-white/80 backdrop-blur-md border border-slate-200/80 p-4 flex flex-col rounded-b-lg rounded-tr-none rounded-tl-none gap-4 z-10">
+    @if (style[StyleName.Color] !== undefined) {
+      <div>
+        <div class="text-md pb-0.5 select-none">Color</div>
         <div class="flex flex-row gap-3">
-          <form>
-            <select class="w-full p-2 bg-white shadow-xs placeholder:text-body">
-              @for (name of fontNames; track $index) {
-                <option
-                  [selected]="name === style[StyleName.FontName]"
-                  (click)="
-                    changeStyle({ name: StyleName.FontName, value: name })
-                  ">
-                  {{ name }}
-                </option>
-              }
-            </select>
-          </form>
-          <form>
-            <select class="w-full p-2 bg-white shadow-xs placeholder:text-body">
-              @for (size of fontSizes; track $index) {
-                <option
-                  [selected]="size === style[StyleName.FontSize]"
-                  (click)="
-                    changeStyle({ name: StyleName.FontSize, value: size })
-                  ">
-                  {{ size }}
-                </option>
-              }
-            </select>
-          </form>
-        </div>
-        <div class="flex flex-row gap-8">
-          <div class="flex flex-row gap-1.5">
-            <div
-              class="tile"
-              (click)="
-                changeStyle({
-                  name: StyleName.FontBold,
-                  value:
-                    style[StyleName.FontBold] === null
-                      ? true
-                      : !style[StyleName.FontBold],
-                })
-              "
-              tabindex="0"
-              [ngClass]="{
-                'tile-selected': style[StyleName.FontBold] === true,
-              }">
-              <div class="tile-content">
-                <i class="fa-solid fa-bold"></i>
-              </div>
-            </div>
-            <div
-              tabindex="0"
-              class="tile"
-              (click)="
-                changeStyle({
-                  name: StyleName.FontItalic,
-                  value:
-                    style[StyleName.FontItalic] === null
-                      ? true
-                      : !style[StyleName.FontItalic],
-                })
-              "
-              [ngClass]="{
-                'tile-selected': style[StyleName.FontItalic] === true,
-              }">
-              <div class="tile-content">
-                <i class="fa-solid fa-italic"></i>
-              </div>
-            </div>
-          </div>
-          <div class="flex flex-row gap-1.5">
-            @for (alignment of lineAlignments; track $index) {
-              <div
-                tabindex="0"
-                class="tile"
-                (click)="
+          @if (isColorTransparent(style[StyleName.Color])) {
+            <div tabindex="0" class="tile m-px relative">
+              <svg class="tile-content absolute top-0 left-0" viewBox="0 0 3 3">
+                <rect x="0" y="0" width="3" height="3" fill="#e0e0e0" />
+                <rect x="1" y="0" width="1" height="1" fill="#bdbdbd" />
+                <rect x="0" y="1" width="1" height="1" fill="#bdbdbd" />
+                <rect x="2" y="1" width="1" height="1" fill="#bdbdbd" />
+                <rect x="1" y="2" width="1" height="1" fill="#bdbdbd" />
+              </svg>
+              <input
+                #colorpicker
+                type="color"
+                class="opacity-0 absolute top-0 left-0"
+                [value]="style[StyleName.Color]"
+                (change)="
                   changeStyle({
-                    name: StyleName.FontAlignment,
-                    value: alignment,
+                    name: StyleName.Color,
+                    value: colorpicker.value,
                   })
-                "
+                " />
+            </div>
+          } @else {
+            <div
+              tabindex="0"
+              class="tile m-px"
+              [style.background-color]="style[StyleName.Color]">
+              <input
+                #colorpicker
+                type="color"
+                class="opacity-0"
+                [value]="style[StyleName.Color]"
+                (change)="
+                  changeStyle({
+                    name: StyleName.Color,
+                    value: colorpicker.value,
+                  })
+                " />
+            </div>
+          }
+          <hr class="m-0.5 h-8 w-0.5 bg-gray-400 border-none" />
+          <div class="flex flex-row gap-2">
+            @for (color of colors; track $index) {
+              <div
+                (click)="changeStyle({ name: StyleName.Color, value: color })"
+                tabindex="0"
                 [ngClass]="{
-                  'tile-selected': alignment === style[StyleName.FontAlignment],
-                }">
-                <div class="tile-content">
-                  @if (alignment === LineAlignment.Left) {
-                    <i class="fa-solid fa-align-left"></i>
-                  } @else if (alignment === LineAlignment.Center) {
-                    <i class="fa-solid fa-align-center"></i>
-                  } @else if (alignment === LineAlignment.Right) {
-                    <i class="fa-solid fa-align-right"></i>
-                  }
-                </div>
+                  'tile-selected': color === style[StyleName.Color],
+                }"
+                class="tile">
+                @if (
+                  color.length === 9 && color[7] === '0' && color[8] === '0'
+                ) {
+                  <svg class="tile-content" viewBox="0 0 3 3">
+                    <rect x="0" y="0" width="3" height="3" fill="#e0e0e0" />
+                    <rect x="1" y="0" width="1" height="1" fill="#bdbdbd" />
+                    <rect x="0" y="1" width="1" height="1" fill="#bdbdbd" />
+                    <rect x="2" y="1" width="1" height="1" fill="#bdbdbd" />
+                    <rect x="1" y="2" width="1" height="1" fill="#bdbdbd" />
+                  </svg>
+                } @else {
+                  <div
+                    class="tile-content"
+                    [style.background-color]="color"></div>
+                }
               </div>
             }
           </div>
         </div>
       </div>
-    </div>
-  }
+    }
+    @if (style[StyleName.BackgroundColor] !== undefined) {
+      <div>
+        <div class="text-md pb-0.5">Background Color</div>
+        <div class="flex flex-row gap-3">
+          @if (isColorTransparent(style[StyleName.BackgroundColor])) {
+            <div tabindex="0" class="tile m-px relative">
+              <svg class="tile-content absolute top-0 left-0" viewBox="0 0 3 3">
+                <rect x="0" y="0" width="3" height="3" fill="#e0e0e0" />
+                <rect x="1" y="0" width="1" height="1" fill="#bdbdbd" />
+                <rect x="0" y="1" width="1" height="1" fill="#bdbdbd" />
+                <rect x="2" y="1" width="1" height="1" fill="#bdbdbd" />
+                <rect x="1" y="2" width="1" height="1" fill="#bdbdbd" />
+              </svg>
+              <input
+                #colorpicker
+                type="color"
+                class="opacity-0 absolute top-0 left-0"
+                [value]="style[StyleName.BackgroundColor]"
+                (change)="
+                  changeStyle({
+                    name: StyleName.BackgroundColor,
+                    value: colorpicker.value,
+                  })
+                " />
+            </div>
+          } @else {
+            <div
+              tabindex="0"
+              class="tile m-px"
+              [style.background-color]="style[StyleName.BackgroundColor]">
+              <input
+                #colorpicker
+                type="color"
+                class="opacity-0"
+                [value]="style[StyleName.BackgroundColor]"
+                (change)="
+                  changeStyle({
+                    name: StyleName.BackgroundColor,
+                    value: colorpicker.value,
+                  })
+                " />
+            </div>
+          }
+          <hr class="m-0.5 h-8 w-0.5 bg-gray-400 border-none" />
+          <div class="flex flex-row gap-2">
+            @for (color of colors; track $index) {
+              <div
+                (click)="
+                  changeStyle({ name: StyleName.BackgroundColor, value: color })
+                "
+                tabindex="0"
+                [ngClass]="{
+                  'tile-selected': color === style[StyleName.BackgroundColor],
+                }"
+                class="tile">
+                @if (
+                  color.length === 9 && color[7] === '0' && color[8] === '0'
+                ) {
+                  <svg class="tile-content" viewBox="0 0 3 3">
+                    <rect x="0" y="0" width="3" height="3" fill="#e0e0e0" />
+                    <rect x="1" y="0" width="1" height="1" fill="#bdbdbd" />
+                    <rect x="0" y="1" width="1" height="1" fill="#bdbdbd" />
+                    <rect x="2" y="1" width="1" height="1" fill="#bdbdbd" />
+                    <rect x="1" y="2" width="1" height="1" fill="#bdbdbd" />
+                  </svg>
+                } @else {
+                  <div
+                    class="tile-content"
+                    [style.background-color]="color"></div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+    @if (style[StyleName.LineWidth] !== undefined) {
+      <div>
+        <div class="text-md pb-0.5 select-none">Line Width</div>
+        <div class="flex flex-row gap-1">
+          @for (lineWidth of lineWidths; track $index) {
+            <div
+              (click)="
+                changeStyle({ name: StyleName.LineWidth, value: lineWidth })
+              "
+              tabindex="0"
+              [ngClass]="{
+                'tile-selected': lineWidth === style[StyleName.LineWidth],
+              }"
+              class="tile">
+              <div class="tile-content cursor-pointer">
+                <svg height="100%" width="100%" viewBox="0 0 10 10">
+                  <line
+                    x1="2"
+                    y1="5"
+                    x2="8"
+                    y2="5"
+                    stroke="black"
+                    [attr.stroke-width]="
+                      1 + $index * (3 / (lineWidths.length - 1))
+                    "
+                    stroke-linecap="round" />
+                </svg>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+    @if (style[StyleName.Opacity] !== undefined) {
+      <div>
+        <div class="text-md pb-0.5 select-none">Opacity</div>
+        <form class="flex flex-row gap-2">
+          <input
+            #opacityslider
+            type="range"
+            name="amountRange"
+            min="0"
+            max="255"
+            [value]="style[StyleName.Opacity]"
+            (input)="
+              changeStyle({
+                name: StyleName.Opacity,
+                value: +opacityslider.value,
+              });
+              opacityvalue.value = opacityslider.value
+            " />
+          <input
+            #opacityvalue
+            type="number"
+            name="amountInput"
+            min="0"
+            max="255"
+            [value]="style[StyleName.Opacity]"
+            (input)="
+              changeStyle({
+                name: StyleName.Opacity,
+                value: +opacityvalue.value,
+              });
+              opacityslider.value = opacityvalue.value
+            " />
+        </form>
+      </div>
+    }
+    @if (
+      style[StyleName.FontName] !== undefined &&
+      style[StyleName.FontSize] !== undefined &&
+      style[StyleName.FontBold] !== undefined &&
+      style[StyleName.FontItalic] !== undefined &&
+      style[StyleName.FontAlignment] !== undefined
+    ) {
+      <div>
+        <div class="text-md pb-0.5">Font</div>
+        <div class="flex flex-col gap-4">
+          <div class="flex flex-row gap-3">
+            <form>
+              <select
+                class="w-full p-2 bg-white shadow-xs placeholder:text-body">
+                @for (name of fontNames; track $index) {
+                  <option
+                    [selected]="name === style[StyleName.FontName]"
+                    (click)="
+                      changeStyle({ name: StyleName.FontName, value: name })
+                    ">
+                    {{ name }}
+                  </option>
+                }
+              </select>
+            </form>
+            <form>
+              <select
+                class="w-full p-2 bg-white shadow-xs placeholder:text-body">
+                @for (size of fontSizes; track $index) {
+                  <option
+                    [selected]="size === style[StyleName.FontSize]"
+                    (click)="
+                      changeStyle({ name: StyleName.FontSize, value: size })
+                    ">
+                    {{ size }}
+                  </option>
+                }
+              </select>
+            </form>
+          </div>
+          <div class="flex flex-row gap-8">
+            <div class="flex flex-row gap-1.5">
+              <div
+                class="tile"
+                (click)="
+                  changeStyle({
+                    name: StyleName.FontBold,
+                    value:
+                      style[StyleName.FontBold] === null
+                        ? true
+                        : !style[StyleName.FontBold],
+                  })
+                "
+                tabindex="0"
+                [ngClass]="{
+                  'tile-selected': style[StyleName.FontBold] === true,
+                }">
+                <div class="tile-content">
+                  <i class="fa-solid fa-bold"></i>
+                </div>
+              </div>
+              <div
+                tabindex="0"
+                class="tile"
+                (click)="
+                  changeStyle({
+                    name: StyleName.FontItalic,
+                    value:
+                      style[StyleName.FontItalic] === null
+                        ? true
+                        : !style[StyleName.FontItalic],
+                  })
+                "
+                [ngClass]="{
+                  'tile-selected': style[StyleName.FontItalic] === true,
+                }">
+                <div class="tile-content">
+                  <i class="fa-solid fa-italic"></i>
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-row gap-1.5">
+              @for (alignment of lineAlignments; track $index) {
+                <div
+                  tabindex="0"
+                  class="tile"
+                  (click)="
+                    changeStyle({
+                      name: StyleName.FontAlignment,
+                      value: alignment,
+                    })
+                  "
+                  [ngClass]="{
+                    'tile-selected':
+                      alignment === style[StyleName.FontAlignment],
+                  }">
+                  <div class="tile-content">
+                    @if (alignment === LineAlignment.Left) {
+                      <i class="fa-solid fa-align-left"></i>
+                    } @else if (alignment === LineAlignment.Center) {
+                      <i class="fa-solid fa-align-center"></i>
+                    } @else if (alignment === LineAlignment.Right) {
+                      <i class="fa-solid fa-align-right"></i>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
 </div>

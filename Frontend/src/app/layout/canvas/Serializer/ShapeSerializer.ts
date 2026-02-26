@@ -109,6 +109,9 @@ export class ShapeSerializer {
     ctx: CanvasRenderingContext2D,
     copy = false
   ): Shape {
+    if (!serializedShape) {
+      throw new Error('Cannot deserialize empty shape');
+    }
     const properties = this.#propertiesSerializer.deserialized(
       serializedShape.type,
       serializedShape.properties,

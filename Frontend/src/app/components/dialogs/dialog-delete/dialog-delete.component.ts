@@ -6,9 +6,9 @@ import {
   output,
 } from '@angular/core';
 import {
+  MAT_DIALOG_DATA,
   MatDialogModule,
   MatDialogRef,
-  MAT_DIALOG_DATA,
 } from '@angular/material/dialog';
 
 export interface DeleteDialogData {
@@ -25,13 +25,13 @@ export interface DeleteDialogData {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DialogDeleteComponent {
-  // Data from dialog
+  #dialogRef = inject(MatDialogRef<DialogDeleteComponent>);
+  
   data: DeleteDialogData;
 
   confirmed = output<void>();
   cancelled = output<void>();
 
-  private dialogRef = inject(MatDialogRef<DialogDeleteComponent>);
 
   constructor() {
     this.data = inject(MAT_DIALOG_DATA);
@@ -39,12 +39,12 @@ export class DialogDeleteComponent {
 
   onConfirm(): void {
     this.confirmed.emit();
-    this.dialogRef.close(true);
+    this.#dialogRef.close(true);
   }
 
   onCancel(): void {
     this.cancelled.emit();
-    this.dialogRef.close(false);
+    this.#dialogRef.close(false);
   }
 
   get confirmButtonText(): string {

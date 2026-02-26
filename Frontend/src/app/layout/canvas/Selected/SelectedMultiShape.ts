@@ -1,3 +1,4 @@
+import { generateUuid } from '../../../utils/uuid';
 import { Rect } from '../Geometry';
 import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { GroupShape } from '../Shapes/GroupShape';
@@ -11,7 +12,7 @@ export class SelectedMultiShape extends SelectedShape {
   constructor(shapes: Shape[], ctx: CanvasRenderingContext2D) {
     const groupShape = new GroupShape(
       {
-        [ShapePropertyName.id]: crypto.randomUUID(),
+        [ShapePropertyName.id]: generateUuid(),
         [ShapePropertyName.shapes]: shapes,
         [ShapePropertyName.edited]: false,
         [ShapePropertyName.selected]: false,

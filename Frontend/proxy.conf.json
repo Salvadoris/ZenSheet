@@ -1,0 +1,13 @@
+{
+  "/api": {
+    "target": "https://localhost:7250",
+    "secure": false,
+    "logLevel": "debug"
+  },
+  "/hubs": {
+    "target": "https://localhost:7250",
+    "secure": false,
+    "ws": true,
+    "logLevel": "debug"
+  }
+}

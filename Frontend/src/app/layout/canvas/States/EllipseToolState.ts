@@ -1,3 +1,4 @@
+import { generateUuid } from '../../../utils/uuid';
 import { CanvasComponent } from '../canvas.component';
 import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { EllipseDrawing } from '../Drawings/EllipseDrawing';
@@ -36,7 +37,7 @@ export class EllipseToolState extends CanvasToolState {
   override onPressedMouseMove(_event: MouseEvent): void {
     if (this.canvas.firstMove) {
       this.#currentDrawing = new EllipseDrawing({
-        [DrawingPropertyName.id]: crypto.randomUUID(),
+        [DrawingPropertyName.id]: generateUuid(),
         [DrawingPropertyName.p0]: [
           this.canvas.startCursor[0],
           this.canvas.startCursor[1],

@@ -35,7 +35,7 @@ export class HandToolState extends CanvasToolState {
     if (this.canvas.leftmouseDown) {
       this.canvas.origin[0] = event.clientX - this.canvas.dragStart[0];
       this.canvas.origin[1] = event.clientY - this.canvas.dragStart[1];
-      this.canvas.renderCanvas(true, false);
+      this.canvas.renderCanvas(true, true);
     }
   }
 

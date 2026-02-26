@@ -5,10 +5,13 @@ import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { GroupShape } from '../Shapes/GroupShape';
 import { Shape } from '../Shapes/Shape';
 import { TextBoxShape } from '../Shapes/TextBoxShape';
+import { EllipseStyle } from '../ShapeStyles/EllipseStyle';
 import { GroupShapeStyle } from '../ShapeStyles/GroupShapeStyle';
 import { ImageStyle } from '../ShapeStyles/ImageStyle';
 import { LineStyle } from '../ShapeStyles/LineStyle';
+import { RectangleStyle } from '../ShapeStyles/RectangleStyle';
 import { NullableShapeStyle, ShapeStyle } from '../ShapeStyles/ShapeStyle';
+import { StraightLineStyle } from '../ShapeStyles/StraightLineStyle';
 import { TextBoxStyle } from '../ShapeStyles/TextBoxStyle';
 
 import { ActionType } from './ActionType';
@@ -75,7 +78,7 @@ export class CanvasActionHandler {
   }
 
   receiveAction(action: CanvasAction) {
-    //
+    this.canvas.actionReceived.emit(action);
   }
 
   private addShapes(action: AddShapesAction) {
@@ -199,6 +202,21 @@ export class CanvasActionHandler {
       return new GroupShapeStyle([{ ...originalStyle, ...newStyle }]);
     } else if (originalStyle instanceof TextBoxStyle) {
       return new TextBoxStyle({
+        ...originalStyle,
+        ...(newStyle as ShapeStyle),
+      });
+    } else if (originalStyle instanceof RectangleStyle) {
+      return new RectangleStyle({
+        ...originalStyle,
+        ...(newStyle as ShapeStyle),
+      });
+    } else if (originalStyle instanceof EllipseStyle) {
+      return new EllipseStyle({
+        ...originalStyle,
+        ...(newStyle as ShapeStyle),
+      });
+    } else if (originalStyle instanceof StraightLineStyle) {
+      return new StraightLineStyle({
         ...originalStyle,
         ...(newStyle as ShapeStyle),
       });

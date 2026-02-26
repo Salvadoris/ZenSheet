@@ -1,0 +1,149 @@
+<button
+  class="btn btn-ghost btn-square bg-white/80 backdrop-blur-md transition-all duration-300 ease-in-out shadow-md border border-slate-200/80"
+  (click)="toggleSidebar()"
+  [disabled]="!isNoteSelected()"
+  [title]="isSidebarHidden() ? 'Show sidebar' : 'Hide sidebar'"
+  [ngClass]="isSidebarHidden() ? 'rounded-xl' : 'rounded-t-lg rounded-b-none'">
+  <i
+    class="fas fa-chevron-down transition-transform duration-300"
+    [ngClass]="isSidebarHidden() ? '-rotate-90' : 'rotate-0'">
+  </i>
+</button>
+
+<div
+  class="select-none bg-white/80 backdrop-blur-md w-64 p-4 flex flex-col transition-all duration-300 transform rounded-b-lg rounded-tr-lg rounded-tl-none min-h-1/2 absolute shadow-md border border-slate-200/80"
+  [ngClass]="{
+    'opacity-0 -translate-y-4 pointer-events-none scale-95 -z-10':
+      isSidebarHidden(),
+    'opacity-100 translate-y-0 scale-100 z-10': !isSidebarHidden(),
+  }">
+  @if (view() === SidebarView.Root) {
+    <app-sidebar-header
+      title="All Folders"
+      [buttons]="getRootHeaderButtons()" />
+    <hr class="border-t border-gray-300 my-3" />
+
+    @if (loading()) {
+      <div class="flex items-center justify-center py-6">
+        <span class="loading loading-dots loading-xl text-primary"></span>
+      </div>
+    } @else {
+      <!-- Cloud Saved Section -->
+      <div 
+        class="px-2 pt-2 pb-1 flex items-center justify-between group cursor-pointer hover:bg-black/5 rounded-lg transition-colors"
+        tabindex="0"
+        (keydown.enter)="toggleCloud()"
+        (keydown.space)="toggleCloud()"
+        (click)="toggleCloud()">
+        <div class="flex items-center gap-2 text-slate-500">
+          <i class="fas fa-chevron-right text-[10px] transition-transform duration-200"
+              [ngClass]="{'rotate-90': !cloudCollapsed()}"></i>
+          <i class="fa-solid fa-cloud text-[10px]"></i>
+          <span class="text-[10px] font-bold uppercase tracking-widest">Cloud Saved</span>
+          @if (isOfflineMode()) {
+            <span class="badge badge-ghost badge-xs text-[8px] opacity-70">OFFLINE</span>
+          }
+        </div>
+        <button 
+          [disabled]="isOfflineMode()" 
+          title="Create Cloud Folder"
+          (click)="$event.stopPropagation(); selectedSource.set('cloud'); addFolder()" 
+          class="btn btn-ghost btn-sm btn-circle text-primary hover:bg-primary/10">
+          <i class="fa-solid fa-folder-plus text-[16px]"></i>
+        </button>
+      </div>
+      
+      @if (!cloudCollapsed()) {
+        <div class="animate-in slide-in-from-top-1 duration-200">
+          @for (folder of cloudFolders(); track folder.id) {
+            <app-list-item
+              [itemData]="getFolderListItemData(folder)"
+              [menuItems]="getFolderMenuItems(folder, 'cloud')"
+              (itemClicked)="selectFolder(folder, 'cloud')" />
+          } @empty {
+            @if (isOfflineMode()) {
+              <div class="px-4 py-2 text-xs text-slate-400 italic">Cloud unavailable in offline mode</div>
+            } @else {
+              <div class="px-4 py-2 text-xs text-slate-400 italic">No cloud folders</div>
+            }
+          }
+        </div>
+      }
+      
+      <hr class="border-t border-gray-200 my-4" />
+
+      <!-- Local Only Section -->
+      <div 
+        class="px-2 pt-2 pb-1 flex items-center justify-between group cursor-pointer hover:bg-black/5 rounded-lg transition-colors"
+        tabindex="0"
+        (keydown.enter)="toggleLocal()"
+        (keydown.space)="toggleLocal()"
+        (click)="toggleLocal()">
+        <div class="flex items-center gap-2 text-slate-500">
+          <i class="fas fa-chevron-right text-[10px] transition-transform duration-200"
+             [ngClass]="{'rotate-90': !localCollapsed()}"></i>
+          <i class="fa-solid fa-laptop text-[10px]"></i>
+          <span class="text-[10px] font-bold uppercase tracking-widest">Local Saved</span>
+        </div>
+        <button 
+          title="Create Local Folder"
+          (click)="$event.stopPropagation(); selectedSource.set('local'); addFolder()" 
+          class="btn btn-ghost btn-sm btn-circle text-primary hover:bg-primary/10">
+          <i class="fa-solid fa-folder-plus text-[16px]"></i>
+        </button>
+      </div>
+
+      @if (!localCollapsed()) {
+        <div class="animate-in slide-in-from-top-1 duration-200">
+          @for (folder of localFolders(); track folder.id) {
+            <app-list-item
+              [itemData]="getFolderListItemData(folder)"
+              [menuItems]="getFolderMenuItems(folder, 'local')"
+              (itemClicked)="selectFolder(folder, 'local')" />
+          } @empty {
+            <app-empty-state
+              message="No local folders. Create one!"
+              icon="fa-laptop" />
+          }
+        </div>
+      }
+    }
+  } @else if (view() === SidebarView.Folder && selectedFolder()) {
+    <app-sidebar-header
+      [title]="selectedFolder()?.name || ''"
+      [titleColor]="selectedFolder()?.color"
+      [showBackButton]="true"
+      [buttons]="getFolderHeaderButtons()"
+      (backClicked)="goBack()" />
+    <hr class="border-t border-gray-300 my-3" />
+
+    @if (loading()) {
+      <div class="flex items-center justify-center py-6">
+        <span class="loading loading-dots loading-xl text-primary"></span>
+      </div>
+    } @else {
+      <!-- Subfolders -->
+      @for (subfolder of selectedFolder()?.subfolders; track subfolder.id) {
+        <app-list-item
+          [itemData]="getFolderListItemData(subfolder)"
+          [menuItems]="getFolderMenuItems(subfolder, selectedSource())"
+          (itemClicked)="selectFolder(subfolder)" />
+      }
+
+      <!-- Notes -->
+      @for (note of selectedFolder()?.notes; track note.id) {
+        <app-list-item
+          [itemData]="getNoteListItemData(note)"
+          [menuItems]="getNoteMenuItems(note, selectedSource())"
+          (itemClicked)="selectNote(note)" 
+          />
+      } @empty {
+        @if ((selectedFolder()?.subfolders || []).length === 0) {
+          <app-empty-state
+            message="No subfolders or notes yet."
+            icon="fa-file" />
+        }
+      }
+    }
+  }
+</div>
