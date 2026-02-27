@@ -13,9 +13,11 @@ export class StraightLineShape extends Shape {
 
   constructor(
     properties: StraightLineShapeProperties,
-    ctx: CanvasRenderingContext2D
+    bufferCtx: CanvasRenderingContext2D
   ) {
-    super(properties, ctx);
+    super(properties, bufferCtx, true);
+    this.properties[ShapePropertyName.minWidth] = 0;
+    this.properties[ShapePropertyName.minHeight] = 0;
   }
 
   override set properties(properties: Required<StraightLineShapeProperties>) {
@@ -44,43 +46,61 @@ export class StraightLineShape extends Shape {
     return {};
   }
 
-  override renderShape(_canvasRect: Rect): void {
-    this.ctx.lineWidth = this.style[StyleName.LineWidth];
-    this.ctx.lineCap = this.style[StyleName.LineCap];
-    if (this.style[StyleName.Color].length === 9) {
-      this.ctx.strokeStyle = this.style[StyleName.Color];
-    } else {
-      this.ctx.strokeStyle =
-        this.style[StyleName.Color] +
-        this.style[StyleName.Opacity].toString(16).padStart(2, '0');
-    }
-    this.ctx.stroke(this.path());
+  override renderShape(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
+    this.bufferCtx.save();
+    this.bufferCtx.lineWidth = this.style[StyleName.LineWidth];
+    this.bufferCtx.lineCap = this.style[StyleName.LineCap];
+    this.bufferCtx.strokeStyle = this.style[StyleName.Color];
+    this.bufferCtx.stroke(this.path());
+    this.bufferCtx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = this.style[StyleName.Opacity];
+    ctx.drawImage(this.bufferCtx.canvas, 0, 0);
+    ctx.restore();
+
+    this.bufferCtx.clearRect(
+      canvasRect[0],
+      canvasRect[1],
+      canvasRect[2] - canvasRect[0],
+      canvasRect[3] - canvasRect[1]
+    );
   }
 
   override path(): Path2D {
     const path = new Path2D();
-    const lineWidth = this.style[StyleName.LineWidth];
-    const x = this.horizontalInverted
-      ? this.originX - lineWidth / 2
-      : this.originX + lineWidth / 2;
-    const y = this.verticallyInverted
-      ? this.originY - lineWidth / 2
-      : this.originY + lineWidth / 2;
-    const width = this.horizontalInverted
-      ? this.width + lineWidth
-      : this.width - lineWidth;
-    const height = this.verticallyInverted
-      ? this.height + lineWidth
-      : this.height - lineWidth;
-    path.moveTo(x, y);
-    path.lineTo(x + width, y + height);
+    path.moveTo(this.originX, this.originY);
+    path.lineTo(this.originX + this.width, this.originY + this.height);
     return path;
   }
 
-  override pointInside(x: number, y: number): boolean {
-    this.ctx.lineWidth = this.style[StyleName.LineWidth];
-    this.ctx.lineCap = this.style[StyleName.LineCap];
-    return this.ctx.isPointInStroke(this.path(), x, y);
+  override offsetPath(): Path2D {
+    return this.path();
+  }
+
+  override offset(): number {
+    return this.style[StyleName.LineWidth] / 2;
+  }
+
+  override offsetRect(): Rect {
+    const trueRect = this.trueRect();
+    const offset = this.offset();
+    return [
+      trueRect[0] - offset,
+      trueRect[1] - offset,
+      trueRect[2] + offset,
+      trueRect[3] + offset,
+    ];
+  }
+
+  override pointInside(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number
+  ): boolean {
+    ctx.lineWidth = this.style[StyleName.LineWidth];
+    ctx.lineCap = this.style[StyleName.LineCap];
+    return ctx.isPointInStroke(this.path(), x, y);
   }
 
   override resizeContent(): ChangableSerializedShapeProperties {

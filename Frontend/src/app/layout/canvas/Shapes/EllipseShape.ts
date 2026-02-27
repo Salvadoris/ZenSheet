@@ -13,9 +13,9 @@ export class EllipseShape extends Shape {
 
   constructor(
     properties: EllipseShapeProperties,
-    ctx: CanvasRenderingContext2D
+    bufferCtx: CanvasRenderingContext2D
   ) {
-    super(properties, ctx);
+    super(properties, bufferCtx);
   }
 
   override set properties(properties: Required<EllipseShapeProperties>) {
@@ -44,32 +44,28 @@ export class EllipseShape extends Shape {
     return {};
   }
 
-  override renderShape(_canvasRect: Rect): void {
-    this.ctx.save();
-    const lineWidth = this.style[StyleName.LineWidth];
-    const opacity = this.style[StyleName.Opacity].toString(16).padStart(2, '0');
-    this.ctx.lineWidth = lineWidth;
+  override renderShape(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
+    this.bufferCtx.save();
+    this.bufferCtx.lineWidth = this.style[StyleName.LineWidth];
+    this.bufferCtx.strokeStyle = this.style[StyleName.Color];
+    this.bufferCtx.fillStyle = this.style[StyleName.BackgroundColor];
 
-    if (this.style[StyleName.Color].length === 9) {
-      this.ctx.strokeStyle = this.style[StyleName.Color];
-    } else {
-      this.ctx.strokeStyle = this.style[StyleName.Color] + opacity;
-    }
-    if (this.style[StyleName.BackgroundColor].length === 9) {
-      this.ctx.fillStyle = this.style[StyleName.BackgroundColor];
-    } else {
-      this.ctx.fillStyle = this.style[StyleName.BackgroundColor] + opacity;
-    }
+    const path = this.path();
+    this.bufferCtx.fill(path);
+    this.bufferCtx.stroke(path);
+    this.bufferCtx.restore();
 
-    const centerX = this.originX + this.width / 2;
-    const centerY = this.originY + this.height / 2;
-    const radiusX = Math.abs(this.width) / 2;
-    const radiusY = Math.abs(this.height) / 2;
+    ctx.save();
+    ctx.globalAlpha = this.style[StyleName.Opacity];
+    ctx.drawImage(this.bufferCtx.canvas, 0, 0);
+    ctx.restore();
 
-    this.ctx.fill(this.backgroundPath(centerX, centerY, radiusX, radiusY));
-    this.ctx.stroke(this.borderPath(centerX, centerY, radiusX, radiusY));
-
-    this.ctx.restore();
+    this.bufferCtx.clearRect(
+      canvasRect[0],
+      canvasRect[1],
+      canvasRect[2] - canvasRect[0],
+      canvasRect[3] - canvasRect[1]
+    );
   }
 
   override path(): Path2D {
@@ -86,18 +82,14 @@ export class EllipseShape extends Shape {
     return path;
   }
 
-  borderPath(
-    centerX: number,
-    centerY: number,
-    radiusX: number,
-    radiusY: number
-  ) {
+  override offsetPath(): Path2D {
     const path = new Path2D();
+    const rect = this.offsetRect();
     path.ellipse(
-      centerX,
-      centerY,
-      Math.abs(radiusX - this.style[StyleName.LineWidth] / 2),
-      Math.abs(radiusY - this.style[StyleName.LineWidth] / 2),
+      (rect[0] + rect[2]) / 2,
+      (rect[1] + rect[3]) / 2,
+      Math.abs(rect[0] - rect[2]) / 2,
+      Math.abs(rect[1] - rect[3]) / 2,
       0,
       0,
       2 * Math.PI
@@ -105,55 +97,38 @@ export class EllipseShape extends Shape {
     return path;
   }
 
-  backgroundPath(
-    centerX: number,
-    centerY: number,
-    radiusX: number,
-    radiusY: number
-  ) {
-    const path = new Path2D();
-    path.ellipse(
-      centerX,
-      centerY,
-      Math.abs(radiusX - this.style[StyleName.LineWidth]),
-      Math.abs(radiusY - this.style[StyleName.LineWidth]),
-      0,
-      0,
-      2 * Math.PI
-    );
-    return path;
+  override offset(): number {
+    return this.style[StyleName.Color] === 'transparent'
+      ? 0
+      : this.style[StyleName.LineWidth] / 2;
   }
 
-  override pointInside(x: number, y: number): boolean {
-    this.ctx.lineWidth = this.style[StyleName.LineWidth];
+  override offsetRect(): Rect {
+    const trueRect = this.trueRect();
+    const offset = this.offset();
+    return [
+      trueRect[0] - offset,
+      trueRect[1] - offset,
+      trueRect[2] + offset,
+      trueRect[3] + offset,
+    ];
+  }
+
+  override pointInside(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number
+  ): boolean {
+    ctx.lineWidth = this.style[StyleName.LineWidth];
     const backgroundTransparent =
-      this.style[StyleName.BackgroundColor].length === 9 &&
-      this.style[StyleName.BackgroundColor][7] === '0' &&
-      this.style[StyleName.BackgroundColor][8] === '0';
-    const borderTransparent =
-      this.style[StyleName.Color].length === 9 &&
-      this.style[StyleName.Color][7] === '0' &&
-      this.style[StyleName.Color][8] === '0';
-    if (backgroundTransparent !== borderTransparent) {
-      const centerX = this.originX + this.width / 2;
-      const centerY = this.originY + this.height / 2;
-      const radiusX = Math.abs(this.width) / 2;
-      const radiusY = Math.abs(this.height) / 2;
-      if (backgroundTransparent) {
-        return this.ctx.isPointInStroke(
-          this.borderPath(centerX, centerY, radiusX, radiusY),
-          x,
-          y
-        );
-      } else {
-        return this.ctx.isPointInPath(
-          this.backgroundPath(centerX, centerY, radiusX, radiusY),
-          x,
-          y
-        );
-      }
+      this.style[StyleName.BackgroundColor] === 'transparent';
+    const borderTransparent = this.style[StyleName.Color] === 'transparent';
+    if (backgroundTransparent && !borderTransparent) {
+      return ctx.isPointInStroke(this.path(), x, y);
+    } else if (borderTransparent && !backgroundTransparent) {
+      return ctx.isPointInPath(this.path(), x, y);
     } else {
-      return this.ctx.isPointInPath(this.path(), x, y);
+      return ctx.isPointInPath(this.offsetPath(), x, y);
     }
   }
 

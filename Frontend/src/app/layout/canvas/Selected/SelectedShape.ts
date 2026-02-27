@@ -1,10 +1,9 @@
+import { ChangedShapeProperties } from '../Actions/ChangeShapesPropertiesAction';
 import { Point, Rect } from '../Geometry';
-import {
-  BaseSerializedShapeProperties,
-  ChangableBaseSerializedShapeProperties,
-} from '../ShapeProperties/ShapeProperties';
+import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
 import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { Shape } from '../Shapes/Shape';
+import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 
 export enum Resize {
   None,
@@ -16,225 +15,280 @@ export enum Resize {
   TopRight,
   BottomLeft,
   BottomRight,
+  StraightLineFirstPoint,
+  StraightLineLastPoint,
 }
-
-type MoveProperties = Partial<
-  Pick<
-    BaseSerializedShapeProperties,
-    ShapePropertyName.originX | ShapePropertyName.originY
-  >
->;
 
 export class SelectedShape {
   shape!: Shape;
-  topLine!: Path2D;
-  bottomLine!: Path2D;
-  leftLine!: Path2D;
-  rightLine!: Path2D;
-  topLeftCorner!: Path2D;
-  topRightCorner!: Path2D;
-  bottomLeftCorner!: Path2D;
-  bottomRightCorner!: Path2D;
-  lineWidth = 6;
-  hoverLineWidth = 12;
-  color = '#00f8';
+  lineWidth = 2;
+  frameWidth = 10;
+  color = '#4040ff';
   dragged = false;
   originFromCursor: Point = [0, 0];
   resized = Resize.None;
+  offsetRect!: Rect;
 
   constructor(shape: Shape) {
     this.shape = shape;
+    this.offsetRect = this.shape.offsetRect();
   }
 
-  render(canvasScale: number, canvasRect: Rect): void {
-    this.shape.render(canvasRect);
-    this.shape.ctx.fillStyle = 'transparent';
-    this.setHoverLines(canvasScale);
-    this.shape.ctx.fill(this.topLine);
-    this.shape.ctx.fill(this.bottomLine);
-    this.shape.ctx.fill(this.leftLine);
-    this.shape.ctx.fill(this.rightLine);
-    this.shape.ctx.fill(this.topLeftCorner);
-    this.shape.ctx.fill(this.topRightCorner);
-    this.shape.ctx.fill(this.bottomLeftCorner);
-    this.shape.ctx.fill(this.bottomRightCorner);
-    this.shape.ctx.strokeStyle = this.color;
-    this.shape.ctx.fillStyle = this.color;
-    this.shape.ctx.lineWidth = this.lineWidth / canvasScale;
-    this.shape.ctx.lineCap = 'square';
-    this.shape.ctx.stroke(this.markedLine(this.shape.ctx.lineWidth));
-  }
-
-  moveTo(x: number, y: number): MoveProperties {
-    this.shape.originX = x + this.originFromCursor[0];
-    this.shape.originY = y + this.originFromCursor[1];
-    const properties: MoveProperties = {};
-    if (x !== 0) {
-      properties[ShapePropertyName.originX] = this.shape.originX;
-    }
-    if (y !== 0) {
-      properties[ShapePropertyName.originY] = this.shape.originY;
-    }
+  setStyleProperty(
+    styleProperty: ShapeStyleProperty
+  ): ChangableSerializedShapeProperties {
+    const properties = this.shape.setStyleProperty(styleProperty);
+    this.updateOffsetRect();
     return properties;
   }
 
-  resize(p: Point): ChangableBaseSerializedShapeProperties {
+  updateOffsetRect() {
+    this.offsetRect = this.shape.offsetRect();
+  }
+
+  render(canvasScale: number, selectFrameCtx: CanvasRenderingContext2D): void {
+    this.frameWidth = 10 / canvasScale;
+    this.drawMarkedLine(selectFrameCtx, canvasScale);
+  }
+
+  moveTo(newOrigin: Point): ChangedShapeProperties[] {
+    const properties: ChangableSerializedShapeProperties = {};
+    if (this.shape.originX !== newOrigin[0]) {
+      this.shape.originX = newOrigin[0];
+      properties[ShapePropertyName.originX] = this.shape.originX;
+    }
+    if (this.shape.originY !== newOrigin[1]) {
+      this.shape.originY = newOrigin[1];
+      properties[ShapePropertyName.originY] = this.shape.originY;
+    }
+    if (Object.keys(properties).length > 0) {
+      this.updateOffsetRect();
+      return [
+        {
+          id: this.shape.properties[ShapePropertyName.id],
+          properties: properties,
+        },
+      ];
+    }
+    return [];
+  }
+
+  resize(p: Point): ChangedShapeProperties[] {
+    let properties: ChangableSerializedShapeProperties = {};
     switch (this.resized) {
       case Resize.Top:
-        return this.shape.resizeTop(p[1]);
+        properties = this.shape.resizeTop(p[1]);
+        break;
       case Resize.Bottom:
-        return this.shape.resizeBottom(p[1]);
+        properties = this.shape.resizeBottom(p[1]);
+        break;
       case Resize.Left:
-        return this.shape.resizeLeft(p[0]);
+        properties = this.shape.resizeLeft(p[0]);
+        break;
       case Resize.Right:
-        return this.shape.resizeRight(p[0]);
+        properties = this.shape.resizeRight(p[0]);
+        break;
       case Resize.TopLeft:
-        return {
-          ...this.shape.resizeLeft(p[0]),
+        properties = {
+          ...this.shape.resizeLeft(p[0], false),
           ...this.shape.resizeTop(p[1]),
         };
+        break;
       case Resize.TopRight:
-        return {
-          ...this.shape.resizeRight(p[0]),
+        properties = {
+          ...this.shape.resizeRight(p[0], false),
           ...this.shape.resizeTop(p[1]),
         };
+        break;
       case Resize.BottomLeft:
-        return {
-          ...this.shape.resizeLeft(p[0]),
+        properties = {
+          ...this.shape.resizeLeft(p[0], false),
           ...this.shape.resizeBottom(p[1]),
         };
+        break;
       case Resize.BottomRight:
-        return {
-          ...this.shape.resizeRight(p[0]),
+        properties = {
+          ...this.shape.resizeRight(p[0], false),
           ...this.shape.resizeBottom(p[1]),
         };
+        break;
     }
-    return {};
+    if (Object.keys(properties).length > 0) {
+      this.updateOffsetRect();
+      return [
+        {
+          id: this.shape.properties[ShapePropertyName.id],
+          properties: properties,
+        },
+      ];
+    }
+    return [];
   }
 
   path() {
-    const path = new Path2D();
-    path.rect(
-      this.shape.originX,
-      this.shape.originY,
-      this.shape.width,
-      this.shape.height
-    );
-    return path;
+    return this.shape.offsetPath();
   }
 
   pointInside(ctx: CanvasRenderingContext2D, x: number, y: number): boolean {
     return ctx.isPointInPath(this.path(), x, y);
   }
+
   pointOnTopLine(ctx: CanvasRenderingContext2D, x: number, y: number) {
-    return ctx.isPointInPath(this.topLine, x, y);
+    ctx.lineWidth = this.frameWidth;
+    const path = new Path2D();
+    path.moveTo(
+      this.shape.horizontalInverted ? this.offsetRect[2] : this.offsetRect[0],
+      this.shape.verticallyInverted ? this.offsetRect[3] : this.offsetRect[1]
+    );
+    path.lineTo(
+      this.shape.horizontalInverted ? this.offsetRect[0] : this.offsetRect[2],
+      this.shape.verticallyInverted ? this.offsetRect[3] : this.offsetRect[1]
+    );
+    return ctx.isPointInStroke(path, x, y);
   }
+
   pointOnBottomLine(ctx: CanvasRenderingContext2D, x: number, y: number) {
-    return ctx.isPointInPath(this.bottomLine, x, y);
+    ctx.lineWidth = this.frameWidth;
+    const path = new Path2D();
+    path.moveTo(
+      this.shape.horizontalInverted ? this.offsetRect[2] : this.offsetRect[0],
+      this.shape.verticallyInverted ? this.offsetRect[1] : this.offsetRect[3]
+    );
+    path.lineTo(
+      this.shape.horizontalInverted ? this.offsetRect[0] : this.offsetRect[2],
+      this.shape.verticallyInverted ? this.offsetRect[1] : this.offsetRect[3]
+    );
+    return ctx.isPointInStroke(path, x, y);
   }
+
   pointOnLeftLine(ctx: CanvasRenderingContext2D, x: number, y: number) {
-    return ctx.isPointInPath(this.leftLine, x, y);
+    ctx.lineWidth = this.frameWidth;
+    const path = new Path2D();
+    path.moveTo(
+      this.shape.horizontalInverted ? this.offsetRect[2] : this.offsetRect[0],
+      this.shape.verticallyInverted ? this.offsetRect[3] : this.offsetRect[1]
+    );
+    path.lineTo(
+      this.shape.horizontalInverted ? this.offsetRect[2] : this.offsetRect[0],
+      this.shape.verticallyInverted ? this.offsetRect[1] : this.offsetRect[3]
+    );
+    return ctx.isPointInStroke(path, x, y);
   }
+
   pointOnRightLine(ctx: CanvasRenderingContext2D, x: number, y: number) {
-    return ctx.isPointInPath(this.rightLine, x, y);
+    ctx.lineWidth = this.frameWidth;
+    const path = new Path2D();
+    path.moveTo(
+      this.shape.horizontalInverted ? this.offsetRect[0] : this.offsetRect[2],
+      this.shape.verticallyInverted ? this.offsetRect[3] : this.offsetRect[1]
+    );
+    path.lineTo(
+      this.shape.horizontalInverted ? this.offsetRect[0] : this.offsetRect[2],
+      this.shape.verticallyInverted ? this.offsetRect[1] : this.offsetRect[3]
+    );
+    return ctx.isPointInStroke(path, x, y);
   }
+
   pointOnTopLeftCorner(ctx: CanvasRenderingContext2D, x: number, y: number) {
-    return ctx.isPointInPath(this.topLeftCorner, x, y);
+    const path = new Path2D();
+    path.rect(
+      (this.shape.horizontalInverted
+        ? this.offsetRect[2]
+        : this.offsetRect[0]) -
+        this.frameWidth / 2,
+      (this.shape.verticallyInverted
+        ? this.offsetRect[3]
+        : this.offsetRect[1]) -
+        this.frameWidth / 2,
+      this.frameWidth,
+      this.frameWidth
+    );
+    return ctx.isPointInPath(path, x, y);
   }
+
   pointOnTopRightCorner(ctx: CanvasRenderingContext2D, x: number, y: number) {
-    return ctx.isPointInPath(this.topRightCorner, x, y);
+    const path = new Path2D();
+    path.rect(
+      (this.shape.horizontalInverted
+        ? this.offsetRect[0]
+        : this.offsetRect[2]) -
+        this.frameWidth / 2,
+      (this.shape.verticallyInverted
+        ? this.offsetRect[3]
+        : this.offsetRect[1]) -
+        this.frameWidth / 2,
+      this.frameWidth,
+      this.frameWidth
+    );
+    return ctx.isPointInPath(path, x, y);
   }
+
   pointOnBottomLeftCorner(ctx: CanvasRenderingContext2D, x: number, y: number) {
-    return ctx.isPointInPath(this.bottomLeftCorner, x, y);
+    const path = new Path2D();
+    path.rect(
+      (this.shape.horizontalInverted
+        ? this.offsetRect[2]
+        : this.offsetRect[0]) -
+        this.frameWidth / 2,
+      (this.shape.verticallyInverted
+        ? this.offsetRect[1]
+        : this.offsetRect[3]) -
+        this.frameWidth / 2,
+      this.frameWidth,
+      this.frameWidth
+    );
+    return ctx.isPointInPath(path, x, y);
   }
+
   pointOnBottomRightCorner(
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number
   ) {
-    return ctx.isPointInPath(this.bottomRightCorner, x, y);
-  }
-
-  setHoverLines(canvasScale: number) {
-    const lineWidth = this.hoverLineWidth / canvasScale;
-    this.topLine = new Path2D();
-    this.topLine.rect(
-      this.shape.originX,
-      this.shape.originY,
-      this.shape.width,
-      this.shape.verticallyInverted ? lineWidth : -lineWidth
-    );
-    this.bottomLine = new Path2D();
-    this.bottomLine.rect(
-      this.shape.originX,
-      this.shape.originY + this.shape.height,
-      this.shape.width,
-      this.shape.verticallyInverted ? -lineWidth : lineWidth
-    );
-    this.leftLine = new Path2D();
-    this.leftLine.rect(
-      this.shape.originX,
-      this.shape.originY,
-      this.shape.horizontalInverted ? lineWidth : -lineWidth,
-      this.shape.height
-    );
-    this.rightLine = new Path2D();
-    this.rightLine.rect(
-      this.shape.originX + this.shape.width,
-      this.shape.originY,
-      this.shape.horizontalInverted ? -lineWidth : lineWidth,
-      this.shape.height
-    );
-    this.topLeftCorner = new Path2D();
-    this.topLeftCorner.rect(
-      this.shape.originX,
-      this.shape.originY,
-      this.shape.horizontalInverted ? lineWidth : -lineWidth,
-      this.shape.verticallyInverted ? lineWidth : -lineWidth
-    );
-    this.topRightCorner = new Path2D();
-    this.topRightCorner.rect(
-      this.shape.originX + this.shape.width,
-      this.shape.originY,
-      this.shape.horizontalInverted ? -lineWidth : lineWidth,
-      this.shape.verticallyInverted ? lineWidth : -lineWidth
-    );
-    this.bottomLeftCorner = new Path2D();
-    this.bottomLeftCorner.rect(
-      this.shape.originX,
-      this.shape.originY + this.shape.height,
-      this.shape.horizontalInverted ? lineWidth : -lineWidth,
-      this.shape.verticallyInverted ? -lineWidth : lineWidth
-    );
-    this.bottomRightCorner = new Path2D();
-    this.bottomRightCorner.rect(
-      this.shape.originX + this.shape.width,
-      this.shape.originY + this.shape.height,
-      this.shape.horizontalInverted ? -lineWidth : lineWidth,
-      this.shape.verticallyInverted ? -lineWidth : lineWidth
-    );
-  }
-
-  markedLine(lineWidth: number): Path2D {
-    const halfLineWidth = lineWidth / 2;
     const path = new Path2D();
-    const xMin = this.shape.horizontalInverted
-      ? this.shape.originX + halfLineWidth
-      : this.shape.originX - halfLineWidth;
-    const yMin = this.shape.verticallyInverted
-      ? this.shape.originY + halfLineWidth
-      : this.shape.originY - halfLineWidth;
-    const xMax = this.shape.horizontalInverted
-      ? this.shape.originX + this.shape.width - halfLineWidth
-      : this.shape.originX + this.shape.width + halfLineWidth;
-    const yMax = this.shape.verticallyInverted
-      ? this.shape.originY + this.shape.height - halfLineWidth
-      : this.shape.originY + this.shape.height + halfLineWidth;
-    path.moveTo(xMin, yMin);
-    path.lineTo(xMax, yMin);
-    path.lineTo(xMax, yMax);
-    path.lineTo(xMin, yMax);
-    path.closePath();
-    return path;
+    path.rect(
+      (this.shape.horizontalInverted
+        ? this.offsetRect[0]
+        : this.offsetRect[2]) -
+        this.frameWidth / 2,
+      (this.shape.verticallyInverted
+        ? this.offsetRect[1]
+        : this.offsetRect[3]) -
+        this.frameWidth / 2,
+      this.frameWidth,
+      this.frameWidth
+    );
+    return ctx.isPointInPath(path, x, y);
+  }
+
+  drawMarkedLine(ctx: CanvasRenderingContext2D, canvasScale: number) {
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = this.lineWidth / canvasScale;
+
+    ctx.moveTo(this.offsetRect[0], this.offsetRect[1]);
+    ctx.lineTo(this.offsetRect[2], this.offsetRect[1]);
+    ctx.lineTo(this.offsetRect[2], this.offsetRect[3]);
+    ctx.lineTo(this.offsetRect[0], this.offsetRect[3]);
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.fillStyle = 'white';
+    for (const point of [
+      [this.offsetRect[0], this.offsetRect[1]],
+      [this.offsetRect[2], this.offsetRect[1]],
+      [this.offsetRect[2], this.offsetRect[3]],
+      [this.offsetRect[0], this.offsetRect[3]],
+    ] as Point[]) {
+      const path = new Path2D();
+      path.roundRect(
+        point[0] - this.frameWidth / 2,
+        point[1] - this.frameWidth / 2,
+        this.frameWidth,
+        this.frameWidth,
+        [this.frameWidth / 4]
+      );
+      ctx.fill(path);
+      ctx.stroke(path);
+    }
   }
 }

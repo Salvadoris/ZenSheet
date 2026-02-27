@@ -1,14 +1,14 @@
 import { Dialog, DialogModule } from '@angular/cdk/dialog';
 import { CommonModule } from '@angular/common';
 import {
-  Component,
-  effect,
-  HostListener,
-  inject,
-  OnDestroy,
-  OnInit,
-  signal,
-  viewChild,
+    Component,
+    effect,
+    HostListener,
+    inject,
+    OnDestroy,
+    OnInit,
+    signal,
+    viewChild,
 } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { concatMap, debounceTime, filter, Subject, Subscription } from 'rxjs';
@@ -26,12 +26,12 @@ import { ToolbarComponent } from './layout/toolbar/toolbar.component';
 import { ZoomIndicatorComponent } from './layout/zoom-indicator/zoom-indicator.component';
 import { Folder, Note, NoteContent } from './models/note.model';
 import {
-  CanvasConnectionService,
-  PresenceInfo,
+    CanvasConnectionService,
+    PresenceInfo,
 } from './services/canvas-connection.service';
 import {
-  ConnectivityService,
-  EConnectivityState,
+    ConnectivityService,
+    EConnectivityState,
 } from './services/connectivity.service';
 import { FolderService } from './services/folder.service';
 import { NotesService } from './services/notes.service';
@@ -461,7 +461,7 @@ export class App implements OnInit, OnDestroy {
       const newOriginY = viewportHeight / 2 - finalPresence.cursorPosition.y * canvas.scale;
 
       canvas.origin = [newOriginX, newOriginY];
-      canvas.renderCanvas(true, true);
+      canvas.renderCanvas({ transformed: true });
     }
   }
 

@@ -12,17 +12,21 @@ import {
 
 export abstract class Shape {
   protected _properties!: Required<BaseShapeProperties>;
+  #bufferCtx: CanvasRenderingContext2D;
   constructor(
     properties: BaseShapeProperties,
-    public ctx: CanvasRenderingContext2D
+    bufferCtx: CanvasRenderingContext2D,
+    zeroSize = false
   ) {
-    if (properties[ShapePropertyName.originalWidth] == 0) {
-      throw new Error('Shape width cannot be zero');
+    if (!zeroSize) {
+      if (properties[ShapePropertyName.originalWidth] == 0) {
+        throw new Error('Shape width cannot be zero');
+      }
+      if (properties[ShapePropertyName.originalWidth] == 0) {
+        throw new Error('Shape height cannot be zero');
+      }
     }
-    if (properties[ShapePropertyName.originalWidth] == 0) {
-      throw new Error('Shape height cannot be zero');
-    }
-
+    this.#bufferCtx = bufferCtx;
     const width =
       properties[ShapePropertyName.width] !== undefined
         ? properties[ShapePropertyName.width]
@@ -69,6 +73,10 @@ export abstract class Shape {
           ? properties[ShapePropertyName.verticallyInverted]
           : height < 0,
     };
+  }
+
+  get bufferCtx() {
+    return this.#bufferCtx;
   }
 
   get properties(): Required<BaseShapeProperties> {
@@ -202,15 +210,21 @@ export abstract class Shape {
     return this.properties[ShapePropertyName.verticallyInverted];
   }
 
-  render(canvasRect: Rect): void {
+  render(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
     this.properties[ShapePropertyName.horizontalInverted] = this.width < 0;
     this.properties[ShapePropertyName.verticallyInverted] = this.height < 0;
-    this.renderShape(canvasRect);
+    this.renderShape(canvasRect, ctx);
   }
 
-  abstract renderShape(canvasRect: Rect): void;
+  abstract renderShape(canvasRect: Rect, ctx: CanvasRenderingContext2D): void;
 
   abstract path(): Path2D;
+
+  abstract offsetPath(): Path2D;
+
+  abstract offsetRect(): Rect;
+
+  abstract offset(): number;
 
   abstract setStyleProperty(
     styleProperty: ShapeStyleProperty
@@ -241,7 +255,11 @@ export abstract class Shape {
     }
   }
 
-  abstract pointInside(x: number, y: number): boolean;
+  abstract pointInside(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number
+  ): boolean;
 
   resizeTop(
     y: number,
@@ -258,8 +276,9 @@ export abstract class Shape {
     }
     const properties: ChangableSerializedShapeProperties = {};
     if (
-      (!this.verticallyInvertable && newHeight >= this.minHeight) ||
-      (this.verticallyInvertable && Math.abs(newHeight) >= this.minHeight)
+      ((!this.verticallyInvertable && newHeight >= this.minHeight) ||
+        (this.verticallyInvertable && Math.abs(newHeight) >= this.minHeight)) &&
+      newHeight !== this.height
     ) {
       this.height = newHeight;
       this.originY = y;
@@ -290,8 +309,9 @@ export abstract class Shape {
     }
     const properties: ChangableSerializedShapeProperties = {};
     if (
-      (!this.verticallyInvertable && newHeight >= this.minHeight) ||
-      (this.verticallyInvertable && Math.abs(newHeight) >= this.minHeight)
+      ((!this.verticallyInvertable && newHeight >= this.minHeight) ||
+        (this.verticallyInvertable && Math.abs(newHeight) >= this.minHeight)) &&
+      newHeight !== this.height
     ) {
       this.height = newHeight;
       this.scaleY = this.height / this.originalHeight;
@@ -320,8 +340,9 @@ export abstract class Shape {
     }
     const properties: ChangableSerializedShapeProperties = {};
     if (
-      (!this.horizontallyInvertable && newWidth > this.minWidth) ||
-      (this.horizontallyInvertable && Math.abs(newWidth) >= this.minWidth)
+      ((!this.horizontallyInvertable && newWidth > this.minWidth) ||
+        (this.horizontallyInvertable && Math.abs(newWidth) >= this.minWidth)) &&
+      newWidth !== this.width
     ) {
       this.width = newWidth;
       this.originX = x;
@@ -352,8 +373,9 @@ export abstract class Shape {
     }
     const properties: ChangableSerializedShapeProperties = {};
     if (
-      (!this.horizontallyInvertable && newWidth >= this.minWidth) ||
-      (this.horizontallyInvertable && Math.abs(newWidth) >= this.minWidth)
+      ((!this.horizontallyInvertable && newWidth >= this.minWidth) ||
+        (this.horizontallyInvertable && Math.abs(newWidth) >= this.minWidth)) &&
+      newWidth !== this.width
     ) {
       this.width = newWidth;
       this.scaleX = this.width / this.originalWidth;

@@ -12,12 +12,12 @@ import { StraightLineDrawing } from '../Drawings/StraightLineDrawing';
 import { EllipseStyle, EllipseStyleType } from '../ShapeStyles/EllipseStyle';
 import { LineStyle, LineStyleType } from '../ShapeStyles/LineStyle';
 import {
-  RectangleStyle,
-  RectangleStyleType,
+    RectangleStyle,
+    RectangleStyleType,
 } from '../ShapeStyles/RectangleStyle';
 import {
-  StraightLineStyle,
-  StraightLineStyleType,
+    StraightLineStyle,
+    StraightLineStyleType,
 } from '../ShapeStyles/StraightLineStyle';
 
 export enum DrawingType {
@@ -33,6 +33,12 @@ export interface SerializedDrawing {
 }
 
 export class DrawingSerializer {
+  #bufferCtx: CanvasRenderingContext2D;
+
+  constructor(bufferCtx: CanvasRenderingContext2D) {
+    this.#bufferCtx = bufferCtx;
+  }
+
   serialized(drawing: Drawing): SerializedDrawing {
     if (drawing instanceof LineDrawing) {
       return {
@@ -96,41 +102,53 @@ export class DrawingSerializer {
   deserialized(serializedDrawing: SerializedDrawing): Drawing {
     switch (serializedDrawing.type) {
       case DrawingType.Line:
-        return new LineDrawing({
-          ...serializedDrawing.properties,
-          [DrawingPropertyName.style]: new LineStyle(
-            serializedDrawing.properties[
-              DrawingPropertyName.style
-            ] as LineStyleType
-          ),
-        } as LineDrawingProperties);
+        return new LineDrawing(
+          {
+            ...serializedDrawing.properties,
+            [DrawingPropertyName.style]: new LineStyle(
+              serializedDrawing.properties[
+                DrawingPropertyName.style
+              ] as LineStyleType
+            ),
+          } as LineDrawingProperties,
+          this.#bufferCtx
+        );
       case DrawingType.StraightLine:
-        return new StraightLineDrawing({
-          ...serializedDrawing.properties,
-          [DrawingPropertyName.style]: new StraightLineStyle(
-            serializedDrawing.properties[
-              DrawingPropertyName.style
-            ] as StraightLineStyleType
-          ),
-        } as StraightLineDrawingProperties);
+        return new StraightLineDrawing(
+          {
+            ...serializedDrawing.properties,
+            [DrawingPropertyName.style]: new StraightLineStyle(
+              serializedDrawing.properties[
+                DrawingPropertyName.style
+              ] as StraightLineStyleType
+            ),
+          } as StraightLineDrawingProperties,
+          this.#bufferCtx
+        );
       case DrawingType.Rectangle:
-        return new RectangleDrawing({
-          ...serializedDrawing.properties,
-          [DrawingPropertyName.style]: new RectangleStyle(
-            serializedDrawing.properties[
-              DrawingPropertyName.style
-            ] as RectangleStyleType
-          ),
-        } as RectangleDrawingProperties);
+        return new RectangleDrawing(
+          {
+            ...serializedDrawing.properties,
+            [DrawingPropertyName.style]: new RectangleStyle(
+              serializedDrawing.properties[
+                DrawingPropertyName.style
+              ] as RectangleStyleType
+            ),
+          } as RectangleDrawingProperties,
+          this.#bufferCtx
+        );
       case DrawingType.Ellipse:
-        return new EllipseDrawing({
-          ...serializedDrawing.properties,
-          [DrawingPropertyName.style]: new EllipseStyle(
-            serializedDrawing.properties[
-              DrawingPropertyName.style
-            ] as EllipseStyleType
-          ),
-        } as EllipseDrawingProperties);
+        return new EllipseDrawing(
+          {
+            ...serializedDrawing.properties,
+            [DrawingPropertyName.style]: new EllipseStyle(
+              serializedDrawing.properties[
+                DrawingPropertyName.style
+              ] as EllipseStyleType
+            ),
+          } as EllipseDrawingProperties,
+          this.#bufferCtx
+        );
       default:
         throw new Error(`Unknown drawing type: ${serializedDrawing.type}`);
     }

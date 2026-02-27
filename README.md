@@ -1,34 +1,58 @@
 # ZenSheet
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.0.1.
+[**Live Demo**](https://salvadoris.github.io/ZenSheet/)
 
-## Development server
+ZenSheet is an infinite-canvas note-taking web application that combines the freedom of an infinite whiteboard with the structure of a file system, letting users draw, type, and organize their thoughts.
 
-To start a local development server, run:
+> **Note**: 🚧 This repository is a work in progress and currently contains the frontend application. Backend implementation is underway.
 
-```bash
-ng serve
-```
+## Features
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+- **Infinite Canvas**: Whiteboard with no borders.
+- **Hierarchical Organization**: Manage your workspace with a nested folder and note structure in the sidebar.
+- **Tools**:
+  - **Pen**: Freehand drawing.
+  - **Shapes**: Quickly add rectangles, ellipses, and straight lines.
+  - **Text**: Place text anywhere on the canvas and format it.
 
-## Code scaffolding
+## Frontend Tech Stack
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+This project is built with:
 
-```bash
-ng generate component component-name
-```
+- **[Angular](https://angular.io/)**
+- **[Angular Material UI](https://material.angular.dev/)**
+- **[Tailwind CSS](https://tailwindcss.com/)**
+- **[DaisyUI](https://daisyui.com/)**
+- **[SignalR Client](https://dotnet.microsoft.com/apps/aspnet/signalr)**
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Getting Started
 
-```bash
-ng generate --help
-```
+To run the application locally:
+
+1. **Clone the repository**:
+
+   ```bash
+   git clone https://github.com/Salvadoris/ZenSheet.git
+   ```
+
+2. **Install dependencies**:
+
+   ```bash
+   npm install
+   ```
+
+3. **Start the development server**:
+
+   ```bash
+   ng serve
+   ```
+
+4. **Open in Browser**:
+   Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
 
 ## Building
 
-To build the project run:
+To build the project for production:
 
 ```bash
 ng build

@@ -6,8 +6,6 @@ export abstract class CanvasToolState {
 
   abstract setStyleProperty(styleProperty: ShapeStyleProperty): void;
   abstract remove(): void;
-  abstract renderMain(): void;
-  abstract renderTmp(): void;
   abstract onMouseDown(event: MouseEvent): void;
   abstract onPressedMouseMove(event: MouseEvent): void;
   abstract onHoveringMouseMove(event: MouseEvent): void;

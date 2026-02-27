@@ -70,33 +70,23 @@ export class SelectRect {
     ctx.strokeStyle = this.strokeColor;
     ctx.lineWidth = this.shapeLineWidth / canvasScale;
     ctx.lineCap = 'square';
-    for (const shape of shapes) {
-      ctx.strokeRect(shape.originX, shape.originY, shape.width, shape.height);
+    if (shapes.length === 1) {
+      const rect = shapes[0].offsetRect();
+      ctx.strokeRect(rect[0], rect[1], rect[2] - rect[0], rect[3] - rect[1]);
+      return;
     }
-    if (shapes.length > 1) {
-      const minX = Math.min(
-        ...shapes.map(s =>
-          s.horizontalInverted ? s.originX + s.width : s.originX
-        )
-      );
-      const minY = Math.min(
-        ...shapes.map(s =>
-          s.verticallyInverted ? s.originY + s.height : s.originY
-        )
-      );
-      const maxX = Math.max(
-        ...shapes.map(s =>
-          s.horizontalInverted ? s.originX : s.originX + s.width
-        )
-      );
-      const maxY = Math.max(
-        ...shapes.map(s =>
-          s.verticallyInverted ? s.originY : s.originY + s.height
-        )
-      );
-      ctx.lineWidth = 2 / canvasScale;
-      ctx.setLineDash([ctx.lineWidth * 6, ctx.lineWidth * 3]);
-      ctx.strokeRect(minX, minY, maxX - minX, maxY - minY);
+
+    const rects = shapes.map(s => s.offsetRect());
+    for (const rect of rects) {
+      ctx.strokeRect(rect[0], rect[1], rect[2] - rect[0], rect[3] - rect[1]);
     }
+    const xMin = Math.min(...rects.map(r => r[0]));
+    const yMin = Math.min(...rects.map(r => r[1]));
+    const xMax = Math.max(...rects.map(r => r[2]));
+    const yMax = Math.max(...rects.map(r => r[3]));
+
+    ctx.lineWidth = 2 / canvasScale;
+    ctx.setLineDash([ctx.lineWidth * 6, ctx.lineWidth * 3]);
+    ctx.strokeRect(xMin, yMin, xMax - xMin, yMax - yMin);
   }
 }

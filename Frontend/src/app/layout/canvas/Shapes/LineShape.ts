@@ -18,7 +18,10 @@ export class LineShape extends Shape {
   private chunks: Chunk[] = [];
   private segments: Segment[] = [];
 
-  constructor(properties: LineShapeProperties, ctx: CanvasRenderingContext2D) {
+  constructor(
+    properties: LineShapeProperties,
+    bufferCtx: CanvasRenderingContext2D
+  ) {
     if (
       properties[ShapePropertyName.originX] === undefined ||
       properties[ShapePropertyName.originY] === undefined ||
@@ -49,7 +52,7 @@ export class LineShape extends Shape {
         ShapePropertyName.points
       ].map(p => [p[0] - originX, p[1] - originY]) as LinePoints;
     }
-    super(properties as Required<LineShapeProperties>, ctx);
+    super(properties as Required<LineShapeProperties>, bufferCtx);
 
     this.chunks = getLineChunks(
       {
@@ -116,7 +119,7 @@ export class LineShape extends Shape {
     return {};
   }
 
-  override renderShape(canvasRect: Rect): void {
+  override renderShape(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
     const xMin = (canvasRect[0] - this.originX) / this.scaleX;
     const yMin = (canvasRect[1] - this.originY) / this.scaleY;
     const xMax = (canvasRect[2] - this.originX) / this.scaleX;
@@ -127,21 +130,14 @@ export class LineShape extends Shape {
       Math.max(xMin, xMax),
       Math.max(yMin, yMax),
     ];
+    this.bufferCtx.save();
+    this.bufferCtx.translate(this.originX, this.originY);
+    this.bufferCtx.scale(this.scaleX, this.scaleY);
 
-    this.ctx.save();
-    this.ctx.translate(this.originX, this.originY);
-    this.ctx.scale(this.scaleX, this.scaleY);
-
-    this.ctx.lineWidth = this.style[StyleName.LineWidth];
-    this.ctx.lineCap = this.style[StyleName.LineCap];
-    if (this.style[StyleName.Color].length === 9) {
-      this.ctx.strokeStyle = this.style[StyleName.Color];
-    } else {
-      this.ctx.strokeStyle =
-        this.style[StyleName.Color] +
-        this.style[StyleName.Opacity].toString(16).padStart(2, '0');
-    }
-    this.ctx.lineJoin = 'round';
+    this.bufferCtx.lineWidth = this.style[StyleName.LineWidth];
+    this.bufferCtx.lineCap = this.style[StyleName.LineCap];
+    this.bufferCtx.strokeStyle = this.style[StyleName.Color];
+    this.bufferCtx.lineJoin = 'round';
 
     for (const chunk of this.chunks) {
       if (rectsOverlap(chunk.rect, localCanvasRect)) {
@@ -151,8 +147,20 @@ export class LineShape extends Shape {
       }
     }
 
-    this.ctx.stroke(this.path());
-    this.ctx.restore();
+    this.bufferCtx.stroke(this.path());
+    this.bufferCtx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = this.style[StyleName.Opacity];
+    ctx.drawImage(this.bufferCtx.canvas, 0, 0);
+    ctx.restore();
+
+    this.bufferCtx.clearRect(
+      canvasRect[0],
+      canvasRect[1],
+      canvasRect[2] - canvasRect[0],
+      canvasRect[3] - canvasRect[1]
+    );
   }
 
   override path(): Path2D {
@@ -188,14 +196,32 @@ export class LineShape extends Shape {
     return path;
   }
 
-  override pointInside(x: number, y: number): boolean {
-    this.ctx.save();
-    this.ctx.translate(this.originX, this.originY);
-    this.ctx.scale(this.scaleX, this.scaleY);
-    this.ctx.lineWidth = this.style[StyleName.LineWidth];
-    this.ctx.lineCap = this.style[StyleName.LineCap];
-    const inside = this.ctx.isPointInStroke(this.path(), x, y);
-    this.ctx.restore();
+  override offsetPath(): Path2D {
+    const path = new Path2D();
+    path.rect(this.originX, this.originY, this.width, this.height);
+    return path;
+  }
+
+  override offset(): number {
+    return 0;
+  }
+
+  override offsetRect(): Rect {
+    return this.trueRect();
+  }
+
+  override pointInside(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number
+  ): boolean {
+    ctx.save();
+    ctx.translate(this.originX, this.originY);
+    ctx.scale(this.scaleX, this.scaleY);
+    ctx.lineWidth = this.style[StyleName.LineWidth];
+    ctx.lineCap = this.style[StyleName.LineCap];
+    const inside = ctx.isPointInStroke(this.path(), x, y);
+    ctx.restore();
     return inside;
   }
 

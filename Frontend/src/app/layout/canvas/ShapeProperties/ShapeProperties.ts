@@ -131,6 +131,11 @@ export type ChangableBaseSerializedShapeProperties = Partial<
   >
 >;
 
+export interface ChangableSerializedShape {
+  [ShapePropertyName.id]: string;
+  properties: ChangableSerializedShapeProperties;
+}
+
 export type ChangableSerializedShapeProperties =
   ChangableBaseSerializedShapeProperties &
     Partial<
@@ -144,8 +149,5 @@ export type ChangableSerializedShapeProperties =
         endIndex: number;
         text: string;
       };
-      [ShapePropertyName.shapes]?: {
-        [ShapePropertyName.id]: string;
-        properties: ChangableSerializedShapeProperties;
-      }[];
+      [ShapePropertyName.shapes]?: ChangableSerializedShape[];
     };

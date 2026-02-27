@@ -1,15 +1,15 @@
 import { CommonModule } from '@angular/common';
 import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  effect,
-  ElementRef,
-  HostListener,
-  inject,
-  OnDestroy,
-  output,
-  ViewChild,
+    AfterViewInit,
+    ChangeDetectionStrategy,
+    Component,
+    effect,
+    ElementRef,
+    HostListener,
+    inject,
+    OnDestroy,
+    output,
+    ViewChild,
 } from '@angular/core';
 
 import { NoteContent } from '../../models/note.model';
@@ -23,32 +23,39 @@ import { AddShapesAction } from './Actions/AddShapesAction';
 import { CanvasAction } from './Actions/CanvasAction';
 import { CanvasActionHandler } from './Actions/CanvasActionHandler';
 import { ChangeDrawingsPropertiesAction } from './Actions/ChangeDrawingPropertiesAction';
-import { ChangeShapesPropertiesAction } from './Actions/ChangeShapesPropertiesAction';
+import {
+    ChangeShapesLayerAction,
+    ShapeLayerMove,
+} from './Actions/ChangeShapesLayerAction';
+import {
+    ChangedShapeProperties,
+    ChangeShapesPropertiesAction,
+} from './Actions/ChangeShapesPropertiesAction';
 import { DrawingToShapeAction } from './Actions/DrawingToShapeAction';
 import { RemoveDrawingsAction } from './Actions/RemoveDrawingsAction';
 import { RemoveGroupShapeAction } from './Actions/RemoveGroupShapeAction';
 import { RemoveShapesAction } from './Actions/RemoveShapesAction';
-import { ShapeToLocalAction } from './Actions/ShapeToLocal';
+import { CanvasContextMenu } from './ContextMenus/canvas-context-menu/canvas-context-menu.component';
+import { ShapeContextMenu } from './ContextMenus/shape-context-menu/shape-context-menu.component';
 import { ChangableDrawingProperties } from './DrawingProperties/DrawingProperties';
 import { DrawingPropertyName } from './DrawingProperties/DrawingPropertyName';
 import { Drawing } from './Drawings/Drawing';
 import { Point, Rect } from './Geometry';
 import { getClientLabel, getColorFromClientId, RemoteCursor, renderOffScreenIndicator, renderRemoteCursor } from './RemoteCursor';
 import {
-  DrawingSerializer,
-  SerializedDrawing,
+    DrawingSerializer,
+    SerializedDrawing,
 } from './Serializer/DrawingSerializer';
 import { SerializedShape, ShapeSerializer } from './Serializer/ShapeSerializer';
-import { ChangableSerializedShapeProperties } from './ShapeProperties/ShapeProperties';
 import { ShapePropertyName } from './ShapeProperties/ShapePropertyName';
 import { GroupShape } from './Shapes/GroupShape';
 import { Shape } from './Shapes/Shape';
 import { CanvasStyle } from './ShapeStyles/CanvasStyle';
 import { LineAlignment } from './ShapeStyles/LineAlignment';
 import {
-  NullableShapeStyle,
-  ShapeStyle,
-  ShapeStyleProperty,
+    NullableShapeStyle,
+    ShapeStyle,
+    ShapeStyleProperty,
 } from './ShapeStyles/ShapeStyle';
 import { StyleName } from './ShapeStyles/StyleName';
 import { CanvasToolState } from './States/CanvasToolState';
@@ -77,13 +84,25 @@ declare global {
   }
 }
 
+export interface CanvasRenderType {
+  transformed?: boolean;
+  shapesChanged?: boolean;
+  drawingsChanged?: boolean;
+  shapesEdited?: boolean;
+  backgroundChanged?: boolean;
+}
+
 @Component({
   selector: 'app-canvas',
-  imports: [CommonModule],
+  imports: [CommonModule, ShapeContextMenu, CanvasContextMenu],
   template: `<div class="relative">
-    <canvas #mainCanvas class="absolute top-0 left-0"></canvas>
-    <canvas
-      #tmpCanvas
+    <canvas hidden #bufferCanvas class="absolute top-0 left-0"></canvas>
+    <canvas #backgroundCanvas class="absolute top-0 left-0"></canvas>
+    <canvas #shapeCanvas class="absolute top-0 left-0"></canvas>
+    <canvas #drawingCanvas class="absolute top-0 left-0 "></canvas>
+    <canvas #selectFrameCanvas class="absolute top-0 left-0"></canvas>
+    <div
+      #inputElement
       (mousedown)="onMouseDown($event)"
       (mousemove)="onHoveringMouseMove($event)"
       (wheel)="onWheel($event)"
@@ -95,24 +114,50 @@ declare global {
       (touchend)="onTouchEnd($event)"
       (touchcancel)="onTouchCancel($event)"
       tabindex="0"
-      class="absolute top-0 left-0"></canvas>
+      class="absolute top-0 left-0 w-screen h-screen bg-transparent"></div>
     <textarea
       #hiddenInput
       class="absolute opacity-0 top-0 left-0 h-0 w-0 overflow-hidden"
       (input)="onInput($event)"
       (keydown)="onKeyDown($event)"
-      (blur)="onInputBlur()"
-    ></textarea>
-  </div>`,
+      (blur)="onInputBlur()"></textarea>
+    @if (isSelectToolState()) {
+      <app-shape-context-menu
+        [hidden]="!asSelectToolState().shapeContextMenuVisible"
+        [style.left.px]="asSelectToolState().contextMenuPosition[0]"
+        [style.top.px]="asSelectToolState().contextMenuPosition[1]"
+        [selectedShape]="asSelectToolState().selectedShapeChange()"
+        (executeAction)="
+          asSelectToolState().executeShapeContextMenuAction($event)
+        "
+        class="absolute z-2"></app-shape-context-menu>
+      <app-canvas-context-menu
+        [hidden]="!asSelectToolState().canvasContextMenuVisible"
+        [style.left.px]="asSelectToolState().contextMenuPosition[0]"
+        [style.top.px]="asSelectToolState().contextMenuPosition[1]"
+        (executeAction)="
+          asSelectToolState().executeCanvasContextMenuAction($event)
+        "
+        class="absolute z-2"></app-canvas-context-menu>
+    }
+  </div> `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CanvasComponent implements AfterViewInit, OnDestroy {
-  @ViewChild('mainCanvas', { static: true })
-  private mainCanvasRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('tmpCanvas', { static: true })
-  private tmpCanvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('shapeCanvas', { static: true })
+  private shapeCanvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('drawingCanvas', { static: true })
+  private drawingCanvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('bufferCanvas', { static: true })
+  private bufferCanvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('selectFrameCanvas', { static: true })
+  private selectFrameCanvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('backgroundCanvas', { static: true })
+  private backgroundCanvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('hiddenInput', { static: true })
   private hiddenInputRef!: ElementRef<HTMLTextAreaElement>;
+  @ViewChild('inputElement', { static: true })
+  private inputElementRef!: ElementRef<HTMLTextAreaElement>;
 
   #canvasConnection = inject(CanvasConnectionService);
   #remoteCursors = new Map<string, RemoteCursor>();
@@ -121,8 +166,11 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
   #cursorThrottleMs = 30;
   #currentNoteId: string | null = null;
 
-  #mainCtx!: CanvasRenderingContext2D;
-  #tmpCtx!: CanvasRenderingContext2D;
+  #shapeCtx!: CanvasRenderingContext2D;
+  #drawingCtx!: CanvasRenderingContext2D;
+  #bufferCtx!: CanvasRenderingContext2D;
+  #selectFrameCtx!: CanvasRenderingContext2D;
+  #backgroundCtx!: CanvasRenderingContext2D;
 
   #toolState!: CanvasToolState;
   modeChange = output<Mode>();
@@ -142,6 +190,10 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
   #maxScale = 5;
   scaleChanged = output<number>();
   #animationFrameId: number | null = null;
+
+  #backgroundIsGrid = true;
+  #smallChunkSize = 1;
+  #snapByGrid = true;
 
   constructor() {
     this.#watchCursorUpdates();
@@ -183,12 +235,15 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
   #leftMouseDown = false;
   #rightMouseDown = false;
 
+  #longTouchTimeout?: number;
+  #doubleTouchTimeout?: number;
+
   #style = new CanvasStyle({
     [StyleName.Color]: '#000000',
-    [StyleName.BackgroundColor]: '#00000000',
+    [StyleName.BackgroundColor]: 'transparent',
     [StyleName.LineWidth]: 10,
     [StyleName.LineCap]: 'round',
-    [StyleName.Opacity]: 255,
+    [StyleName.Opacity]: 1,
     [StyleName.FontSize]: 40,
     [StyleName.FontLineSpace]: 1.25,
     [StyleName.FontName]: 'Times New Roman',
@@ -202,17 +257,23 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
   #smoothLineFactor = 4;
 
   ngAfterViewInit() {
-    this.#shapeSerializer = new ShapeSerializer();
-    this.#drawingSerializer = new DrawingSerializer();
+    const bufferCanvas = this.bufferCanvasRef.nativeElement;
+    this.#bufferCtx = bufferCanvas.getContext('2d')!;
+    const shapeCanvas = this.shapeCanvasRef.nativeElement;
+    this.#shapeCtx = shapeCanvas.getContext('2d')!;
+    const drawingCanvas = this.drawingCanvasRef.nativeElement;
+    this.#drawingCtx = drawingCanvas.getContext('2d')!;
+    const selectFrameCanvas = this.selectFrameCanvasRef.nativeElement;
+    this.#selectFrameCtx = selectFrameCanvas.getContext('2d')!;
+    const backgroundCanvas = this.backgroundCanvasRef.nativeElement;
+    this.#backgroundCtx = backgroundCanvas.getContext('2d')!;
+
+    this.#shapeSerializer = new ShapeSerializer(this.#bufferCtx);
+    this.#drawingSerializer = new DrawingSerializer(this.#bufferCtx);
     this.#actionHandler = new CanvasActionHandler(this);
 
-    const mainCanvas = this.mainCanvasRef.nativeElement;
-    this.#mainCtx = mainCanvas.getContext('2d')!;
-    const tmpCanvas = this.tmpCanvasRef.nativeElement;
-    this.#tmpCtx = tmpCanvas.getContext('2d')!;
-
     this.changeToHover();
-    this.renderCanvas(true, true);
+    this.renderCanvas({ transformed: true });
     
     // Start smoothing loop
     this.#startAnimationLoop();
@@ -267,7 +328,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
   #startAnimationLoop() {
     const loop = () => {
       let needsRender = false;
-      const lerpFactor = 0.5; // Catch up faster (was 0.2)
+      const lerpFactor = 0.5;
 
       for (const cursor of this.#remoteCursors.values()) {
         const dx = cursor.targetCursorPosition.x - cursor.cursorPosition.x;
@@ -279,7 +340,6 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
           needsRender = true;
         }
 
-        // Center on tracked user
         const trackedId = this.#canvasConnection.trackedClientId();
         if (trackedId === cursor.clientId) {
           this.#origin[0] = window.innerWidth / 2 - cursor.cursorPosition.x * this.#scale;
@@ -289,7 +349,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
       }
 
       if (needsRender) {
-        this.renderCanvas(true, true); // Must render main too if origin changed
+        this.renderCanvas({ transformed: true });
       }
 
       this.#animationFrameId = requestAnimationFrame(loop);
@@ -305,19 +365,31 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
 
     const now = Date.now();
     if (now - this.#lastCursorSendTime < this.#cursorThrottleMs) {
-      return; // Throttle
+      return;
     }
 
     this.#lastCursorSendTime = now;
     this.#canvasConnection.sendCursorPosition(this.#currentNoteId, cursorPosition);
   }
 
-  get mainCtx() {
-    return this.#mainCtx;
+  get shapeCtx() {
+    return this.#shapeCtx;
   }
 
-  get tmpCtx() {
-    return this.#tmpCtx;
+  get drawingCtx() {
+    return this.#drawingCtx;
+  }
+
+  get bufferCtx() {
+    return this.#bufferCtx;
+  }
+
+  get selectFrameCtx() {
+    return this.#selectFrameCtx;
+  }
+
+  get backgroundCtx() {
+    return this.#backgroundCtx;
   }
 
   get shapeSerializer() {
@@ -433,21 +505,29 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     return '';
   }
 
+  isSelectToolState() {
+    return this.#toolState instanceof SelectToolState;
+  }
+
+  asSelectToolState() {
+    return this.#toolState as SelectToolState;
+  }
+
   zoomInCenter(zoom: number) {
     if (zoom !== this.#scale) {
       this.applyZoom(
         zoom,
-        this.mainCtx.canvas.width / 2,
-        this.mainCtx.canvas.height / 2
+        this.#shapeCtx.canvas.width / 2,
+        this.#shapeCtx.canvas.height / 2
       );
       this.scaleChanged.emit(this.scale);
-      this.renderCanvas(true, true);
+      this.renderCanvas({ transformed: true });
     }
   }
 
   resetOrigin() {
     this.#origin = [window.innerWidth / 2, window.innerHeight / 2];
-    this.renderCanvas(true, true);
+    this.renderCanvas({ transformed: true });
   }
 
   addShapes(shapes: Shape[]) {
@@ -480,16 +560,10 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.canvasChanged.emit();
   }
 
-  changeShapesProperties(
-    shapeIdList: string[],
-    properties: ChangableSerializedShapeProperties
-  ) {
+  changeShapesProperties(changedShapeProperties: ChangedShapeProperties[]) {
     this.#actionHandler.receiveAction({
       type: ActionType.ChangeShapesProperties,
-      data: {
-        shapeIdList: shapeIdList,
-        properties: properties,
-      },
+      data: { shapes: changedShapeProperties },
     } as ChangeShapesPropertiesAction);
     this.canvasChanged.emit();
   }
@@ -536,7 +610,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
   }
 
   drawingToShape(drawing: Drawing) {
-    const shape = drawing.toShape(this.mainCtx);
+    const shape = drawing.toShape();
     this.shapes.push(shape);
     const serializedShape = this.shapeSerializer.serialized(shape);
 
@@ -637,34 +711,17 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.canvasChanged.emit();
   }
 
-  shapeToLocal(groupShape: GroupShape, shape: Shape) {
+  changeShapesLayer(shapes: ShapeLayerMove[]) {
     this.#actionHandler.receiveAction({
-      type: ActionType.ShapeToLocal,
-      data: {
-        groupShape: {
-          [ShapePropertyName.id]: groupShape.properties[ShapePropertyName.id],
-          [ShapePropertyName.originX]:
-            groupShape.properties[ShapePropertyName.originX],
-          [ShapePropertyName.originY]:
-            groupShape.properties[ShapePropertyName.originY],
-          [ShapePropertyName.width]:
-            groupShape.properties[ShapePropertyName.width],
-          [ShapePropertyName.height]:
-            groupShape.properties[ShapePropertyName.height],
-        },
-        shapeProperties: {
-          [ShapePropertyName.id]: shape.properties[ShapePropertyName.id],
-          [ShapePropertyName.originX]:
-            shape.properties[ShapePropertyName.originX],
-          [ShapePropertyName.originY]:
-            shape.properties[ShapePropertyName.originY],
-          [ShapePropertyName.width]: shape.properties[ShapePropertyName.width],
-          [ShapePropertyName.height]:
-            shape.properties[ShapePropertyName.height],
-        },
-      },
-    } as ShapeToLocalAction);
+      type: ActionType.ChangeShapesLayer,
+      data: { shapes: shapes },
+    } as ChangeShapesLayerAction);
     this.canvasChanged.emit();
+  }
+
+  changeBackground(grid: boolean) {
+    this.#backgroundIsGrid = grid;
+    this.renderCanvas({ backgroundChanged: true });
   }
 
   changeMode(mode: Mode) {
@@ -678,7 +735,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
       if (this.#toolState instanceof SelectToolState) {
         this.#toolState.selectSingleShape(textBox);
       }
-      this.renderCanvas(false, true);
+      this.renderCanvas({ shapesEdited: true });
       return;
     }
 
@@ -718,7 +775,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
   }
 
   focusCanvas() {
-    this.tmpCanvasRef.nativeElement.focus();
+    this.inputElementRef.nativeElement.focus();
   }
 
   changeStyle(style: NullableShapeStyle) {
@@ -734,7 +791,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
   }
 
   changeCursor(cursor: string) {
-    this.#tmpCtx.canvas.style.cursor = cursor;
+    this.inputElementRef.nativeElement.style.cursor = cursor;
   }
 
   enableMove() {
@@ -801,7 +858,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.#scale = clampedScale;
     this.scaleChanged.emit(this.#scale);
 
-    this.renderCanvas(true, true);
+    this.renderCanvas({ transformed: true });
   }
 
   private panBy(deltaX: number, deltaY: number) {
@@ -814,93 +871,116 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.#origin[0] -= deltaX;
     this.#origin[1] -= deltaY;
 
-    this.renderCanvas(true, true);
+    this.renderCanvas({ transformed: true });
   }
 
   @HostListener('window:resize')
   onResize() {
-    this.renderCanvas(true, true);
+    this.renderCanvas({ transformed: true });
   }
 
-  renderCanvas(main: boolean, tmp: boolean) {
+  renderCanvas(renderType: CanvasRenderType) {
     const originX = -this.#origin[0] / this.#scale;
     const originY = -this.#origin[1] / this.#scale;
     const xMax = originX + window.innerWidth / this.#scale;
     const yMax = originY + window.innerHeight / this.#scale;
     this.#trueRect = [originX, originY, xMax, yMax];
 
-    if (main) {
-      this.#mainCtx.canvas.width = window.innerWidth;
-      this.#mainCtx.canvas.height = window.innerHeight;
-      this.#mainCtx.save();
+    this.#smallChunkSize = this.scaleToSmallGridChunkSize();
 
-      this.#mainCtx.clearRect(
+    if (renderType.backgroundChanged || renderType.transformed) {
+      this.#backgroundCtx.canvas.width = window.innerWidth;
+      this.#backgroundCtx.canvas.height = window.innerHeight;
+      this.#backgroundCtx.translate(this.#origin[0], this.#origin[1]);
+      this.#backgroundCtx.scale(this.#scale, this.#scale);
+
+      this.#backgroundCtx.clearRect(
         0,
         0,
-        this.#mainCtx.canvas.width,
-        this.#mainCtx.canvas.height
+        this.#backgroundCtx.canvas.width,
+        this.#backgroundCtx.canvas.height
       );
 
-      this.#mainCtx.translate(this.#origin[0], this.#origin[1]);
-      this.#mainCtx.scale(this.#scale, this.#scale);
-      for (const shape of this.#shapes) {
-        if (
-          !shape.properties[ShapePropertyName.edited] &&
-          this.shapeInside(shape)
-        ) {
-          shape.render(this.#trueRect);
-        }
+      if (this.#backgroundIsGrid) {
+        this.drawGrid();
       }
-
-      this.#toolState.renderMain();
-
-      this.#mainCtx.restore();
     }
 
-    if (tmp) {
-      this.#tmpCtx.canvas.width = window.innerWidth;
-      this.#tmpCtx.canvas.height = window.innerHeight;
-      this.#tmpCtx.save();
+    if (renderType.shapesChanged || renderType.transformed) {
+      this.#bufferCtx.canvas.width = window.innerWidth;
+      this.#bufferCtx.canvas.height = window.innerHeight;
+      this.#bufferCtx.translate(this.#origin[0], this.#origin[1]);
+      this.#bufferCtx.scale(this.#scale, this.#scale);
 
-      this.#tmpCtx.clearRect(
+      this.#shapeCtx.canvas.width = window.innerWidth;
+      this.#shapeCtx.canvas.height = window.innerHeight;
+      this.#shapeCtx.save();
+
+      this.#shapeCtx.clearRect(
         0,
         0,
-        this.#tmpCtx.canvas.width,
-        this.#tmpCtx.canvas.height
+        this.#shapeCtx.canvas.width,
+        this.#shapeCtx.canvas.height
       );
 
-      this.#tmpCtx.translate(this.#origin[0], this.#origin[1]);
-      this.#tmpCtx.scale(this.#scale, this.#scale);
-
+      if (this.#toolState instanceof SelectToolState) {
+        this.#toolState.selectedShapesToGlobal();
+      }
       for (const shape of this.#shapes) {
-        if (
-          shape.properties[ShapePropertyName.edited] &&
-          !shape.properties[ShapePropertyName.selected] &&
-          this.shapeInside(shape)
-        ) {
-          shape.render(this.#trueRect);
+        if (this.shapeInside(shape)) {
+          shape.render(this.#trueRect, this.#shapeCtx);
         }
       }
+      if (this.#toolState instanceof SelectToolState) {
+        this.#toolState.selectedShapesToLocal();
+      }
+
+      this.#shapeCtx.restore();
+    }
+
+    if (renderType.shapesEdited || renderType.transformed) {
+      this.#selectFrameCtx.canvas.width = window.innerWidth;
+      this.#selectFrameCtx.canvas.height = window.innerHeight;
+      this.#selectFrameCtx.translate(this.#origin[0], this.#origin[1]);
+      this.#selectFrameCtx.scale(this.#scale, this.#scale);
+
+      if (this.#toolState instanceof SelectToolState) {
+        this.#toolState.renderSelectedFrame();
+      } else if (this.#toolState instanceof TextToolState) {
+        this.#toolState.renderTextBoxRect();
+      }
+    }
+
+    if (renderType.drawingsChanged || renderType.transformed) {
+      this.#drawingCtx.canvas.width = window.innerWidth;
+      this.#drawingCtx.canvas.height = window.innerHeight;
+      this.#drawingCtx.save();
+
+      this.#drawingCtx.clearRect(
+        0,
+        0,
+        this.#drawingCtx.canvas.width,
+        this.#drawingCtx.canvas.height
+      );
 
       for (const drawing of this.#drawings) {
-        drawing.render(this.#tmpCtx);
+        drawing.render(this.#trueRect, this.#drawingCtx, this.#bufferCtx);
       }
-      this.#toolState.renderTmp();
 
-      // Render remote cursors
+      // Render remote cursors on the drawing canvas
       for (const cursor of this.#remoteCursors.values()) {
-        renderRemoteCursor(this.#tmpCtx, cursor, this.#scale);
+        renderRemoteCursor(this.#drawingCtx, cursor, this.#scale);
       }
 
       this.renderRemoteSelections();
 
-      this.#tmpCtx.restore();
+      this.#drawingCtx.restore();
 
       // Render off-screen indicators (in screen space)
-      const { width, height } = this.#tmpCtx.canvas;
+      const { width, height } = this.#drawingCtx.canvas;
       for (const cursor of this.#remoteCursors.values()) {
         renderOffScreenIndicator(
-          this.#tmpCtx,
+          this.#drawingCtx,
           cursor,
           this.#origin,
           this.#scale,
@@ -916,24 +996,23 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
       if (clientId === this.#canvasConnection.clientId()) continue;
 
       const color = getColorFromClientId(clientId);
-      this.#tmpCtx.save();
-      this.#tmpCtx.strokeStyle = color;
-      this.#tmpCtx.lineWidth = 2 / this.#scale;
-      this.#tmpCtx.setLineDash([5 / this.#scale, 5 / this.#scale]);
+      this.#drawingCtx.save();
+      this.#drawingCtx.strokeStyle = color;
+      this.#drawingCtx.lineWidth = 2 / this.#scale;
+      this.#drawingCtx.setLineDash([5 / this.#scale, 5 / this.#scale]);
 
       for (const shapeId of shapeIds) {
         const shape = this.#shapes.find(s => s.properties[ShapePropertyName.id] === shapeId);
         if (shape) {
           const rect = shape.trueRect();
-          this.#tmpCtx.strokeRect(rect[0], rect[1], rect[2] - rect[0], rect[3] - rect[1]);
+          this.#drawingCtx.strokeRect(rect[0], rect[1], rect[2] - rect[0], rect[3] - rect[1]);
           
-          // Draw user label tag
-          this.#tmpCtx.fillStyle = color;
-          this.#tmpCtx.font = `600 ${10 / this.#scale}px "Inter"`;
-          this.#tmpCtx.fillText(getClientLabel(clientId), rect[0], rect[1] - 5 / this.#scale);
+          this.#drawingCtx.fillStyle = color;
+          this.#drawingCtx.font = `600 ${10 / this.#scale}px "Inter"`;
+          this.#drawingCtx.fillText(getClientLabel(clientId), rect[0], rect[1] - 5 / this.#scale);
         }
       }
-      this.#tmpCtx.restore();
+      this.#drawingCtx.restore();
     }
   }
 
@@ -944,6 +1023,50 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
       }
     }
     return false;
+  }
+
+  private drawGrid() {
+    const bigChunkSize = this.#smallChunkSize * 5;
+    this.drawGridChunksBySize(this.#smallChunkSize, '#d0d0d0');
+    this.drawGridChunksBySize(bigChunkSize, '#808080');
+  }
+
+  private scaleToSmallGridChunkSize(): number {
+    if (this.scale <= 0) return 0;
+    const index = Math.floor(Math.log2(this.scale / 0.1));
+    return 256 / Math.pow(2, index);
+  }
+
+  private drawGridChunksBySize(chunkSize: number, color: string) {
+    this.backgroundCtx.strokeStyle = color;
+    this.backgroundCtx.lineWidth = 1 / this.scale;
+
+    const path = new Path2D();
+
+    const startX = Math.ceil(this.trueRect[0] / chunkSize) * chunkSize;
+    const countX = Math.ceil((this.trueRect[2] - startX) / chunkSize);
+    for (let x = startX; x < startX + countX * chunkSize; x += chunkSize) {
+      path.moveTo(x, this.trueRect[1]);
+      path.lineTo(x, this.trueRect[3]);
+    }
+
+    const startY = Math.ceil(this.trueRect[1] / chunkSize) * chunkSize;
+    const countY = Math.ceil((this.trueRect[3] - startY) / chunkSize);
+    for (let y = startY; y < startY + countY * chunkSize; y += chunkSize) {
+      path.moveTo(this.trueRect[0], y);
+      path.lineTo(this.trueRect[2], y);
+    }
+
+    this.backgroundCtx.stroke(path);
+  }
+
+  pointToGrid(p: Point): Point {
+    return this.#snapByGrid
+      ? [
+          Math.round(p[0] / this.#smallChunkSize) * this.#smallChunkSize,
+          Math.round(p[1] / this.#smallChunkSize) * this.#smallChunkSize,
+        ]
+      : [p[0], p[1]];
   }
 
   private zoomWithWheel(event: WheelEvent) {
@@ -1023,6 +1146,15 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.#toolState.onDoubleClick(event);
   };
 
+  @HostListener('contextmenu', ['$event'])
+  onContextMenu(event: PointerEvent) {
+    event.preventDefault();
+    this.updateCursor(event.clientX, event.clientY);
+    if (this.#toolState instanceof SelectToolState) {
+      this.#toolState.onContextMenu(event.clientX, event.clientY);
+    }
+  }
+
   @HostListener('window:gesturestart', ['$event'])
   handleGestureStart(event: GestureEventWithScale) {
     if (!this.#moveEnabled) {
@@ -1054,15 +1186,33 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.#isPinching = false;
   }
 
+  startLongTouch(event: TouchEvent) {
+    this.#longTouchTimeout = setTimeout(() => {
+      if (
+        event.touches.length > 0 &&
+        this.#toolState instanceof SelectToolState
+      )
+        this.#toolState.onContextMenu(
+          event.touches[0].clientX,
+          event.touches[0].clientY
+        );
+    }, 500);
+  }
+
+  cancelLongTouch() {
+    clearTimeout(this.#longTouchTimeout);
+  }
+
   onTouchStart(event: TouchEvent) {
     event.preventDefault();
+    this.startLongTouch(event);
     if (event.touches.length === 1) {
       this.#isTouchPinching = false;
-      
+
       // Touch fix. Reset movement state for a new touch input.
       this.#pressedMouseMoved = false;
       this.#firstMove = true;
-      
+
       const touch = event.touches[0];
       const mouseEvent = new MouseEvent('mousedown', {
         clientX: touch.clientX,
@@ -1070,6 +1220,16 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
         button: 0,
         buttons: 1,
       });
+
+      if (this.#doubleTouchTimeout === undefined) {
+        this.#doubleTouchTimeout = event.timeStamp + 500;
+      } else if (event.timeStamp <= this.#doubleTouchTimeout) {
+        this.#doubleTouchTimeout = undefined;
+        this.onDoubleClick(mouseEvent);
+      } else {
+        this.#doubleTouchTimeout = event.timeStamp + 500;
+      }
+
       this.onMouseDown(mouseEvent);
     } else if (event.touches.length === 2) {
       if (this.#mouseDown) {
@@ -1090,13 +1250,17 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
 
   onTouchMove(event: TouchEvent) {
     event.preventDefault();
+    this.cancelLongTouch();
     if (event.touches.length === 1 && !this.#isTouchPinching) {
       const touch = event.touches[0];
       const startScreenX = this.#startCursor[0] * this.#scale + this.#origin[0];
       const startScreenY = this.#startCursor[1] * this.#scale + this.#origin[1];
-      
-      const screenDist = Math.hypot(touch.clientX - startScreenX, touch.clientY - startScreenY);
-      
+
+      const screenDist = Math.hypot(
+        touch.clientX - startScreenX,
+        touch.clientY - startScreenY
+      );
+
       if (screenDist < 5) {
         return;
       }
@@ -1116,19 +1280,19 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
       if (this.#lastTouchDistance > 0) {
         const zoomFactor = currentDistance / this.#lastTouchDistance;
         const newScale = this.#scale * zoomFactor;
-        
+
         // Use the center between fingers as zoom focus
         this.applyZoom(newScale, center.x, center.y);
-        
+
         this.#lastTouchDistance = currentDistance;
       }
 
       // Pan
       const deltaX = center.x - this.#touchStartFocus[0];
       const deltaY = center.y - this.#touchStartFocus[1];
-      
+
       this.panBy(-deltaX, -deltaY);
-      
+
       this.#touchStartFocus[0] = center.x;
       this.#touchStartFocus[1] = center.y;
     }
@@ -1136,6 +1300,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
 
   onTouchEnd(event: TouchEvent) {
     event.preventDefault();
+    this.cancelLongTouch();
     if (event.touches.length === 0) {
       if (this.#isTouchPinching) {
         this.#isTouchPinching = false;
@@ -1167,18 +1332,18 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     const value = textarea.value;
     if (value.length > 0) {
       const char = value.slice(-1);
-      
+
       const keyEvent = new KeyboardEvent('keypress', {
         key: char,
       });
       this.onKeyPress(keyEvent);
-      
+
       textarea.value = '';
     }
   }
-  
+
   onInputBlur() {
-     this.focusCanvas();
+    this.focusCanvas();
   }
 
   private getTouchDistance(touches: TouchList): number {
@@ -1222,18 +1387,22 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
 
     if (this.#leftMouseDown && event.ctrlKey) {
       this.#isPanning = true;
-      this.#previousCursor = this.#tmpCtx.canvas.style.cursor;
+      this.#previousCursor = this.inputElementRef.nativeElement.style.cursor;
       this.changeCursor('grabbing');
       return;
     }
 
     this.#toolState.onMouseDown(event);
 
-    this.renderCanvas(true, true);
+    this.renderCanvas({
+      drawingsChanged: true,
+      shapesChanged: true,
+      shapesEdited: true,
+    });
   };
 
   onHoveringMouseMove = (event: MouseEvent) => {
-    if (!this.#tmpCtx || this.#mouseDown) {
+    if (this.#mouseDown) {
       return;
     }
     event.preventDefault();
@@ -1246,7 +1415,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     if (this.#isPanning) {
       this.#origin[0] = event.clientX - this.#dragStart[0];
       this.#origin[1] = event.clientY - this.#dragStart[1];
-      this.renderCanvas(true, true);
+      this.renderCanvas({ transformed: true });
       return;
     }
     this.#toolState.onPressedMouseMove(event);
@@ -1310,13 +1479,11 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.#scale = scale;
     this.scaleChanged.emit(this.#scale);
 
-    this.#shapes = shapes.map(s =>
-      this.#shapeSerializer.deserialized(s, this.mainCtx)
-    );
+    this.#shapes = shapes.map(s => this.#shapeSerializer.deserialized(s));
 
     this.#drawings = drawings.map(d => this.#drawingSerializer.deserialized(d));
 
-    this.renderCanvas(true, true);
+    this.renderCanvas({ transformed: true });
   }
 
   /**
@@ -1325,7 +1492,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
    */
   applyRemoteAction(action: CanvasAction) {
     this.#actionHandler.executeAction(action);
-    this.renderCanvas(true, true);
+    this.renderCanvas({ transformed: true });
   }
 
   async emitAction(action: CanvasAction) {
@@ -1370,7 +1537,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
       const clientLeft = this.#canvasConnection.clientLeft();
       if (clientLeft) {
         this.#remoteCursors.delete(clientLeft.clientId);
-        this.renderCanvas(false, true);
+        this.renderCanvas({ drawingsChanged: true });
       }
     });
   }
@@ -1381,7 +1548,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
       if (removedClientId) {
         this.#remoteCursors.delete(removedClientId);
         this.#remoteSelections.delete(removedClientId);
-        this.renderCanvas(false, true);
+        this.renderCanvas({ drawingsChanged: true });
       }
     });
   }
@@ -1395,7 +1562,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
         } else {
           this.#remoteSelections.set(update.clientId, update.shapeIdList);
         }
-        this.renderCanvas(false, true);
+        this.renderCanvas({ drawingsChanged: true });
       }
     });
   }
