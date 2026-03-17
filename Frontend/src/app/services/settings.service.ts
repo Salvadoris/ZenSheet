@@ -1,53 +1,129 @@
-import { effect, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
 
 import { environment } from '../../environments/environment';
+
+import { ClientSessionService } from './client-session.service';
+
+interface AppSettings {
+  username: string;
+  offlineMode: boolean;
+  showJsonViewer: boolean;
+  showGrid: boolean;
+  snapToGrid: boolean;
+  showCursors: boolean;
+  isInitial?: boolean;
+}
 
 @Injectable({
   providedIn: 'root',
 })
 export class SettingsService {
-  readonly #USERNAME_KEY = 'zen_username';
-  readonly #OFFLINE_MODE_KEY = 'zen_offline_mode';
-  readonly #SHOW_JSON_VIEWER_KEY = 'zen_show_json_viewer';
+  readonly #storageKey = 'app_settings';
 
-  username = signal<string>(localStorage.getItem(this.#USERNAME_KEY) || 'Anonymous');
-  isOfflineMode = signal<boolean>(!environment.backendEnabled || localStorage.getItem(this.#OFFLINE_MODE_KEY) === 'true');
-  showJsonViewer = signal<boolean>(localStorage.getItem(this.#SHOW_JSON_VIEWER_KEY) === 'true');
+  readonly #defaults: AppSettings = {
+    username: 'Anonymous',
+    offlineMode: !environment.backendEnabled,
+    showJsonViewer: false,
+    showGrid: true,
+    snapToGrid: true,
+    showCursors: true,
+    isInitial: true
+  };
+
+  readonly #initial: AppSettings;
+
+  #username = signal('');
+  #offlineMode = signal(false);
+  #showJsonViewer = signal(false);
+  #showGrid = signal(true);
+  #snapToGrid = signal(true);
+  #showCursors = signal(true);
+
+  #clientSessionService = inject(ClientSessionService);
+
+  readonly username = this.#username.asReadonly();
+  readonly isOfflineMode = this.#offlineMode.asReadonly();
+  readonly showJsonViewer = this.#showJsonViewer.asReadonly();
+  readonly showGrid = this.#showGrid.asReadonly();
+  readonly snapToGrid = this.#snapToGrid.asReadonly();
+  readonly showCursors = this.#showCursors.asReadonly();
+
+  readonly canvasSettings = computed(() => ({
+    showGrid: this.#showGrid(),
+    snapToGrid: this.#snapToGrid(),
+    showCursors: this.#showCursors(),
+  }));
 
   constructor() {
-    effect(() => {
-      localStorage.setItem(this.#USERNAME_KEY, this.username());
-    });
+    this.#initial = {
+      ...this.#defaults,
+      ...this.#readFromStorage(),
+    };
+
+    let initialUsername = this.#initial.username;
+    if (this.#initial.isInitial || initialUsername === 'Anonymous') {
+      const clientId = this.#clientSessionService.getClientId();
+      initialUsername = `User-${clientId.substring(0, 4).toUpperCase()}`;
+    }
+
+    this.#username.set(initialUsername);
+    this.#offlineMode.set(this.#initial.offlineMode);
+    this.#showJsonViewer.set(this.#initial.showJsonViewer);
+    this.#showGrid.set(this.#initial.showGrid);
+    this.#snapToGrid.set(this.#initial.snapToGrid);
+    this.#showCursors.set(this.#initial.showCursors);
 
     effect(() => {
-      localStorage.setItem(this.#OFFLINE_MODE_KEY, String(this.isOfflineMode()));
-    });
+      const settings: AppSettings = {
+        username: this.#username(),
+        offlineMode: this.#offlineMode(),
+        showJsonViewer: this.#showJsonViewer(),
+        showGrid: this.#showGrid(),
+        snapToGrid: this.#snapToGrid(),
+        showCursors: this.#showCursors(),
+        isInitial: false
+      };
 
-    effect(() => {
-      localStorage.setItem(this.#SHOW_JSON_VIEWER_KEY, String(this.showJsonViewer()));
+      localStorage.setItem(this.#storageKey, JSON.stringify(settings));
     });
   }
 
   setUsername(name: string) {
     if (name.length >= 3 && name.length <= 20) {
-      this.username.set(name);
+      this.#username.set(name);
     }
   }
 
   setOfflineMode(offline: boolean) {
     if (!environment.backendEnabled) {
-      this.isOfflineMode.set(true);
+      this.#offlineMode.set(true);
       return;
     }
-    this.isOfflineMode.set(offline);
-    if (offline) {
-        // Logic to disconnect or warn will be in connection service
-    } else {
-        // Logic to refresh will be in components
-    }
+    this.#offlineMode.set(offline);
   }
 
   setShowJsonViewer(show: boolean) {
-    this.showJsonViewer.set(show);
+    this.#showJsonViewer.set(show);
+  }
+
+  setShowGrid(show: boolean) {
+    this.#showGrid.set(show);
+  }
+
+  setSnapToGrid(snap: boolean) {
+    this.#snapToGrid.set(snap);
+  }
+
+  setShowCursors(show: boolean) {
+    this.#showCursors.set(show);
+  }
+
+  #readFromStorage(): Partial<AppSettings> {
+    try {
+      const raw = localStorage.getItem(this.#storageKey);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
   }
 }

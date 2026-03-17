@@ -1,14 +1,15 @@
 import { Dialog, DialogModule } from '@angular/cdk/dialog';
 import { CommonModule } from '@angular/common';
 import {
-    Component,
-    effect,
-    HostListener,
-    inject,
-    OnDestroy,
-    OnInit,
-    signal,
-    viewChild,
+  Component,
+  effect,
+  HostListener,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+  untracked,
+  viewChild,
 } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { concatMap, debounceTime, filter, Subject, Subscription } from 'rxjs';
@@ -25,13 +26,14 @@ import { PresenceBarComponent } from './layout/presence-bar/presence-bar.compone
 import { ToolbarComponent } from './layout/toolbar/toolbar.component';
 import { ZoomIndicatorComponent } from './layout/zoom-indicator/zoom-indicator.component';
 import { Folder, Note, NoteContent } from './models/note.model';
+import { CanvasActionEmitterService } from './services/canvas-action-emitter.service';
 import {
-    CanvasConnectionService,
-    PresenceInfo,
+  CanvasConnectionService,
+  PresenceInfo,
 } from './services/canvas-connection.service';
 import {
-    ConnectivityService,
-    EConnectivityState,
+  ConnectivityService,
+  EConnectivityState,
 } from './services/connectivity.service';
 import { FolderService } from './services/folder.service';
 import { NotesService } from './services/notes.service';
@@ -62,6 +64,7 @@ export class App implements OnInit, OnDestroy {
   connectivity = inject(ConnectivityService);
   settingsService = inject(SettingsService);
   #dialog = inject(Dialog);
+  #canvasActionEmitter = inject(CanvasActionEmitterService);
 
   canvas = viewChild<CanvasComponent>('canvas');
   overviewSidebar = viewChild<OverviewSidebarComponent>('overviewSidebar');
@@ -79,6 +82,7 @@ export class App implements OnInit, OnDestroy {
   #saveSubscription?: Subscription;
   #actionSubscription?: Subscription;
   #lastLoadRequestId = 0;
+  #isFirstModeLoad = true;
 
   #saveSubject$ = new Subject<void>();
 
@@ -105,13 +109,25 @@ export class App implements OnInit, OnDestroy {
       }
     });
 
-    // Listen for hierarchy changes (e.g. folder/note created by another client)
     effect(() => {
-      const changes = this.#canvasConnection.hierarchyChanged();
-      if (changes > 0) {
+      const affectedFolderId = this.#canvasConnection.hierarchyChanged();
+      if (affectedFolderId === null) return; // initial value, skip
+
+      // Use untracked to prevent tracking signals read inside (e.g. cloudFolders, selectedFolderId)
+      // — otherwise loadFolders writing to cloudFolders would re-trigger this effect infinitely.
+      untracked(() => {
         this.updateGlobalNoteStatus();
-        this.overviewSidebar()?.loadFolders('cloud');
-      }
+
+        const currentFolderId = this.selectedFolderId();
+        if (
+          !currentFolderId ||                        // at root — always refresh
+          affectedFolderId === '' ||                  // root-level change
+          affectedFolderId === currentFolderId ||     // exact match
+          this.#isAncestorFolder(affectedFolderId, currentFolderId)
+        ) {
+          this.overviewSidebar()?.loadFolders('cloud');
+        }
+      });
     });
 
     this.#saveSubscription = this.#saveSubject$
@@ -119,12 +135,22 @@ export class App implements OnInit, OnDestroy {
         debounceTime(500),
         concatMap(async () => {
           if (this.isDirty()) {
-            console.log('Performing debounced save...');
             await this.saveCurrentNote();
           }
         })
       )
       .subscribe();
+
+    effect(() => {
+      this.settingsService.isOfflineMode();
+      
+      if (this.#isFirstModeLoad) {
+        this.#isFirstModeLoad = false;
+        return;
+      }
+
+      this.handleModeTransition();
+    });
   }
 
   ngOnInit() {
@@ -137,7 +163,6 @@ export class App implements OnInit, OnDestroy {
       this.#syncWithUrl();
     }
 
-    // Subscribe to reconnection events to refresh data automatically
     this.#reconnectSubscription = this.connectivity.onReconnected$.subscribe(
       async () => {
         await this.updateGlobalNoteStatus();
@@ -301,6 +326,26 @@ export class App implements OnInit, OnDestroy {
     return undefined;
   }
 
+  /** Checks if `candidateId` is an ancestor of `currentFolderId` in the loaded cloud folder tree. */
+  #isAncestorFolder(candidateId: string, currentFolderId: string): boolean {
+    const findParent = (folders: Folder[], targetId: string): string | null => {
+      for (const f of folders) {
+        if (f.subfolders.some(sf => sf.id === targetId)) return f.id;
+        const deeper = findParent(f.subfolders, targetId);
+        if (deeper) return deeper;
+      }
+      return null;
+    };
+
+    const cloudFolders = this.overviewSidebar()?.cloudFolders() ?? [];
+    let folderId: string | null = currentFolderId;
+    while (folderId) {
+      if (folderId === candidateId) return true;
+      folderId = findParent(cloudFolders, folderId);
+    }
+    return false;
+  }
+
   async onFolderSelected(event: { folderId: string, source: 'cloud' | 'local' }) {
     const { folderId, source } = event;
     if (!folderId) {
@@ -383,30 +428,14 @@ export class App implements OnInit, OnDestroy {
     this.#saveSubject$.next();
   }
 
-  async onLocalActionEmitted(action: CanvasAction) {
+  onLocalActionEmitted(action: CanvasAction) {
     const note = this.selectedNote();
     const source = this.selectedNoteSource();
     if (!note || source !== 'cloud') return;
 
-    console.log('Action emitted:', action);
-
-    try {
-      const result = await this.#canvasConnection.sendAction(
-        note.id,
-        action.type,
-        {
-          type: action.type,
-          data: action.data,
-        }
-      );
-
-      if (result) {
-        console.log('Action confirmed by server, version:', result.version);
-        this.#canvasConnection.currentVersion.set(result.version);
-      }
-    } catch (error) {
+    this.#canvasActionEmitter.emitAction(note.id, action).catch(error => {
       console.error('Failed to broadcast local action:', error);
-    }
+    });
   }
 
   async onTeleport(presence: PresenceInfo) {
@@ -495,5 +524,25 @@ export class App implements OnInit, OnDestroy {
       width: '400px',
       maxWidth: '95vw',
     });
+  }
+
+  async handleModeTransition() {    
+    this.selectedNote.set(null);
+    this.selectedNoteSource.set(null);
+    this.selectedFolderId.set('');
+    
+    const canvas = this.canvas();
+    if (canvas) {
+      canvas.toolstate.remove();
+      await canvas.loadCanvasData([], [], [window.innerWidth / 2, window.innerHeight / 2], 1);
+    }
+    
+    this.updateGlobalNoteStatus();
+    this.overviewSidebar()?.loadFolders();
+    this.overviewSidebar()?.resetToRoot();
+    
+    if (this.#router.url !== '/') {
+      await this.#router.navigateByUrl('/');
+    }
   }
 }

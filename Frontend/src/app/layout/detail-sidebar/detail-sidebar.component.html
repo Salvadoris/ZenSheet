@@ -19,7 +19,7 @@
       <div>
         <div class="text-md pb-0.5 select-none">Color</div>
         <div class="flex flex-row gap-3">
-          @if (isColorTransparent(style[StyleName.Color])) {
+          @if (style[StyleName.Color] === 'transparent') {
             <div tabindex="0" class="tile m-px relative">
               <svg class="tile-content absolute top-0 left-0" viewBox="0 0 3 3">
                 <rect x="0" y="0" width="3" height="3" fill="#e0e0e0" />
@@ -33,12 +33,7 @@
                 type="color"
                 class="opacity-0 absolute top-0 left-0"
                 [value]="style[StyleName.Color]"
-                (change)="
-                  changeStyle({
-                    name: StyleName.Color,
-                    value: colorpicker.value,
-                  })
-                " />
+                (change)="changeStyle({name: StyleName.Color, value: colorpicker.value,})" />
             </div>
           } @else {
             <div
@@ -50,12 +45,7 @@
                 type="color"
                 class="opacity-0"
                 [value]="style[StyleName.Color]"
-                (change)="
-                  changeStyle({
-                    name: StyleName.Color,
-                    value: colorpicker.value,
-                  })
-                " />
+                (change)="changeStyle({name: StyleName.Color, value: colorpicker.value,})" />
             </div>
           }
           <hr class="m-0.5 h-8 w-0.5 bg-gray-400 border-none" />
@@ -68,9 +58,7 @@
                   'tile-selected': color === style[StyleName.Color],
                 }"
                 class="tile">
-                @if (
-                  color.length === 9 && color[7] === '0' && color[8] === '0'
-                ) {
+                @if (color === 'transparent') {
                   <svg class="tile-content" viewBox="0 0 3 3">
                     <rect x="0" y="0" width="3" height="3" fill="#e0e0e0" />
                     <rect x="1" y="0" width="1" height="1" fill="#bdbdbd" />
@@ -93,7 +81,7 @@
       <div>
         <div class="text-md pb-0.5">Background Color</div>
         <div class="flex flex-row gap-3">
-          @if (isColorTransparent(style[StyleName.BackgroundColor])) {
+          @if (style[StyleName.BackgroundColor] === 'transparent') {
             <div tabindex="0" class="tile m-px relative">
               <svg class="tile-content absolute top-0 left-0" viewBox="0 0 3 3">
                 <rect x="0" y="0" width="3" height="3" fill="#e0e0e0" />
@@ -207,12 +195,12 @@
             type="range"
             name="amountRange"
             min="0"
-            max="255"
-            [value]="style[StyleName.Opacity]"
+            max="100"
+            [value]="roundedOpacity()"
             (input)="
               changeStyle({
                 name: StyleName.Opacity,
-                value: +opacityslider.value,
+                value: +opacityslider.value / 100,
               });
               opacityvalue.value = opacityslider.value
             " />
@@ -221,12 +209,12 @@
             type="number"
             name="amountInput"
             min="0"
-            max="255"
-            [value]="style[StyleName.Opacity]"
+            max="100"
+            [value]="roundedOpacity()"
             (input)="
               changeStyle({
                 name: StyleName.Opacity,
-                value: +opacityvalue.value,
+                value: +opacityslider.value / 100,
               });
               opacityslider.value = opacityvalue.value
             " />

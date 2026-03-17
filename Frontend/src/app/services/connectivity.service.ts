@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { effect, inject, Injectable, signal } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { catchError, exhaustMap, interval, of, startWith, Subject, tap } from 'rxjs';
+import { catchError, exhaustMap, interval, of, startWith, Subject } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 
@@ -60,10 +60,9 @@ export class ConnectivityService {
             return of({ status: 'OfflineMode', database: 'OfflineMode' });
           }
           return this.#http.get<{ status: string; database: string }>(this.#API_URL).pipe(
-            tap(res => console.log('[Connectivity] Health probe result:', res)),
             catchError((error: HttpErrorResponse) => {
               if (error.status === 503 && error.error && typeof error.error === 'object') {
-                console.log('[Connectivity] Database issues detected (503):', error.error);
+                console.warn('[Connectivity] Database issues detected (503):', error.error);
                 return of(error.error as { status: string; database: string });
               }
               console.error('[Connectivity] Probe failed:', error.message || error);
@@ -110,9 +109,7 @@ export class ConnectivityService {
       this.state.set(newState);
       this.#notifyUser(newState);
 
-      // Trigger reconnection event if the state transitioned to online
       if (newState === EConnectivityState.Online && prevState !== EConnectivityState.Online) {
-        console.log('[Connectivity] State is now Online, triggering reconnection event');
         this.onReconnected$.next();
       }
     }

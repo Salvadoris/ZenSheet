@@ -1,16 +1,18 @@
 import { Injectable } from '@angular/core';
 
+import { generateUuid } from '../utils/uuid';
+
 @Injectable({
   providedIn: 'root',
 })
 export class ClientSessionService {
-  readonly #CLIENT_ID_KEY = 'zen_client_id';
-  readonly #CLIENT_SECRET_KEY = 'zen_client_secret';
+  readonly #CLIENT_ID_KEY = 'client_id';
+  readonly #CLIENT_SECRET_KEY = 'client_secret';
 
   getClientId(): string {
     let clientId = localStorage.getItem(this.#CLIENT_ID_KEY);
     if (!clientId) {
-      clientId = this.#generateUuid();
+      clientId = generateUuid();
       localStorage.setItem(this.#CLIENT_ID_KEY, clientId);
     }
     return clientId;
@@ -19,17 +21,9 @@ export class ClientSessionService {
   getClientSecret(): string {
     let clientSecret = localStorage.getItem(this.#CLIENT_SECRET_KEY);
     if (!clientSecret) {
-      clientSecret = this.#generateUuid() + this.#generateUuid(); // Longer secret
+      clientSecret = generateUuid() + generateUuid();
       localStorage.setItem(this.#CLIENT_SECRET_KEY, clientSecret);
     }
     return clientSecret;
-  }
-
-  #generateUuid(): string {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = (Math.random() * 16) | 0;
-      const v = c === 'x' ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
   }
 }

@@ -2,23 +2,14 @@ import { Injectable, inject } from '@angular/core';
 
 import { ActionType } from '../layout/canvas/Actions/ActionType';
 import { CanvasAction } from '../layout/canvas/Actions/CanvasAction';
-import { DrawingSerializer } from '../layout/canvas/Serializer/DrawingSerializer';
-import { ShapeSerializer } from '../layout/canvas/Serializer/ShapeSerializer';
 
 import { CanvasConnectionService } from './canvas-connection.service';
 
-/**
- * Service to handle sending canvas actions from the frontend to the backend
- * Acts as a bridge between canvas components and the WebSocket connection
- * Uses existing serializers for consistent data formatting
- */
 @Injectable({
   providedIn: 'root',
 })
 export class CanvasActionEmitterService {
   #canvasConnection = inject(CanvasConnectionService);
-  #shapeSerializer = new ShapeSerializer();
-  #drawingSerializer = new DrawingSerializer();
 
   async emitAction(noteId: string, action: CanvasAction): Promise<void> {
     if (!noteId) {
@@ -47,7 +38,7 @@ export class CanvasActionEmitterService {
         [ActionType.AddDrawings]: 'AddDrawings',
         [ActionType.RemoveDrawings]: 'RemoveDrawings',
         [ActionType.DrawingToShape]: 'DrawingToShape',
-        [ActionType.ShapeToLocal]: 'ShapeToLocal',
+        [ActionType.ChangeShapesLayer]: 'ChangeShapesLayer',
         [ActionType.ChangeDrawingProperties]: 'ChangeDrawingProperties'
     };
 
@@ -56,16 +47,6 @@ export class CanvasActionEmitterService {
 
   #serializeAction(action: CanvasAction): { type: string; data: unknown } {
     const data = { ...action.data };
-
-    if ('shapes' in data && Array.isArray(data['shapes'])) {
-      data['shapes'] = data['shapes'].map((shape) => this.#shapeSerializer.serialized(shape));
-    }
-
-    if ('drawings' in data && Array.isArray(data['drawings'])) {
-      data['drawings'] = data['drawings'].map((drawing) =>
-        this.#drawingSerializer.serialized(drawing)
-      );
-    }
 
     return {
       type: action.type,

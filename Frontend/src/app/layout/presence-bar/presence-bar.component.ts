@@ -48,17 +48,24 @@ export class PresenceBarComponent {
   }
 
   getInitial(user: PresenceInfo) {
-    if (user.username && user.username !== 'Anonymous') {
+    if (user.username) {
       return user.username.charAt(0).toUpperCase();
     }
     return getClientLabel(user.clientId).charAt(0).toUpperCase();
   }
 
-  getLabel(user: PresenceInfo) {
-    if (user.username && user.username !== 'Anonymous') {
+  getLabel(userOrId: PresenceInfo | string) {
+    let user: PresenceInfo | undefined;
+    if (typeof userOrId === 'string') {
+      user = this.presenceList().find(p => p.clientId === userOrId);
+    } else {
+      user = userOrId;
+    }
+
+    if (user && user.username) {
       return user.username;
     }
-    return getClientLabel(user.clientId);
+    return getClientLabel(typeof userOrId === 'string' ? userOrId : userOrId.clientId);
   }
 
   getStatusText(noteId: string): string {
@@ -82,7 +89,7 @@ export class PresenceBarComponent {
 
   onUserClick(user: PresenceInfo) {
     if (user.clientId === this.myClientId()) return;
-    if (this.#isHolding) return; // Ignore regular click if we just finished a hold
+    if (this.#isHolding) return;
     this.teleport.emit(user);
   }
 

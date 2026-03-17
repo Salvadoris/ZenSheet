@@ -227,7 +227,7 @@ export class CanvasActionHandler {
   }
 
   private removeDrawings(action: RemoveDrawingsAction) {
-    this.canvas.drawings.filter(
+    this.canvas.drawings = this.canvas.drawings.filter(
       d =>
         !action.data.drawingIdList.includes(
           d.properties[DrawingPropertyName.id]

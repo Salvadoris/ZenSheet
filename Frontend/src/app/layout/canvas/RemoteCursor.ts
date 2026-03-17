@@ -33,13 +33,13 @@ export function renderRemoteCursor(
 
   ctx.save();
 
-  // Draw cursor shadow
+  // Cursor shadow
   ctx.shadowBlur = 4 / scale;
   ctx.shadowColor = 'rgba(0,0,0,0.3)';
   ctx.shadowOffsetX = 2 / scale;
   ctx.shadowOffsetY = 2 / scale;
 
-  // Draw cursor pointer
+  // Cursor pointer
   const size = 18 / scale;
   ctx.beginPath();
   ctx.moveTo(cursorPosition.x, cursorPosition.y);
@@ -51,7 +51,6 @@ export function renderRemoteCursor(
   ctx.lineTo(cursorPosition.x + size * 0.75, cursorPosition.y + size * 0.65);
   ctx.closePath();
 
-  // Fill and stroke
   ctx.fillStyle = color;
   ctx.fill();
   ctx.strokeStyle = '#ffffff';
@@ -64,7 +63,7 @@ export function renderRemoteCursor(
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 0;
 
-  // Draw Label Badge
+  // Label Badge
   const fontSize = 11 / scale;
   ctx.font = `600 ${fontSize}px "Inter", "Segoe UI", sans-serif`;
   const textMetrics = ctx.measureText(label);
@@ -105,7 +104,6 @@ export function renderOffScreenIndicator(
 ): void {
   const { cursorPosition, color, label } = cursor;
   
-  // Calculate screen coordinates
   const screenX = cursorPosition.x * scale + origin[0];
   const screenY = cursorPosition.y * scale + origin[1];
   const margin = 20;

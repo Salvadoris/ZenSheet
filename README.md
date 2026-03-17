@@ -4,7 +4,7 @@
 
 ZenSheet is an infinite-canvas note-taking web application that combines the freedom of an infinite whiteboard with the structure of a file system, letting users draw, type, and organize their thoughts.
 
-> **Note**: 🚧 This repository is a work in progress and currently contains the frontend application. Backend implementation is underway.
+> **Note**: 🚧 This repository is a work in progress.
 
 ## Features
 

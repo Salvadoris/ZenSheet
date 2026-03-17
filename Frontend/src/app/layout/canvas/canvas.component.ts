@@ -1,19 +1,23 @@
 import { CommonModule } from '@angular/common';
 import {
-    AfterViewInit,
-    ChangeDetectionStrategy,
-    Component,
-    effect,
-    ElementRef,
-    HostListener,
-    inject,
-    OnDestroy,
-    output,
-    ViewChild,
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  ElementRef,
+  HostListener,
+  inject,
+  OnDestroy,
+  output,
+  ViewChild,
 } from '@angular/core';
 
 import { NoteContent } from '../../models/note.model';
-import { CanvasConnectionService, CursorPosition, CursorUpdate } from '../../services/canvas-connection.service';
+import {
+  CanvasConnectionService,
+  CursorPosition,
+} from '../../services/canvas-connection.service';
+import { SettingsService } from '../../services/settings.service';
 import { Mode } from '../toolbar/toolbar.component';
 
 import { ActionType } from './Actions/ActionType';
@@ -24,12 +28,12 @@ import { CanvasAction } from './Actions/CanvasAction';
 import { CanvasActionHandler } from './Actions/CanvasActionHandler';
 import { ChangeDrawingsPropertiesAction } from './Actions/ChangeDrawingPropertiesAction';
 import {
-    ChangeShapesLayerAction,
-    ShapeLayerMove,
+  ChangeShapesLayerAction,
+  ShapeLayerMove,
 } from './Actions/ChangeShapesLayerAction';
 import {
-    ChangedShapeProperties,
-    ChangeShapesPropertiesAction,
+  ChangedShapeProperties,
+  ChangeShapesPropertiesAction,
 } from './Actions/ChangeShapesPropertiesAction';
 import { DrawingToShapeAction } from './Actions/DrawingToShapeAction';
 import { RemoveDrawingsAction } from './Actions/RemoveDrawingsAction';
@@ -41,10 +45,10 @@ import { ChangableDrawingProperties } from './DrawingProperties/DrawingPropertie
 import { DrawingPropertyName } from './DrawingProperties/DrawingPropertyName';
 import { Drawing } from './Drawings/Drawing';
 import { Point, Rect } from './Geometry';
-import { getClientLabel, getColorFromClientId, RemoteCursor, renderOffScreenIndicator, renderRemoteCursor } from './RemoteCursor';
+import { RemoteActionHandler } from './RemoteActionHandler';
 import {
-    DrawingSerializer,
-    SerializedDrawing,
+  DrawingSerializer,
+  SerializedDrawing,
 } from './Serializer/DrawingSerializer';
 import { SerializedShape, ShapeSerializer } from './Serializer/ShapeSerializer';
 import { ShapePropertyName } from './ShapeProperties/ShapePropertyName';
@@ -53,9 +57,9 @@ import { Shape } from './Shapes/Shape';
 import { CanvasStyle } from './ShapeStyles/CanvasStyle';
 import { LineAlignment } from './ShapeStyles/LineAlignment';
 import {
-    NullableShapeStyle,
-    ShapeStyle,
-    ShapeStyleProperty,
+  NullableShapeStyle,
+  ShapeStyle,
+  ShapeStyleProperty,
 } from './ShapeStyles/ShapeStyle';
 import { StyleName } from './ShapeStyles/StyleName';
 import { CanvasToolState } from './States/CanvasToolState';
@@ -90,6 +94,7 @@ export interface CanvasRenderType {
   drawingsChanged?: boolean;
   shapesEdited?: boolean;
   backgroundChanged?: boolean;
+  presenceChanged?: boolean;
 }
 
 @Component({
@@ -159,11 +164,11 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
   @ViewChild('inputElement', { static: true })
   private inputElementRef!: ElementRef<HTMLTextAreaElement>;
 
-  #canvasConnection = inject(CanvasConnectionService);
-  #remoteCursors = new Map<string, RemoteCursor>();
-  #remoteSelections = new Map<string, string[]>();
-  #lastCursorSendTime = 0;
-  #cursorThrottleMs = 30;
+  readonly #canvasConnection = inject(CanvasConnectionService);
+  readonly #settingsService = inject(SettingsService);
+
+  #remoteActionHandler!: RemoteActionHandler;
+
   #currentNoteId: string | null = null;
 
   #shapeCtx!: CanvasRenderingContext2D;
@@ -189,19 +194,8 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
   #minScale = 0.1;
   #maxScale = 5;
   scaleChanged = output<number>();
-  #animationFrameId: number | null = null;
 
-  #backgroundIsGrid = true;
   #smallChunkSize = 1;
-  #snapByGrid = true;
-
-  constructor() {
-    this.#watchCursorUpdates();
-    this.#watchInitialCursors();
-    this.#watchClientLeft();
-    this.#watchCursorRemoved();
-    this.#watchSelectionUpdates();
-  }
 
   #origin: Point = [window.innerWidth / 2, window.innerHeight / 2];
 
@@ -256,6 +250,20 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
   #smoothLine = true;
   #smoothLineFactor = 4;
 
+  constructor() {
+    this.#remoteActionHandler = new RemoteActionHandler(this, this.#canvasConnection);
+
+    effect(() => {
+      this.#settingsService.showGrid();
+      this.renderCanvas({ backgroundChanged: true });
+    });
+
+    effect(() => {
+      this.#settingsService.showCursors();
+      this.renderCanvas({ presenceChanged: true });
+    });
+  }
+
   ngAfterViewInit() {
     const bufferCanvas = this.bufferCanvasRef.nativeElement;
     this.#bufferCtx = bufferCanvas.getContext('2d')!;
@@ -274,25 +282,15 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
 
     this.changeToHover();
     this.renderCanvas({ transformed: true });
-    
-    // Start smoothing loop
-    this.#startAnimationLoop();
   }
 
   ngOnDestroy() {
-    // Clean up cursor tracking
-    this.#remoteCursors.clear();
-    if (this.#animationFrameId !== null) {
-      cancelAnimationFrame(this.#animationFrameId);
-    }
+    this.#remoteActionHandler.destroy();
   }
 
-  /**
-   * Set the current note ID for cursor tracking
-   */
   setNoteId(noteId: string) {
     this.#currentNoteId = noteId;
-    this.#remoteCursors.clear();
+    this.#remoteActionHandler.setNoteId(noteId);
   }
 
   get currentNoteId(): string | null {
@@ -300,76 +298,8 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
   }
 
 
-  /**
-   * Handle cursor update from remote client
-   */
-  #handleCursorUpdate(update: CursorUpdate) {
-    const existing = this.#remoteCursors.get(update.clientId);
-    if (existing) {
-      existing.targetCursorPosition.x = update.cursorPosition.x;
-      existing.targetCursorPosition.y = update.cursorPosition.y;
-      if (update.username) {
-        existing.label = update.username;
-      }
-    } else {
-      this.#remoteCursors.set(update.clientId, {
-        clientId: update.clientId,
-        cursorPosition: { ...update.cursorPosition },
-        targetCursorPosition: { ...update.cursorPosition },
-        color: getColorFromClientId(update.clientId),
-        label: update.username || getClientLabel(update.clientId),
-      });
-    }
-  }
-
-  /**
-   * Animation loop for smoothing and real-time updates
-   */
-  #startAnimationLoop() {
-    const loop = () => {
-      let needsRender = false;
-      const lerpFactor = 0.5;
-
-      for (const cursor of this.#remoteCursors.values()) {
-        const dx = cursor.targetCursorPosition.x - cursor.cursorPosition.x;
-        const dy = cursor.targetCursorPosition.y - cursor.cursorPosition.y;
-
-        if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
-          cursor.cursorPosition.x += dx * lerpFactor;
-          cursor.cursorPosition.y += dy * lerpFactor;
-          needsRender = true;
-        }
-
-        const trackedId = this.#canvasConnection.trackedClientId();
-        if (trackedId === cursor.clientId) {
-          this.#origin[0] = window.innerWidth / 2 - cursor.cursorPosition.x * this.#scale;
-          this.#origin[1] = window.innerHeight / 2 - cursor.cursorPosition.y * this.#scale;
-          needsRender = true;
-        }
-      }
-
-      if (needsRender) {
-        this.renderCanvas({ transformed: true });
-      }
-
-      this.#animationFrameId = requestAnimationFrame(loop);
-    };
-    this.#animationFrameId = requestAnimationFrame(loop);
-  }
-
-  /**
-   * Send cursor position to other clients (throttled)
-   */
   #sendCursorPosition(cursorPosition: CursorPosition) {
-    if (!this.#currentNoteId) return;
-
-    const now = Date.now();
-    if (now - this.#lastCursorSendTime < this.#cursorThrottleMs) {
-      return;
-    }
-
-    this.#lastCursorSendTime = now;
-    this.#canvasConnection.sendCursorPosition(this.#currentNoteId, cursorPosition);
+    this.#remoteActionHandler.sendCursorPosition(cursorPosition);
   }
 
   get shapeCtx() {
@@ -719,10 +649,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.canvasChanged.emit();
   }
 
-  changeBackground(grid: boolean) {
-    this.#backgroundIsGrid = grid;
-    this.renderCanvas({ backgroundChanged: true });
-  }
+
 
   changeMode(mode: Mode) {
     if (
@@ -880,6 +807,16 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
   }
 
   renderCanvas(renderType: CanvasRenderType) {
+    if (
+      !this.#backgroundCtx ||
+      !this.#drawingCtx ||
+      !this.#shapeCtx ||
+      !this.#bufferCtx ||
+      !this.#selectFrameCtx
+    ) {
+      return;
+    }
+
     const originX = -this.#origin[0] / this.#scale;
     const originY = -this.#origin[1] / this.#scale;
     const xMax = originX + window.innerWidth / this.#scale;
@@ -888,7 +825,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
 
     this.#smallChunkSize = this.scaleToSmallGridChunkSize();
 
-    if (renderType.backgroundChanged || renderType.transformed) {
+    if (this.#backgroundCtx && this.#drawingCtx && (renderType.backgroundChanged || renderType.transformed)) {
       this.#backgroundCtx.canvas.width = window.innerWidth;
       this.#backgroundCtx.canvas.height = window.innerHeight;
       this.#backgroundCtx.translate(this.#origin[0], this.#origin[1]);
@@ -901,7 +838,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
         this.#backgroundCtx.canvas.height
       );
 
-      if (this.#backgroundIsGrid) {
+      if (this.#settingsService.showGrid()) {
         this.drawGrid();
       }
     }
@@ -938,7 +875,11 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
       this.#shapeCtx.restore();
     }
 
-    if (renderType.shapesEdited || renderType.transformed) {
+    if (
+      renderType.shapesEdited ||
+      renderType.transformed ||
+      renderType.presenceChanged
+    ) {
       this.#selectFrameCtx.canvas.width = window.innerWidth;
       this.#selectFrameCtx.canvas.height = window.innerHeight;
       this.#selectFrameCtx.translate(this.#origin[0], this.#origin[1]);
@@ -949,9 +890,21 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
       } else if (this.#toolState instanceof TextToolState) {
         this.#toolState.renderTextBoxRect();
       }
+
+      if (this.#settingsService.showCursors()) {
+        this.#remoteActionHandler.renderRemoteSelections(
+          this.#selectFrameCtx,
+          this.#scale
+        );
+      }
     }
 
-    if (renderType.drawingsChanged || renderType.transformed) {
+    if (
+      this.#drawingCtx &&
+      (renderType.drawingsChanged ||
+        renderType.transformed ||
+        renderType.presenceChanged)
+    ) {
       this.#drawingCtx.canvas.width = window.innerWidth;
       this.#drawingCtx.canvas.height = window.innerHeight;
       this.#drawingCtx.save();
@@ -963,25 +916,36 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
         this.#drawingCtx.canvas.height
       );
 
+      this.#bufferCtx.canvas.width = window.innerWidth;
+      this.#bufferCtx.canvas.height = window.innerHeight;
+      this.#bufferCtx.save();
+      this.#bufferCtx.translate(this.#origin[0], this.#origin[1]);
+      this.#bufferCtx.scale(this.#scale, this.#scale);
+
       for (const drawing of this.#drawings) {
         drawing.render(this.#trueRect, this.#drawingCtx, this.#bufferCtx);
       }
 
-      // Render remote cursors on the drawing canvas
-      for (const cursor of this.#remoteCursors.values()) {
-        renderRemoteCursor(this.#drawingCtx, cursor, this.#scale);
-      }
+      this.#bufferCtx.restore();
 
-      this.renderRemoteSelections();
+      if (this.#settingsService.showCursors()) {
+        this.#drawingCtx.save();
+        this.#drawingCtx.translate(this.#origin[0], this.#origin[1]);
+        this.#drawingCtx.scale(this.#scale, this.#scale);
+        this.#remoteActionHandler.renderRemoteCursors(
+          this.#drawingCtx,
+          this.#scale
+        );
+        this.#drawingCtx.restore();
+      }
 
       this.#drawingCtx.restore();
 
       // Render off-screen indicators (in screen space)
-      const { width, height } = this.#drawingCtx.canvas;
-      for (const cursor of this.#remoteCursors.values()) {
-        renderOffScreenIndicator(
+      if (this.#settingsService.showCursors()) {
+        const { width, height } = this.#drawingCtx.canvas;
+        this.#remoteActionHandler.renderOffScreenIndicators(
           this.#drawingCtx,
-          cursor,
           this.#origin,
           this.#scale,
           width,
@@ -991,38 +955,8 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  private renderRemoteSelections() {
-    for (const [clientId, shapeIds] of this.#remoteSelections.entries()) {
-      if (clientId === this.#canvasConnection.clientId()) continue;
-
-      const color = getColorFromClientId(clientId);
-      this.#drawingCtx.save();
-      this.#drawingCtx.strokeStyle = color;
-      this.#drawingCtx.lineWidth = 2 / this.#scale;
-      this.#drawingCtx.setLineDash([5 / this.#scale, 5 / this.#scale]);
-
-      for (const shapeId of shapeIds) {
-        const shape = this.#shapes.find(s => s.properties[ShapePropertyName.id] === shapeId);
-        if (shape) {
-          const rect = shape.trueRect();
-          this.#drawingCtx.strokeRect(rect[0], rect[1], rect[2] - rect[0], rect[3] - rect[1]);
-          
-          this.#drawingCtx.fillStyle = color;
-          this.#drawingCtx.font = `600 ${10 / this.#scale}px "Inter"`;
-          this.#drawingCtx.fillText(getClientLabel(clientId), rect[0], rect[1] - 5 / this.#scale);
-        }
-      }
-      this.#drawingCtx.restore();
-    }
-  }
-
   isShapeLocked(shapeId: string): boolean {
-    for (const [clientId, shapeIds] of this.#remoteSelections.entries()) {
-      if (clientId !== this.#canvasConnection.clientId() && shapeIds.includes(shapeId)) {
-        return true;
-      }
-    }
-    return false;
+    return this.#remoteActionHandler.isShapeLocked(shapeId);
   }
 
   private drawGrid() {
@@ -1061,7 +995,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
   }
 
   pointToGrid(p: Point): Point {
-    return this.#snapByGrid
+    return this.#settingsService.snapToGrid()
       ? [
           Math.round(p[0] / this.#smallChunkSize) * this.#smallChunkSize,
           Math.round(p[1] / this.#smallChunkSize) * this.#smallChunkSize,
@@ -1364,9 +1298,9 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     if (this.pressedMouseMoved) {
       return;
     }
-    
+
     this.#canvasConnection.trackedClientId.set(null);
-    
+
     event.preventDefault();
     this.focusCanvas();
     this.#leftMouseDown = event.button == 0;
@@ -1437,10 +1371,10 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.#toolState.onMouseUp(event);
     this.#firstMove = false;
     this.#pressedMouseMoved = false;
-    
+
     // Send cursor position on mouse up to update remote cursors
     this.#sendCursorPosition({ x: this.#cursor[0], y: this.#cursor[1] });
-    
+
     this.changeToHover();
   };
 
@@ -1454,7 +1388,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.#prevCursor[1] = this.#cursor[1];
     this.#cursor[0] = (screenX - this.#origin[0]) / this.#scale;
     this.#cursor[1] = (screenY - this.#origin[1]) / this.#scale;
-    
+
     // Send cursor position to other clients
     this.#sendCursorPosition({ x: this.#cursor[0], y: this.#cursor[1] });
   }
@@ -1491,12 +1425,11 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
    * Used to synchronize canvas state in real-time
    */
   applyRemoteAction(action: CanvasAction) {
-    this.#actionHandler.executeAction(action);
-    this.renderCanvas({ transformed: true });
+    this.#remoteActionHandler.applyRemoteAction(action);
   }
 
   async emitAction(action: CanvasAction) {
-    this.actionReceived.emit(action);
+    this.#remoteActionHandler.emitAction(action);
   }
 
   getCanvasData(): NoteContent {
@@ -1507,63 +1440,6 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
       drawings: this.#drawings.map(drawing =>
         this.#drawingSerializer.serialized(drawing)
       ),
-    });
-  }
-
-    #watchCursorUpdates() {
-    effect(() => {
-      const update = this.#canvasConnection.cursorUpdate();
-      if (
-        update && 
-        update.noteId === this.#currentNoteId && 
-        update.clientId !== this.#canvasConnection.clientId()
-      ) {
-        this.#handleCursorUpdate(update);
-      }
-    });
-  }
-
-  #watchInitialCursors() {
-    effect(() => {
-      const cursors = this.#canvasConnection.initialCursors();
-      if (cursors) {
-        cursors.forEach(cursor => this.#handleCursorUpdate(cursor));
-      }
-    });
-  }
-
-  #watchClientLeft() {
-    effect(() => {
-      const clientLeft = this.#canvasConnection.clientLeft();
-      if (clientLeft) {
-        this.#remoteCursors.delete(clientLeft.clientId);
-        this.renderCanvas({ drawingsChanged: true });
-      }
-    });
-  }
-
-  #watchCursorRemoved() {
-    effect(() => {
-      const removedClientId = this.#canvasConnection.cursorRemoved();
-      if (removedClientId) {
-        this.#remoteCursors.delete(removedClientId);
-        this.#remoteSelections.delete(removedClientId);
-        this.renderCanvas({ drawingsChanged: true });
-      }
-    });
-  }
-
-  #watchSelectionUpdates() {
-    effect(() => {
-      const update = this.#canvasConnection.selectionUpdate();
-      if (update) {
-        if (update.shapeIdList.length === 0) {
-          this.#remoteSelections.delete(update.clientId);
-        } else {
-          this.#remoteSelections.set(update.clientId, update.shapeIdList);
-        }
-        this.renderCanvas({ drawingsChanged: true });
-      }
     });
   }
 }

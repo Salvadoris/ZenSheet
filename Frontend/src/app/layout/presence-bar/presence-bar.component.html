@@ -1,7 +1,25 @@
 @if (!isOfflineMode()) {
-  <div class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+  <div class="flex flex-col items-end gap-3">
+    <!-- Session Stats Overlay -->
+    <div class="flex flex-col items-end gap-2">
+      @if (trackedClientId()) {
+        <div class="bg-black/60 backdrop-blur-xl px-4 py-2 rounded-2xl border border-white/10 shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div class="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
+          <span class="text-white/90 text-xs font-semibold tracking-wide select-none">
+            Spectating <span class="text-emerald-400 font-bold ml-0.5">{{ getLabel(trackedClientId()!) }}</span>
+          </span>
+          <button 
+            (click)="$event.stopPropagation(); trackedClientId.set(null)" 
+            class="w-6 h-6 rounded-lg flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/90 transition-all ml-1"
+            title="Stop spectating">
+            <i class="fa-solid fa-xmark text-xs"></i>
+          </button>
+        </div>
+      }
+    </div>
+
     <!-- Active Users List -->
-    <div class="flex flex-row-reverse -space-x-2 space-x-reverse">
+    <div class="flex flex-row-reverse -space-x-2 space-x-reverse items-center">
       @for (user of presenceList(); track user.clientId) {
         <div 
           class="relative group cursor-pointer transition-transform hover:-translate-y-1 active:scale-95"
@@ -46,29 +64,6 @@
               <span class="text-[10px] text-white/70">{{ getStatusText(user.noteId) }}</span>
             </div>
           </div>
-        </div>
-      }
-    </div>
-    
-    <!-- Session Stats Overlay -->
-    <div class="flex flex-col items-end gap-2">
-      <!-- @if (trackedClientId()) {
-        <div class="bg-emerald-500/20 backdrop-blur-md px-3 py-1 rounded-full border border-emerald-500/30 shadow-lg animate-pulse flex items-center gap-2">
-          <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-          <span class="text-emerald-400 text-[10px] font-bold tracking-tight select-none">
-            Now spectating {{ getLabel(trackedClientId()!) }}
-          </span>
-          <button (click)="$event.stopPropagation(); trackedClientId.set(null)" class="text-emerald-400 hover:text-emerald-200 transition-colors ml-1">
-            <i class="fa-solid fa-xmark text-[10px]"></i>
-          </button>
-        </div>
-      } -->
-
-      @if (presenceList().length > 0) {
-        <div class="bg-black/50 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 shadow-lg animate-in fade-in slide-in-from-right-4 duration-500">
-           <span class="text-white/80 text-[10px] font-medium tracking-widest uppercase select-none">
-            {{ presenceList().length }} {{ presenceList().length === 1 ? 'Collaborator' : 'Collaborators' }} Live
-           </span>
         </div>
       }
     </div>

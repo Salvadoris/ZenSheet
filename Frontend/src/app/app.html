@@ -19,7 +19,7 @@
     connectivity.state() === eConnectivityState.Online
   ) {
     <div
-      class="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 animate-in fade-in duration-700">
+      class="absolute inset-0 z-10 animate-in fade-in duration-700 pointer-events-none">
       <div
         class="absolute left-[300px] flex flex-col items-start gap-3 text-white animate-in slide-in-from-left duration-1000"
         [ngClass]="{
@@ -57,6 +57,12 @@
     (actionReceived)="onLocalActionEmitted($event)">
   </app-canvas>
 
+  @if (!selectedNote() && !isLoadingNote()) {
+    <div
+      class="absolute inset-0 bg-black/40 backdrop-blur-sm z-5 animate-in fade-in duration-500">
+    </div>
+  }
+
   @if (connectivity.state() !== eConnectivityState.Online) {
     <app-connection-status-badge
       [connectivityStateInput]="connectivity.state()">
@@ -90,23 +96,25 @@
         class="absolute right-0 bottom-40 z-50">
       </app-json-viewer>
     }
-    <div class="fixed left-4 bottom-4 z-1 flex gap-3 items-center">
-      <app-zoom-indicator
-        #zoomindicator
-        (zoomChanged)="canvas.zoomInCenter($event)"></app-zoom-indicator>
-      <button
-        class="flex items-center justify-center p-2 rounded-lg text-xl text-gray-500 bg-white/80 backdrop-blur-md border border-slate-200/80 shadow-md hover:text-gray-100 hover:bg-gray-500 transition-colors w-[44px] h-[44px]"
-        (click)="canvas.resetOrigin()"
-        title="Back to Origin">
-        <i class="fas fa-arrows-to-dot"></i>
-      </button>
-      <button
-        class="flex items-center justify-center p-2 rounded-lg text-xl text-gray-500 bg-white/80 backdrop-blur-md border border-slate-200/80 shadow-md hover:text-gray-100 hover:bg-gray-500 transition-colors w-[44px] h-[44px]"
-        (click)="openSettings()"
-        title="Settings">
-        <i class="fa-solid fa-gear"></i>
-      </button>
-      <app-presence-bar (teleport)="onTeleport($event)"></app-presence-bar>
+    <div class="fixed left-4 right-4 bottom-4 z-20 flex justify-between items-end pointer-events-none">
+      <div class="flex gap-3 items-center pointer-events-auto">
+        <app-zoom-indicator
+          #zoomindicator
+          (zoomChanged)="canvas.zoomInCenter($event)"></app-zoom-indicator>
+        <button
+          class="flex items-center justify-center p-2 rounded-lg text-xl text-gray-500 bg-white/80 backdrop-blur-md border border-slate-200/80 shadow-md hover:text-gray-100 hover:bg-gray-500 transition-colors w-[44px] h-[44px]"
+          (click)="canvas.resetOrigin()"
+          title="Back to Origin">
+          <i class="fas fa-arrows-to-dot"></i>
+        </button>
+        <button
+          class="flex items-center justify-center p-2 rounded-lg text-xl text-gray-500 bg-white/80 backdrop-blur-md border border-slate-200/80 shadow-md hover:text-gray-100 hover:bg-gray-500 transition-colors w-[44px] h-[44px]"
+          (click)="openSettings()"
+          title="Settings">
+          <i class="fa-solid fa-gear"></i>
+        </button>
+      </div>
+      <app-presence-bar class="pointer-events-auto" (teleport)="onTeleport($event)"></app-presence-bar>
     </div>
   </div>
 </div>

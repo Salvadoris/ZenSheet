@@ -27,7 +27,6 @@ export class DialogSettingsComponent {
   #fb = inject(FormBuilder);
   dialogRef = inject(DialogRef);
 
-  // Using FormGroup to support future expansion with more inputs
   usernameForm = this.#fb.group({
     username: [this.#settingsService.username(), [Validators.required, Validators.minLength(3), Validators.maxLength(20)]]
   });
@@ -53,17 +52,23 @@ export class DialogSettingsComponent {
     {
       label: 'Show Grid',
       description: 'Display a background grid on the canvas',
-      disabled: true,
+      checked: () => this.#settingsService.showGrid(),
+      toggle: () => this.#settingsService.setShowGrid(!this.#settingsService.showGrid()),
+      disabled: false,
     },
     {
       label: 'Snap to Grid',
       description: 'Align shapes to the background grid',
-      disabled: true,
+      checked: () => this.#settingsService.snapToGrid(),
+      toggle: () => this.#settingsService.setSnapToGrid(!this.#settingsService.snapToGrid()),
+      disabled: false,
     },
     {
       label: 'Show Cursors',
       description: 'See other collaborators\' cursors',
-      disabled: true,
+      checked: () => this.#settingsService.showCursors(),
+      toggle: () => this.#settingsService.setShowCursors(!this.#settingsService.showCursors()),
+      disabled: false,
     }
   ];
 

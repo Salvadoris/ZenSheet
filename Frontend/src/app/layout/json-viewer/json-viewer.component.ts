@@ -114,7 +114,6 @@ export class JsonViewerComponent {
       lines.push({ text: '[', path, indent, isChangeable: false, isHighlighted: false });
       obj.forEach((val, i) => {
         const itemLines = this.generateLines(val, indent + 1, `${path}[${i}]`);
-        // Add comma to last line of item if not last
         if (i < obj.length - 1) {
           itemLines[itemLines.length - 1].text += ',';
         }

@@ -47,11 +47,9 @@ export class FolderService {
       // however for the *sidebar display* we want to show whatever is available.
       // Actually, if isOfflineMode is TRUE, we shouldn't even try the backend to avoid 500s/timeouts.
       if (this.#settingsService.isOfflineMode()) {
-        console.log('[FolderService] Cloud fetch skipped: Offline Mode is ON');
         return [];
       }
 
-      console.log('[FolderService] Fetching hierarchy from backend');
       try {
         const response = await firstValueFrom(this.#http.get<BackendFolder[]>(`${this.#apiUrl}/hierarchy`));
         return this.#mapHierarchyResponse(response || []);
@@ -64,7 +62,6 @@ export class FolderService {
         return this.#localFoldersCache;
       }
 
-      console.log('[FolderService] Fetching hierarchy from local storage');
       const folders = await this.#storageService.load<Folder[]>(this.#storageKey);
       this.#localFoldersCache = this.#mapFoldersRecursive(folders || []);
       return this.#localFoldersCache;

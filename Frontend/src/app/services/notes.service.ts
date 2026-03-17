@@ -6,27 +6,15 @@ import { environment } from '../../environments/environment';
 import { SerializedDrawing } from '../layout/canvas/Serializer/DrawingSerializer';
 import { SerializedShape } from '../layout/canvas/Serializer/ShapeSerializer';
 import { Note, NoteContent } from '../models/note.model';
+import { GetNoteResponse } from '../models/Responses/get-note-response';
 import { generateUuid } from '../utils/uuid';
 
 
 import { apiEndpoints } from './api-endpoints';
+import { ClientSessionService } from './client-session.service';
 import { FolderService } from './folder.service';
 import { SettingsService } from './settings.service';
 import { StorageService } from './storage.service';
-
-
-// TODO temp interface
-interface BackendNoteResponse {
-  id: string;
-  parentFolderId: string;
-  title: string;
-  content: {
-    drawings: unknown[];
-    shapes: unknown[];
-  };
-  viewPosition?: { x: number; y: number };
-  zoomScale: number;
-}
 
 @Injectable({
   providedIn: 'root',
@@ -36,25 +24,11 @@ export class NotesService {
   #storageService = inject(StorageService);
   #folderService = inject(FolderService);
   #settingsService = inject(SettingsService);
+  #clientSessionService = inject(ClientSessionService);
   
   readonly #apiUrl = `${environment.apiBaseUrl}${apiEndpoints.Note}`;
-  #clientId = '';
 
-  constructor() {
-    this.#initClientId();
-    console.log('[NotesService] Initialized with Dual Storage support');
-  }
 
-  #initClientId() {
-    const key = 'zensheet_client_id';
-    let id = localStorage.getItem(key);
-    if (!id) {
-      id = generateUuid();
-      localStorage.setItem(key, id);
-    }
-    this.#clientId = id;
-    console.log('[NotesService] 🆔 Client ID:', this.#clientId);
-  }
 
   async createNote(folderId: string, title: string, source: 'cloud' | 'local' = 'cloud'): Promise<string> {
     if (source === 'cloud' && !this.#settingsService.isOfflineMode()) {
@@ -78,7 +52,6 @@ export class NotesService {
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      // In local mode, notes are stored within folders in FolderService
       await this.#folderService.addNoteToLocalFolder(folderId, note);
       return id;
     }
@@ -125,8 +98,8 @@ export class NotesService {
       return this.#storageService.load<Note>(`note_${noteId}`);
     }
     try {
-      const response = await firstValueFrom(this.#http.get<BackendNoteResponse>(`${this.#apiUrl}/${noteId}`, {
-        params: { clientId: this.#clientId }
+      const response = await firstValueFrom(this.#http.get<GetNoteResponse>(`${this.#apiUrl}/${noteId}`, {
+        params: { clientId: this.#clientSessionService.getClientId() }
       }));
       if (!response) return null;
 
@@ -149,7 +122,6 @@ export class NotesService {
 
   async updateNoteContent(note: Note, source: 'cloud' | 'local' = 'cloud', includeContent = false): Promise<void> {
     if (source === 'cloud' && !this.#settingsService.isOfflineMode()) {
-      console.log(`[NotesService] Saving note ${includeContent ? 'content' : 'metadata'} to backend:`, note.id);
       
       const payload: {
         clientId: string;
@@ -157,7 +129,7 @@ export class NotesService {
         viewPosition: number[] | null;
         content?: NoteContent;
       } = {
-        clientId: this.#clientId,
+        clientId: this.#clientSessionService.getClientId(),
         zoomScale: note.zoomScale,
         viewPosition: note.viewPosition ? [Number(note.viewPosition.x.toFixed(2)), Number(note.viewPosition.y.toFixed(2))] : null
       };
@@ -171,10 +143,8 @@ export class NotesService {
         payload
       ));
     } else {
-      console.log('[NotesService] Saving note content to local storage:', note.id);
       await this.#storageService.save(`note_${note.id}`, note);
 
-      // Also update it in the folder hierarchy for consistency
       await this.#folderService.updateNoteInLocalFolder(note.parentFolderId, note);
     }
   }
@@ -186,7 +156,7 @@ export class NotesService {
   async copyNoteFromCloud(noteId: string, destFolderId: string): Promise<Note | null> {
     try {
       const response = await firstValueFrom(
-        this.#http.post<BackendNoteResponse>(`${this.#apiUrl}/${noteId}/copy`, null, {
+        this.#http.post<GetNoteResponse>(`${this.#apiUrl}/${noteId}/copy`, null, {
           params: { destinationFolderId: destFolderId }
         })
       );
@@ -212,7 +182,7 @@ export class NotesService {
   async insertNoteFromLocal(noteData: unknown, destFolderId: string): Promise<Note | null> {
     try {
       const response = await firstValueFrom(
-        this.#http.post<BackendNoteResponse>(`${this.#apiUrl}/local`, {
+        this.#http.post<GetNoteResponse>(`${this.#apiUrl}/local`, {
           destinationFolderId: destFolderId,
           noteData: noteData
         })

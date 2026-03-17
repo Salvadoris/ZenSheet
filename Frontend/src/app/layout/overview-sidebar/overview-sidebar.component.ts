@@ -73,7 +73,6 @@ export class OverviewSidebarComponent implements OnInit {
   }
 
   async loadFolders(source?: 'cloud' | 'local') {
-    console.log(`[Sidebar] 🔄 Loading folders${source ? ' (' + source + ')' : ''}...`);
     this.loading.set(true);
     
     if (source === 'cloud') {
@@ -83,7 +82,6 @@ export class OverviewSidebarComponent implements OnInit {
       const local = await this.#folderService.getFolders('local');
       this.localFolders.set(local);
     } else {
-      // Fetch from both sources in parallel
       const [cloud, local] = await Promise.all([
         this.#folderService.getFolders('cloud'),
         this.#folderService.getFolders('local')
@@ -389,10 +387,12 @@ export class OverviewSidebarComponent implements OnInit {
           {
             label: 'New Note',
             action: () => this.addNote(),
+            icon: 'fa-file-circle-plus',
           },
           {
             label: 'New Subfolder',
             action: () => this.addFolder(),
+            icon: 'fa-folder-plus',
           },
         ],
       },

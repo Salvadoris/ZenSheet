@@ -621,11 +621,17 @@ export class SelectToolState extends CanvasToolState {
         this.canvas.cursor[1]
       )
     ) {
+      if (this.canvas.isShapeLocked(this.#selectedShape.shape.properties[ShapePropertyName.id])) {
+        return;
+      }
       this.showShapeContextMenu(screenX, screenY);
       return;
     }
     const shape = this.findSelectedShape(this.canvas.cursor);
     if (shape) {
+      if (this.canvas.isShapeLocked(shape.properties[ShapePropertyName.id])) {
+        return;
+      }
       if (
         !(
           this.#selectedShape &&
@@ -644,6 +650,9 @@ export class SelectToolState extends CanvasToolState {
 
   private mouseDownSelectedShape(): boolean {
     if (this.#selectedShape) {
+      if (this.canvas.isShapeLocked(this.#selectedShape.shape.properties[ShapePropertyName.id])) {
+        return false;
+      }
       if (
         this.#selectedShape instanceof SelectedStraightLineShape &&
         this.#selectedShape.pointOnFirstPoint(
@@ -832,6 +841,7 @@ export class SelectToolState extends CanvasToolState {
         const shapeTrueRect = shape.trueRect();
         if (
           this.canvas.shapeInside(shape) &&
+          !this.canvas.isShapeLocked(shape.properties[ShapePropertyName.id]) &&
           shapeTrueRect[0] >= trueSelectRect[0] &&
           shapeTrueRect[1] >= trueSelectRect[1] &&
           shapeTrueRect[2] <= trueSelectRect[2] &&

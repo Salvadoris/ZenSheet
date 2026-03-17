@@ -14,6 +14,7 @@ import { Drawing } from './Drawing';
 
 export class LineDrawing implements Drawing {
   #path = new Path2D();
+  #pathPointsCount = 0;
 
   constructor(
     public properties: LineDrawingProperties,
@@ -23,6 +24,7 @@ export class LineDrawing implements Drawing {
     for (let i = 1; i < this.points.length; i++) {
       this.#path.lineTo(this.points[i][0], this.points[i][1]);
     }
+    this.#pathPointsCount = this.points.length;
   }
 
   get points() {
@@ -70,6 +72,15 @@ export class LineDrawing implements Drawing {
   }
 
   render(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
+    if (this.#pathPointsCount !== this.points.length) {
+      this.#path = new Path2D();
+      this.#path.moveTo(this.points[0][0], this.points[0][1]);
+      for (let i = 1; i < this.points.length; i++) {
+        this.#path.lineTo(this.points[i][0], this.points[i][1]);
+      }
+      this.#pathPointsCount = this.points.length;
+    }
+
     this.bufferCtx.save();
     this.bufferCtx.lineWidth = this.style[StyleName.LineWidth];
     this.bufferCtx.lineCap = this.style[StyleName.LineCap];
