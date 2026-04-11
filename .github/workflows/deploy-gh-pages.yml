@@ -25,11 +25,11 @@ jobs:
         run: cd Frontend && npm ci
 
       - name: Build Angular
-        run: cd Frontend && npm run build -- --configuration production --base-href=/ZenSheet/
+        run: cd Frontend && npm run build -- --configuration gh.pages --base-href=/ZenSheet/
 
       - name: Fix SPA routing for GitHub Pages
         run: cp Frontend/dist/ZenSheet/browser/index.html Frontend/dist/ZenSheet/browser/404.html
-        
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
