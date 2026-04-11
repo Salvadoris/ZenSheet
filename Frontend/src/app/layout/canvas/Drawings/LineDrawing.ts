@@ -1,3 +1,4 @@
+import { generateUuid } from '../../../utils/uuid';
 import { ChangableDrawingProperties } from '../DrawingProperties/DrawingProperties';
 import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { LineDrawingProperties } from '../DrawingProperties/LineDrawingProperties';
@@ -13,6 +14,7 @@ import { Drawing } from './Drawing';
 
 export class LineDrawing implements Drawing {
   #path = new Path2D();
+  #pathPointsCount = 0;
 
   constructor(
     public properties: LineDrawingProperties,
@@ -22,6 +24,7 @@ export class LineDrawing implements Drawing {
     for (let i = 1; i < this.points.length; i++) {
       this.#path.lineTo(this.points[i][0], this.points[i][1]);
     }
+    this.#pathPointsCount = this.points.length;
   }
 
   get points() {
@@ -39,7 +42,7 @@ export class LineDrawing implements Drawing {
   toShape(): Shape {
     return new LineShape(
       {
-        [ShapePropertyName.id]: crypto.randomUUID(),
+        [ShapePropertyName.id]: generateUuid(),
         [ShapePropertyName.style]: this.style,
         [ShapePropertyName.points]: this.points,
         [ShapePropertyName.edited]: false,
@@ -51,7 +54,16 @@ export class LineDrawing implements Drawing {
 
   update(
     p: Point
-  ): Required<Pick<ChangableDrawingProperties, DrawingPropertyName.points>> {
+  ): Required<Pick<ChangableDrawingProperties, DrawingPropertyName.points>> | null {
+    const lastPoint = this.points[this.points.length - 1];
+    const dx = p[0] - lastPoint[0];
+    const dy = p[1] - lastPoint[1];
+    const distanceSq = dx * dx + dy * dy;
+
+    if (distanceSq < 0.25) {
+      return null;
+    }
+
     this.points.push([p[0], p[1]]);
     this.#path.lineTo(p[0], p[1]);
     return {
@@ -60,6 +72,15 @@ export class LineDrawing implements Drawing {
   }
 
   render(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
+    if (this.#pathPointsCount !== this.points.length) {
+      this.#path = new Path2D();
+      this.#path.moveTo(this.points[0][0], this.points[0][1]);
+      for (let i = 1; i < this.points.length; i++) {
+        this.#path.lineTo(this.points[i][0], this.points[i][1]);
+      }
+      this.#pathPointsCount = this.points.length;
+    }
+
     this.bufferCtx.save();
     this.bufferCtx.lineWidth = this.style[StyleName.LineWidth];
     this.bufferCtx.lineCap = this.style[StyleName.LineCap];

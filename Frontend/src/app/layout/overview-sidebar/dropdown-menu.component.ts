@@ -5,6 +5,7 @@ export interface DropdownMenuItem {
   label: string;
   action: () => void;
   isDestructive?: boolean;
+  icon?: string;
 }
 
 @Component({
@@ -22,8 +23,12 @@ export interface DropdownMenuItem {
           <li>
             <button
               [class]="item.isDestructive ? 'text-red-500' : ''"
-              (click)="item.action()">
-              {{ item.label }}
+              (click)="item.action()"
+              class="flex items-center gap-2">
+              @if (item.icon) {
+                <i class="fa-solid {{ item.icon }} text-[14px]"></i>
+              }
+              <span>{{ item.label }}</span>
             </button>
           </li>
         }

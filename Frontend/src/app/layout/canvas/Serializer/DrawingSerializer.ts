@@ -12,12 +12,12 @@ import { StraightLineDrawing } from '../Drawings/StraightLineDrawing';
 import { EllipseStyle, EllipseStyleType } from '../ShapeStyles/EllipseStyle';
 import { LineStyle, LineStyleType } from '../ShapeStyles/LineStyle';
 import {
-  RectangleStyle,
-  RectangleStyleType,
+    RectangleStyle,
+    RectangleStyleType,
 } from '../ShapeStyles/RectangleStyle';
 import {
-  StraightLineStyle,
-  StraightLineStyleType,
+    StraightLineStyle,
+    StraightLineStyleType,
 } from '../ShapeStyles/StraightLineStyle';
 
 export enum DrawingType {
@@ -138,7 +138,7 @@ export class DrawingSerializer {
           this.#bufferCtx
         );
       case DrawingType.Ellipse:
-        return new RectangleDrawing(
+        return new EllipseDrawing(
           {
             ...serializedDrawing.properties,
             [DrawingPropertyName.style]: new EllipseStyle(

@@ -1,4 +1,4 @@
-import { Point, Rect } from '../Geometry';
+import { Rect } from '../Geometry';
 import { ImageShapeProperties } from '../ShapeProperties/ImageShapeProperties';
 import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
 import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';

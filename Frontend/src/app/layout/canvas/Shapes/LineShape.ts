@@ -8,7 +8,7 @@ import {
 import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
 import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { LineStyle } from '../ShapeStyles/LineStyle';
-import { ShapeStyle, ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
+import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { StyleName } from '../ShapeStyles/StyleName';
 
 import { Shape } from './Shape';

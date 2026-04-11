@@ -1,3 +1,4 @@
+import { generateUuid } from '../../../utils/uuid';
 import { ChangableDrawingProperties } from '../DrawingProperties/DrawingProperties';
 import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { StraightLineDrawingProperties } from '../DrawingProperties/StraightLineDrawingProperties';
@@ -38,7 +39,7 @@ export class StraightLineDrawing implements Drawing {
   toShape(): Shape {
     return new StraightLineShape(
       {
-        [ShapePropertyName.id]: crypto.randomUUID(),
+        [ShapePropertyName.id]: generateUuid(),
         [ShapePropertyName.style]: this.style,
         [ShapePropertyName.originX]: this.p0[0],
         [ShapePropertyName.originY]: this.p0[1],

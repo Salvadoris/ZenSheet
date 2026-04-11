@@ -1,6 +1,6 @@
 import {
-  ChangableDrawingProperties,
-  DrawingProperties,
+    ChangableDrawingProperties,
+    DrawingProperties,
 } from '../DrawingProperties/DrawingProperties';
 import { Point, Rect } from '../Geometry';
 import { Shape } from '../Shapes/Shape';

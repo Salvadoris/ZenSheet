@@ -4,10 +4,11 @@ import { Injectable } from '@angular/core';
   providedIn: 'root',
 })
 export class StorageService {
-   readonly #dbName = 'ZenSheetClientDB';
-   readonly #dbVersion = 1;
-   readonly #storeName = 'notes';
-   #db: IDBDatabase | null = null;
+  readonly #dbName = 'ZenSheetClientDB';
+  readonly #dbVersion = 1;
+  readonly #storeName = 'notes';
+  #db: IDBDatabase | null = null;
+
 
   async init(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -41,10 +42,10 @@ export class StorageService {
 
       const transaction = this.#db.transaction([this.#storeName], 'readwrite');
       const store = transaction.objectStore(this.#storeName);
-      const request = store.put({ id: key, data: data });
+      store.put({ id: key, data: data });
 
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve();
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
     });
   }
 

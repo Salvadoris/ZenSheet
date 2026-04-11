@@ -4,7 +4,7 @@
 
 ZenSheet is an infinite-canvas note-taking web application that combines the freedom of an infinite whiteboard with the structure of a file system, letting users draw, type, and organize their thoughts.
 
-> **Note**: 🚧 This repository is a work in progress and currently contains the frontend application. Backend implementation is underway.
+> **Note**: 🚧 This repository is a work in progress.
 
 ## Features
 
@@ -58,4 +58,28 @@ To build the project for production:
 ng build
 ```
 
-The build artifacts will be stored in the `dist/` directory.
+This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+
+## Running unit tests
+
+To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+
+```bash
+ng test
+```
+
+## Running end-to-end tests
+
+For end-to-end (e2e) testing, run:
+
+```bash
+ng e2e
+```
+
+Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+
+## Additional Resources
+
+For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+
+[Paper Ship](https://icons8.com/icon/XjQsm2o4LxaW/paper-ship) icon by [Icons8](https://icons8.com)

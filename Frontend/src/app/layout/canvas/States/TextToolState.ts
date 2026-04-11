@@ -1,3 +1,4 @@
+import { generateUuid } from '../../../utils/uuid';
 import { CanvasComponent } from '../canvas.component';
 import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
 import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
@@ -137,7 +138,7 @@ export class TextToolState extends CanvasToolState {
     const lineSpace = calcLineSpace(style);
     this.#currentTextBox = new TextBoxShape(
       {
-        [ShapePropertyName.id]: crypto.randomUUID(),
+        [ShapePropertyName.id]: generateUuid(),
         [ShapePropertyName.text]: '',
         [ShapePropertyName.style]: new TextBoxStyle(this.canvas.style),
         [ShapePropertyName.wrap]: false,

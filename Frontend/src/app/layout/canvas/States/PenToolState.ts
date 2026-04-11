@@ -1,3 +1,4 @@
+import { generateUuid } from '../../../utils/uuid';
 import { CanvasComponent } from '../canvas.component';
 import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { LineDrawing } from '../Drawings/LineDrawing';
@@ -39,7 +40,7 @@ export class PenToolState extends CanvasToolState {
         ) {
           this.#currentDrawing = new LineDrawing(
             {
-              [DrawingPropertyName.id]: crypto.randomUUID(),
+              [DrawingPropertyName.id]: generateUuid(),
               [DrawingPropertyName.points]: [
                 [this.canvas.startCursor[0], this.canvas.startCursor[1]],
                 [this.canvas.cursor[0], this.canvas.cursor[1]],
@@ -64,10 +65,12 @@ export class PenToolState extends CanvasToolState {
             this.roundPoint([this.canvas.cursor[0], this.canvas.cursor[1]])
           );
           this.canvas.renderCanvas({ drawingsChanged: true });
-          this.canvas.changeDrawingsProperties(
-            [this.#currentDrawing.properties[DrawingPropertyName.id]],
-            changeProperties
-          );
+          if (changeProperties) {
+            this.canvas.changeDrawingsProperties(
+              [this.#currentDrawing.properties[DrawingPropertyName.id]],
+              changeProperties
+            );
+          }
           this.#lastPoint = [this.canvas.cursor[0], this.canvas.cursor[1]];
         }
       }

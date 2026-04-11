@@ -1,3 +1,4 @@
+import { generateUuid } from '../../../utils/uuid';
 import { CanvasComponent } from '../canvas.component';
 import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { EllipseDrawing } from '../Drawings/EllipseDrawing';
@@ -34,7 +35,7 @@ export class EllipseToolState extends CanvasToolState {
       if (startOrigin[0] !== newPoint[0] && startOrigin[1] !== newPoint[1]) {
         this.#currentDrawing = new EllipseDrawing(
           {
-            [DrawingPropertyName.id]: crypto.randomUUID(),
+            [DrawingPropertyName.id]: generateUuid(),
             [DrawingPropertyName.p0]: startOrigin,
             [DrawingPropertyName.p1]: newPoint,
             [DrawingPropertyName.style]: new EllipseStyle(this.canvas.style),

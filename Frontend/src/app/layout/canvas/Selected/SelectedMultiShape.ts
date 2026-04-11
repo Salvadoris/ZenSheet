@@ -1,9 +1,10 @@
+import { generateUuid } from '../../../utils/uuid';
 import { ChangedShapeProperties } from '../Actions/ChangeShapesPropertiesAction';
 import { Point, Rect } from '../Geometry';
 import {
-  ChangableBaseSerializedShapeProperties,
-  ChangableSerializedShape,
-  ChangableSerializedShapeProperties,
+    ChangableBaseSerializedShapeProperties,
+    ChangableSerializedShape,
+    ChangableSerializedShapeProperties,
 } from '../ShapeProperties/ShapeProperties';
 import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { GroupShape } from '../Shapes/GroupShape';
@@ -28,7 +29,7 @@ export class SelectedMultiShape extends SelectedShape {
   constructor(shapes: Shape[], bufferCtx: CanvasRenderingContext2D) {
     const groupShape = new GroupShape(
       {
-        [ShapePropertyName.id]: crypto.randomUUID(),
+        [ShapePropertyName.id]: generateUuid(),
         [ShapePropertyName.shapes]: shapes,
         [ShapePropertyName.edited]: true,
         [ShapePropertyName.selected]: true,

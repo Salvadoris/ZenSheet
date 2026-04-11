@@ -1,0 +1,10 @@
+node_modules
+dist
+.angular
+.vscode
+.editorconfig
+.eslintrc.json
+.prettierignore
+.prettierrc.json
+README.md
+*.spec.ts

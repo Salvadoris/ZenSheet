@@ -1,265 +1,263 @@
-import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 
-import { Folder, Note } from '../models/note.model';
+import { environment } from '../../environments/environment';
+import { SerializedDrawing } from '../layout/canvas/Serializer/DrawingSerializer';
+import { SerializedShape } from '../layout/canvas/Serializer/ShapeSerializer';
+import { Note, NoteContent } from '../models/note.model';
+import { GetNoteResponse } from '../models/Responses/get-note-response';
+import { generateUuid } from '../utils/uuid';
 
+
+import { apiEndpoints } from './api-endpoints';
+import { ClientSessionService } from './client-session.service';
+import { FolderService } from './folder.service';
+import { SettingsService } from './settings.service';
 import { StorageService } from './storage.service';
-
 
 @Injectable({
   providedIn: 'root',
 })
 export class NotesService {
+  #http = inject(HttpClient);
   #storageService = inject(StorageService);
+  #folderService = inject(FolderService);
+  #settingsService = inject(SettingsService);
+  #clientSessionService = inject(ClientSessionService);
   
-  #storageKey = 'folders';
+  readonly #apiUrl = `${environment.apiBaseUrl}${apiEndpoints.Note}`;
 
-  async getFolders(): Promise<Folder[]> {
-    const folders = await this.#storageService.load<Folder[]>(this.#storageKey);
-    if (!folders) return [];
 
-    return this.#mapFoldersRecursive(folders);
-  }
 
-  #mapFoldersRecursive(folders: Folder[]): Folder[] {
-    return folders.map((folder: Folder) => ({
-      ...folder,
-      subfolders: this.#mapFoldersRecursive(folder.subfolders || []),
-      notes: (folder.notes || []).map((note: Note) => new Note(note)),
-    }));
-  }
+  async createNote(folderId: string, title: string, source: 'cloud' | 'local' = 'cloud'): Promise<string> {
+    if (source === 'cloud' && !this.#settingsService.isOfflineMode()) {
+      const response = await firstValueFrom(this.#http.post<{ id: string }>(`${this.#apiUrl}`, {
+        title,
+        parentFolderId: folderId,
+      }));
 
-  async saveFolders(folders: Folder[]): Promise<void> {
-    const serializedFolders = this.#serializeFoldersRecursive(folders);
-    await this.#storageService.save(this.#storageKey, serializedFolders);
-  }
+      if (!response?.id) {
+        throw new Error('No response from backend');
+      }
 
-  #serializeFoldersRecursive(folders: Folder[]): Folder[] {
-    return folders.map(folder => ({
-      ...folder,
-      subfolders: this.#serializeFoldersRecursive(folder.subfolders || []),
-      notes: (folder.notes || []).map(note => ({
-        ...note,
-        updatedAt: note.updatedAt.toISOString(),
-      }) as unknown as Note),
-    }));
-  }
-
-  async createFolder(name: string, parentFolderId?: string): Promise<Folder> {
-    const folder: Folder = { 
-      id: crypto.randomUUID(), 
-      name, 
-      notes: [], 
-      subfolders: [],
-      parentFolderId 
-    };
-    
-    const folders = await this.getFolders();
-    if (parentFolderId) {
-      this.#updateFolderRecursive(folders, parentFolderId, f => {
-        f.subfolders.push(folder);
-      });
+      return response.id;
     } else {
-      folders.push(folder);
+      const id = generateUuid();
+      const note = new Note({
+        id,
+        parentFolderId: folderId,
+        title,
+        content: new NoteContent({}),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      await this.#folderService.addNoteToLocalFolder(folderId, note);
+      return id;
     }
-    
-    await this.saveFolders(folders);
-    return folder;
   }
 
-  async createNote(folderId: string, title: string): Promise<Note> {
-    const note = new Note({
-      parentFolderId: folderId,
-      title: title,
-    });
-
-    const folders = await this.getFolders();
-    this.#updateFolderRecursive(folders, folderId, f => {
-      f.notes = [note, ...f.notes];
-    });
-    
-    await this.saveFolders(folders);
-    return note;
-  }
-
-  async deleteNote(folderId: string, noteId: string): Promise<void> {
-    const folders = await this.getFolders();
-    this.#updateFolderRecursive(folders, folderId, f => {
-      f.notes = f.notes.filter(n => n.id !== noteId);
-    });
-    await this.saveFolders(folders);
-  }
-
-  async updateNoteContent(note: Note): Promise<void> {
-    const folders = await this.getFolders();
-    this.#updateFolderRecursive(folders, note.parentFolderId, f => {
-      f.notes = f.notes.map(n =>
-         n.id === note.id
-           ? { ...n, content: note.content, updatedAt: new Date() }
-           : n
-       );
-    });
-    await this.saveFolders(folders);
+  async deleteNote(folderId: string, noteId: string, source: 'cloud' | 'local' = 'cloud'): Promise<void> {
+    if (source === 'local' || this.#settingsService.isOfflineMode()) {
+       await this.#folderService.removeNoteFromLocalFolder(folderId, noteId);
+       return;
+    }
+    try {
+      await firstValueFrom(this.#http.delete(`${this.#apiUrl}/${noteId}`));
+    } catch (error) {
+      console.error('Failed to delete note on backend:', error);
+      throw error;
+    }
   }
 
   async updateNoteTitle(
     folderId: string,
     noteId: string,
-    title: string
+    title: string,
+    source: 'cloud' | 'local' = 'cloud'
   ): Promise<void> {
-    const folders = await this.getFolders();
-    this.#updateFolderRecursive(folders, folderId, f => {
-      f.notes = f.notes.map(n =>
-        n.id === noteId ? { ...n, title, updatedAt: new Date() } : n
-      );
-    });
-    await this.saveFolders(folders);
-  }
-
-  async deleteFolder(folderId: string): Promise<void> {
-    let folders = await this.getFolders();
-    
-    if (folders.some(f => f.id === folderId)) {
-      folders = folders.filter(f => f.id !== folderId);
-    } else {
-      this.#findAndRemoveFolderRecursive(folders, folderId);
-    }
-    
-    await this.saveFolders(folders);
-  }
-
-  async renameFolder(folderId: string, name: string): Promise<void> {
-    const folders = await this.getFolders();
-    this.#updateFolderRecursive(folders, folderId, f => {
-      f.name = name;
-    });
-    await this.saveFolders(folders);
-  }
-
-  async renameNote(noteId: string, name: string): Promise<void> {
-    const folders = await this.getFolders();
-    this.#updateNoteRecursive(folders, noteId, n => {
-      n.title = name;
-      n.updatedAt = new Date();
-    });
-    await this.saveFolders(folders);
-  }
-
-  async updateFolderColor(folderId: string, color: string): Promise<void> {
-    const folders = await this.getFolders();
-    this.#updateFolderRecursive(folders, folderId, f => {
-      f.color = color;
-    });
-    await this.saveFolders(folders);
-  }
-
-  #updateFolderRecursive(folders: Folder[], folderId: string, action: (f: Folder) => void): boolean {
-    for (const folder of folders) {
-      if (folder.id === folderId) {
-        action(folder);
-        return true;
-      }
-      if (folder.subfolders.length > 0) {
-        if (this.#updateFolderRecursive(folder.subfolders, folderId, action)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  #findAndRemoveFolderRecursive(folders: Folder[], folderId: string): boolean {
-    for (let i = 0; i < folders.length; i++) {
-      if (folders[i].id === folderId) {
-        folders.splice(i, 1);
-        return true;
-      }
-      if (folders[i].subfolders.length > 0) {
-        if (this.#findAndRemoveFolderRecursive(folders[i].subfolders, folderId)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  #updateNoteRecursive(folders: Folder[], noteId: string, action: (n: Note) => void): boolean {
-    for (const folder of folders) {
-      const note = folder.notes.find(n => n.id === noteId);
+    if (source === 'local' || this.#settingsService.isOfflineMode()) {
+      const note: Note | null = await this.getNote(noteId, source);
       if (note) {
-        action(note);
-        return true;
+        note.title = title;
+        await this.#folderService.updateNoteInLocalFolder(folderId, note);
       }
-      if (folder.subfolders.length > 0) {
-        if (this.#updateNoteRecursive(folder.subfolders, noteId, action)) {
-          return true;
-        }
-      }
+      return;
     }
-    return false;
+    try {
+      await firstValueFrom(this.#http.put(`${this.#apiUrl}/${noteId}/title`, { title }));
+    } catch (error) {
+      console.error('Failed to update note title on backend:', error);
+      throw error;
+    }
   }
 
-  async getItemByPath(path: string[]): Promise<{ folder: Folder | null, note: Note | null }> {
-    const folders = await this.getFolders();
-    let currentFolders = folders;
-    let currentFolder: Folder | null = null;
+  async getNote(noteId: string, source: 'cloud' | 'local' = 'cloud'): Promise<Note | null> {
+    if (source === 'local' || this.#settingsService.isOfflineMode()) {
+      return this.#storageService.load<Note>(`note_${noteId}`);
+    }
+    try {
+      const response = await firstValueFrom(this.#http.get<GetNoteResponse>(`${this.#apiUrl}/${noteId}`, {
+        params: { clientId: this.#clientSessionService.getClientId() }
+      }));
+      if (!response) return null;
 
-    for (let i = 0; i < path.length; i++) {
-      const segment = path[i];
-      const isLast = i === path.length - 1;
+      return new Note({
+        id: response.id,
+        parentFolderId: response.parentFolderId,
+        title: response.title,
+        content: new NoteContent({
+          drawings: response.content.drawings as SerializedDrawing[],
+          shapes: response.content.shapes as SerializedShape[],
+        }),
+        viewPosition: response.viewPosition,
+        zoomScale: response.zoomScale,
+      });
+    } catch (error) {
+      console.error('Failed to fetch note from backend:', error);
+      return null;
+    }
+  }
 
-      const folder = currentFolders.find(f => f.name === segment);
-      let note: Note | undefined;
+  async updateNoteContent(note: Note, source: 'cloud' | 'local' = 'cloud', includeContent = false): Promise<void> {
+    if (source === 'cloud' && !this.#settingsService.isOfflineMode()) {
+      
+      const payload: {
+        clientId: string;
+        zoomScale: number;
+        viewPosition: number[] | null;
+        content?: NoteContent;
+      } = {
+        clientId: this.#clientSessionService.getClientId(),
+        zoomScale: note.zoomScale,
+        viewPosition: note.viewPosition ? [Number(note.viewPosition.x.toFixed(2)), Number(note.viewPosition.y.toFixed(2))] : null
+      };
 
-      if (isLast && currentFolder) {
-        note = currentFolder.notes.find(n => n.title === segment);
+      if (includeContent) {
+        payload.content = note.content;
       }
 
-      if (folder) {
-        if (isLast) return { folder, note: note || null };
-        currentFolder = folder;
-        currentFolders = folder.subfolders;
-        continue;
-      }
+      await firstValueFrom(this.#http.put(
+        `${this.#apiUrl}/${note.id}/content`,
+        payload
+      ));
+    } else {
+      await this.#storageService.save(`note_${note.id}`, note);
 
-      if (isLast && note) {
-        return { folder: null, note };
-      }
+      await this.#folderService.updateNoteInLocalFolder(note.parentFolderId, note);
+    }
+  }
 
-      break;
+  async renameNote(noteId: string, name: string, folderId: string, source: 'cloud' | 'local' = 'cloud'): Promise<void> {
+    await this.updateNoteTitle(folderId, noteId, name, source);
+  }
+
+  async copyNoteFromCloud(noteId: string, destFolderId: string): Promise<Note | null> {
+    try {
+      const response = await firstValueFrom(
+        this.#http.post<GetNoteResponse>(`${this.#apiUrl}/${noteId}/copy`, null, {
+          params: { destinationFolderId: destFolderId }
+        })
+      );
+      if (!response) return null;
+
+      return new Note({
+        id: response.id,
+        parentFolderId: response.parentFolderId,
+        title: response.title,
+        content: new NoteContent({
+          drawings: response.content.drawings as SerializedDrawing[],
+          shapes: response.content.shapes as SerializedShape[],
+        }),
+        viewPosition: response.viewPosition,
+        zoomScale: response.zoomScale,
+      });
+    } catch (error) {
+      console.error('Failed to copy note on backend:', error);
+      return null;
+    }
+  }
+
+  async insertNoteFromLocal(noteData: unknown, destFolderId: string): Promise<Note | null> {
+    try {
+      const response = await firstValueFrom(
+        this.#http.post<GetNoteResponse>(`${this.#apiUrl}/local`, {
+          destinationFolderId: destFolderId,
+          noteData: noteData
+        })
+      );
+      if (!response) return null;
+
+      return new Note({
+        id: response.id,
+        parentFolderId: response.parentFolderId,
+        title: response.title,
+        content: new NoteContent({
+           drawings: response.content.drawings as SerializedDrawing[],
+           shapes: response.content.shapes as SerializedShape[],
+        }),
+        viewPosition: response.viewPosition,
+        zoomScale: response.zoomScale,
+      });
+    } catch (error) {
+       console.error('Failed to insert local note to backend:', error);
+       return null;
+    }
+  }
+
+  async exportNoteToLocal(noteId: string, source: 'cloud' | 'local'): Promise<void> {
+    const note = await this.getNote(noteId, source);
+    if (!note) return;
+    
+    const plainNote = {
+      id: note.id,
+      parentFolderId: note.parentFolderId,
+      title: note.title,
+      content: note.content,
+      viewPosition: note.viewPosition,
+      zoomScale: note.zoomScale,
+      createdAt: note.createdAt,
+      updatedAt: note.updatedAt
+    };
+
+    const noteJson = JSON.stringify(plainNote, null, 2);
+    const blob = new Blob([noteJson], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${note.title || 'Note'}.json`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+
+  async pasteNote(noteId: string, source: 'cloud' | 'local', destFolderId: string, destSource: 'cloud' | 'local'): Promise<void> {
+    if (source === 'cloud' && destSource === 'cloud') {
+       await this.copyNoteFromCloud(noteId, destFolderId);
+       return;
     }
 
-    return { folder: null, note: null };
-  }
+    const note = await this.getNote(noteId, source);
+    if (!note) return;
 
-  async getFolderPath(folderId: string): Promise<string[]> {
-    const folders = await this.getFolders();
-    const path: string[] = [];
-    this.#findPathRecursive(folders, folderId, path);
-    return path;
-  }
-
-  async getTotalNotesCount(): Promise<number> {
-    const folders = await this.getFolders();
-    return folders.reduce((acc, folder) => acc + this.#countNotesRecursive(folder), 0);
-  }
-
-  #countNotesRecursive(folder: Folder): number {
-    let count = folder.notes.length;
-    for (const sub of folder.subfolders) {
-      count += this.#countNotesRecursive(sub);
+    if (destSource === 'cloud') {
+       await this.insertNoteFromLocal(note, destFolderId);
+    } else {
+       const newNote = new Note({
+         id: generateUuid(),
+         parentFolderId: destFolderId,
+         title: `${note.title} (Copy)`,
+         content: new NoteContent({
+           drawings: [...note.content.drawings],
+           shapes: [...note.content.shapes],
+         }),
+         createdAt: new Date(),
+         updatedAt: new Date(),
+         zoomScale: note.zoomScale,
+         viewPosition: note.viewPosition ? { ...note.viewPosition } : undefined
+       });
+       await this.#storageService.save(`note_${newNote.id}`, newNote);
+       await this.#folderService.addNoteToLocalFolder(destFolderId, newNote);
     }
-    return count;
-  }
-
-  #findPathRecursive(folders: Folder[], folderId: string, path: string[]): boolean {
-    for (const folder of folders) {
-      path.push(folder.name);
-      if (folder.id === folderId) return true;
-      if (folder.subfolders.length > 0) {
-        if (this.#findPathRecursive(folder.subfolders, folderId, path)) return true;
-      }
-      path.pop();
-    }
-    return false;
   }
 }
+

@@ -71,23 +71,23 @@ export class ZoomIndicatorComponent {
   }
 
   onInputBlur() {
-    this.finishEdit();
+    this.#finishEdit();
   }
 
   onInputEnter() {
-    this.finishEdit();
+    this.#finishEdit();
   }
 
   onZoomInput() {
-    this.applyCustomZoom();
+    this.#applyCustomZoom();
   }
 
-  private finishEdit() {
-    this.applyCustomZoom();
+  #finishEdit() {
+    this.#applyCustomZoom();
     this.disableEdit();
   }
 
-  private applyCustomZoom() {
+  #applyCustomZoom() {
     if (this.customZoomValue !== null) {
       let val = this.customZoomValue;
       if (val < 10) val = 10;

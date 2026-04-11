@@ -1,3 +1,4 @@
+import { generateUuid } from '../../../utils/uuid';
 import { ChangableDrawingProperties } from '../DrawingProperties/DrawingProperties';
 import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { RectangleDrawingProperties } from '../DrawingProperties/RectangleDrawingProperties';
@@ -31,7 +32,7 @@ export class RectangleDrawing implements Drawing {
   toShape(): Shape {
     return new RectangleShape(
       {
-        [ShapePropertyName.id]: crypto.randomUUID(),
+        [ShapePropertyName.id]: generateUuid(),
         [ShapePropertyName.style]: this.style,
         [ShapePropertyName.originX]: Math.min(this.p0[0], this.p1[0]),
         [ShapePropertyName.originY]: Math.min(this.p0[1], this.p1[1]),
