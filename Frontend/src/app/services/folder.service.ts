@@ -42,10 +42,6 @@ export class FolderService {
 
   async getFolders(source: 'cloud' | 'local' = 'cloud'): Promise<Folder[]> {
     if (source === 'cloud') {
-      // Always attempt cloud fetch if not explicitly in a forced offline mode (e.g. environment disabled)
-      // but if the global toggle is on, we might still want to respect it for *actions*, 
-      // however for the *sidebar display* we want to show whatever is available.
-      // Actually, if isOfflineMode is TRUE, we shouldn't even try the backend to avoid 500s/timeouts.
       if (this.#settingsService.isOfflineMode()) {
         return [];
       }
@@ -121,11 +117,9 @@ export class FolderService {
       let note: Note | undefined;
 
       if (isLast) {
-        // Try to find note in current parent folder or root if no parent
         if (currentFolder) {
           note = currentFolder.notes.find(n => n.title === segment);
         } else {
-          // Check for notes in the root - they often have an empty parentFolderId or 000...
           for (const f of folders) {
               const rootNote = f.notes.find(n => n.title === segment && (!n.parentFolderId || n.parentFolderId === '00000000-0000-0000-0000-000000000000'));
               if (rootNote) {

@@ -108,7 +108,6 @@ export function renderOffScreenIndicator(
   const screenY = cursorPosition.y * scale + origin[1];
   const margin = 20;
   
-  // Check if cursor is on screen (with margin)
   if (
     screenX >= margin && 
     screenX <= width - margin && 
@@ -118,18 +117,15 @@ export function renderOffScreenIndicator(
     return;
   }
 
-  // Clamp to edges
   const edgeX = Math.max(margin, Math.min(width - margin, screenX));
   const edgeY = Math.max(margin, Math.min(height - margin, screenY));
 
   ctx.save();
   ctx.translate(edgeX, edgeY);
 
-  // Calculate angle towards original position
   const angle = Math.atan2(screenY - edgeY, screenX - edgeX);
   ctx.rotate(angle);
 
-  // Draw Rounded Arrow pointing outward (towards the user)
   const arrowSize = 18;
   ctx.beginPath();
   ctx.lineJoin = 'round';
@@ -146,10 +142,8 @@ export function renderOffScreenIndicator(
   ctx.fill();
   ctx.stroke();
 
-  // Reset rotation for text
   ctx.rotate(-angle);
 
-  // Draw Label Badge
   const fontSize = 11;
   ctx.font = `600 ${fontSize}px "Inter", "Segoe UI", sans-serif`;
   const textMetrics = ctx.measureText(label);
@@ -158,7 +152,6 @@ export function renderOffScreenIndicator(
   const rectW = textMetrics.width + paddingX * 2;
   const rectH = fontSize + paddingY * 2;
   
-  // Position label so it doesn't go off-screen
   let labelX = 0;
   let labelY = 0;
 

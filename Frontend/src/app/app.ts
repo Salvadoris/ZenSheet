@@ -111,18 +111,16 @@ export class App implements OnInit, OnDestroy {
 
     effect(() => {
       const affectedFolderId = this.#canvasConnection.hierarchyChanged();
-      if (affectedFolderId === null) return; // initial value, skip
+      if (affectedFolderId === null) return;
 
-      // Use untracked to prevent tracking signals read inside (e.g. cloudFolders, selectedFolderId)
-      // — otherwise loadFolders writing to cloudFolders would re-trigger this effect infinitely.
       untracked(() => {
         this.updateGlobalNoteStatus();
 
         const currentFolderId = this.selectedFolderId();
         if (
-          !currentFolderId ||                        // at root — always refresh
-          affectedFolderId === '' ||                  // root-level change
-          affectedFolderId === currentFolderId ||     // exact match
+          !currentFolderId ||
+          affectedFolderId === '' ||
+          affectedFolderId === currentFolderId ||
           this.#isAncestorFolder(affectedFolderId, currentFolderId)
         ) {
           this.overviewSidebar()?.loadFolders('cloud');
@@ -214,8 +212,6 @@ export class App implements OnInit, OnDestroy {
   async #syncWithUrl() {
     const url = decodeURIComponent(this.#router.url.split('?')[0]);
     if (url === '/') {
-      // If we have folders, stay at root (sidebar shows folders)
-      // Only load default note if we have NO folders at all
       if (!this.hasFolders()) {
         await this.#loadDefaultNote();
       } else {
@@ -246,9 +242,6 @@ export class App implements OnInit, OnDestroy {
         );
       }
     } else if (!isFolderUrl && folder) {
-      // URL looks like note but matches folder.
-      // If matched note not found, but folder found -> redirect to folder URL
-      // This handles user typing "/folder" manually without slash
       await this.onFolderSelected({ folderId: folder.id, source: (pathSource || 'cloud') as 'cloud' | 'local' });
     } else {
       if (!this.hasFolders()) {

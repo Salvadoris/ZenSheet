@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="ZenSheet.Api/ZenSheet.Api.csproj" />
+  <Project Path="ZenSheet.Core/ZenSheet.Core.csproj" />
+  <Project Path="ZenSheet.Database/ZenSheet.Database.csproj" />
+</Solution>

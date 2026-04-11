@@ -76,7 +76,6 @@ export class CanvasConnectionService {
   #sessionService = inject(ClientSessionService);
   #settingsService = inject(SettingsService);
 
-  // Cursor throttle state (~30fps = 33ms interval)
   readonly #CURSOR_THROTTLE_MS = 33;
   #cursorThrottleTimer: ReturnType<typeof setTimeout> | null = null;
   #pendingCursor: { noteId: string; cursorPosition: CursorPosition } | null = null;
@@ -130,7 +129,6 @@ export class CanvasConnectionService {
         await this.#hubConnection.start();
         this.isConnected.set(true);
 
-        // Register client ID immediately to map connection for presence
         const clientId = this.clientId();
         if (clientId && this.#hubConnection.state === signalR.HubConnectionState.Connected) {
           await this.#hubConnection.invoke('InitialRegisterAsync', clientId, this.#settingsService.username());
@@ -150,17 +148,14 @@ export class CanvasConnectionService {
   #setupHubEvents(): void {
     if (!this.#hubConnection) return;
 
-    // When server responds with current version
     this.#hubConnection.on('VersionSync', (version: number) => {
       this.currentVersion.set(version);
       this.versionSync.set(version);
     });
 
-    // When an action is received from any client
     this.#hubConnection.on('ActionReceived', (action: ReceivedAction) => {
       this.currentVersion.set(action.version);
       
-      // If noteId is missing, assume it belongs to the current note
       if (!action.noteId) {
         action.noteId = this.currentNoteId() || '';
       }

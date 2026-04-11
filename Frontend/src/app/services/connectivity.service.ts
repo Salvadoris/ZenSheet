@@ -26,12 +26,10 @@ export class ConnectivityService {
   readonly #API_URL = `${environment.apiBaseUrl}${apiEndpoints.Health}`;
   readonly #POLL_INTERVAL = 5000;
 
-  // Signals for state
   state = signal<EConnectivityState>(EConnectivityState.Online);
   isBackendConnected = signal<boolean>(true);
   isDatabaseConnected = signal<boolean>(true);
   
-  // Event for when connection is restored
   onReconnected$ = new Subject<void>();
 
   constructor() {
@@ -45,7 +43,6 @@ export class ConnectivityService {
         if (isOfflineMode) {
             this.state.set(EConnectivityState.OfflineMode);
         } else {
-            // Re-trigger update to restore online/offline/db states
             this.#updateState(this.isBackendConnected(), this.isDatabaseConnected());
         }
     });
@@ -74,8 +71,6 @@ export class ConnectivityService {
       .subscribe({
         next: (res: { status: string; database: string }) => {
           if (res.status === 'OfflineMode') {
-            // Keep existing connection state while in offline mode
-            // This prevents "Can't reach backend" errors when switching back to Cloud
             return;
           }
           

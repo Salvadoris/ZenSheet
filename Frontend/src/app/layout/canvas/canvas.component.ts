@@ -941,7 +941,6 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
 
       this.#drawingCtx.restore();
 
-      // Render off-screen indicators (in screen space)
       if (this.#settingsService.showCursors()) {
         const { width, height } = this.#drawingCtx.canvas;
         this.#remoteActionHandler.renderOffScreenIndicators(
@@ -1316,7 +1315,6 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.#startCursor[1] = this.#cursor[1];
     this.#firstMove = true;
 
-    // Send cursor position on mouse down
     this.#sendCursorPosition({ x: this.#cursor[0], y: this.#cursor[1] });
 
     if (this.#leftMouseDown && event.ctrlKey) {
@@ -1372,7 +1370,6 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.#firstMove = false;
     this.#pressedMouseMoved = false;
 
-    // Send cursor position on mouse up to update remote cursors
     this.#sendCursorPosition({ x: this.#cursor[0], y: this.#cursor[1] });
 
     this.changeToHover();
@@ -1389,7 +1386,6 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.#cursor[0] = (screenX - this.#origin[0]) / this.#scale;
     this.#cursor[1] = (screenY - this.#origin[1]) / this.#scale;
 
-    // Send cursor position to other clients
     this.#sendCursorPosition({ x: this.#cursor[0], y: this.#cursor[1] });
   }
 

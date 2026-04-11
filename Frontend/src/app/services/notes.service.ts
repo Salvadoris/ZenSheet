@@ -77,7 +77,6 @@ export class NotesService {
     source: 'cloud' | 'local' = 'cloud'
   ): Promise<void> {
     if (source === 'local' || this.#settingsService.isOfflineMode()) {
-      // We need the full note to update it in the folder
       const note: Note | null = await this.getNote(noteId, source);
       if (note) {
         note.title = title;
@@ -210,7 +209,6 @@ export class NotesService {
     const note = await this.getNote(noteId, source);
     if (!note) return;
     
-    // Create a plain object for serialization 
     const plainNote = {
       id: note.id,
       parentFolderId: note.parentFolderId,
