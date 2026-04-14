@@ -114,7 +114,9 @@
           <i class="fa-solid fa-gear"></i>
         </button>
       </div>
-      <app-presence-bar class="pointer-events-auto" (teleport)="onTeleport($event)"></app-presence-bar>
+      @if (getBackendEnabled()) {
+        <app-presence-bar class="pointer-events-auto" (teleport)="onTeleport($event)"></app-presence-bar>
+      }
     </div>
   </div>
 </div>

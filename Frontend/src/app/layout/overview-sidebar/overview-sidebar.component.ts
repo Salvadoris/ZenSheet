@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { environment } from '../../../environments/environment';
 import { Folder, Note } from '../../models/note.model';
 import { DialogService } from '../../services/dialog.service';
 import { FolderService } from '../../services/folder.service';
@@ -24,6 +25,7 @@ import {
   HeaderButton,
   SidebarHeaderComponent,
 } from './overview-sidebar-header.component';
+
 
 export enum SidebarMode {
   Root,
@@ -240,7 +242,9 @@ export class OverviewSidebarComponent implements OnInit {
   }
 
   toggleLocal() {
-    this.localCollapsed.update(v => !v);
+    if (this.backendEnabled) {
+      this.localCollapsed.update(v => !v);
+    }
   }
 
   changeFolderColor(folderId: string, source?: 'cloud' | 'local') {
@@ -477,4 +481,8 @@ export class OverviewSidebarComponent implements OnInit {
       return exists ? { nameExists: true } : null;
     };
   }
+
+    get backendEnabled() {
+      return environment.backendEnabled;
+    }
 }

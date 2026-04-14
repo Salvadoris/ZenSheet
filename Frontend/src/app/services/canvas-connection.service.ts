@@ -103,6 +103,10 @@ export class CanvasConnectionService {
   #connectingPromise: Promise<void> | null = null;
 
   async connect(): Promise<void> {
+    if (!environment.backendEnabled) {
+      return;
+    }
+
     if (this.#connectingPromise) {
       return this.#connectingPromise;
     }

@@ -49,6 +49,13 @@ export class ConnectivityService {
   }
 
   #startMonitoring() {
+    if (!environment.backendEnabled) {
+      this.state.set(EConnectivityState.OfflineMode);
+      this.isBackendConnected.set(false);
+      this.isDatabaseConnected.set(false);
+      return;
+    }
+
     interval(this.#POLL_INTERVAL)
       .pipe(
         startWith(0),

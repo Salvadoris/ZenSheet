@@ -67,7 +67,13 @@ export class SettingsService {
     }
 
     this.#username.set(initialUsername);
-    this.#offlineMode.set(this.#initial.offlineMode);
+
+    if (!environment.backendEnabled) {
+      this.#offlineMode.set(true);
+    } else {
+      this.#offlineMode.set(this.#initial.offlineMode);
+    }
+
     this.#showJsonViewer.set(this.#initial.showJsonViewer);
     this.#showGrid.set(this.#initial.showGrid);
     this.#snapToGrid.set(this.#initial.snapToGrid);

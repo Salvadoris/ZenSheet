@@ -29,59 +29,65 @@
       </div>
     } @else {
       <!-- Cloud Saved Section -->
-      <div 
-        class="px-2 pt-2 pb-1 flex items-center justify-between group cursor-pointer hover:bg-black/5 rounded-lg transition-colors"
-        tabindex="0"
-        (keydown.enter)="toggleCloud()"
-        (keydown.space)="toggleCloud()"
-        (click)="toggleCloud()">
-        <div class="flex items-center gap-2 text-slate-500">
-          <i class="fas fa-chevron-right text-[10px] transition-transform duration-200"
-              [ngClass]="{'rotate-90': !cloudCollapsed()}"></i>
-          <i class="fa-solid fa-cloud text-[10px]"></i>
-          <span class="text-[10px] font-bold uppercase tracking-widest">Cloud Saved</span>
-          @if (isOfflineMode()) {
-            <span class="badge badge-ghost badge-xs text-[8px] opacity-70">OFFLINE</span>
-          }
-        </div>
-        <button 
-          [disabled]="isOfflineMode()" 
-          title="Create Cloud Folder"
-          (click)="$event.stopPropagation(); selectedSource.set('cloud'); addFolder()" 
-          class="btn btn-ghost btn-sm btn-circle text-primary hover:bg-primary/10">
-          <i class="fa-solid fa-folder-plus text-[16px]"></i>
-        </button>
-      </div>
-      
-      @if (!cloudCollapsed()) {
-        <div class="animate-in slide-in-from-top-1 duration-200">
-          @for (folder of cloudFolders(); track folder.id) {
-            <app-list-item
-              [itemData]="getFolderListItemData(folder)"
-              [menuItems]="getFolderMenuItems(folder, 'cloud')"
-              (itemClicked)="selectFolder(folder, 'cloud')" />
-          } @empty {
+      @if (backendEnabled) {
+        <div 
+          class="px-2 pt-2 pb-1 flex items-center justify-between group cursor-pointer hover:bg-black/5 rounded-lg transition-colors"
+          tabindex="0"
+          (keydown.enter)="toggleCloud()"
+          (keydown.space)="toggleCloud()"
+          (click)="toggleCloud()">
+          <div class="flex items-center gap-2 text-slate-500">
+            <i class="fas fa-chevron-right text-[10px] transition-transform duration-200"
+                [ngClass]="{'rotate-90': !cloudCollapsed()}"></i>
+            <i class="fa-solid fa-cloud text-[10px]"></i>
+            <span class="text-[10px] font-bold uppercase tracking-widest">Cloud Saved</span>
             @if (isOfflineMode()) {
-              <div class="px-4 py-2 text-xs text-slate-400 italic">Cloud unavailable in offline mode</div>
-            } @else {
-              <div class="px-4 py-2 text-xs text-slate-400 italic">No cloud folders</div>
+              <span class="badge badge-ghost badge-xs text-[8px] opacity-70">OFFLINE</span>
             }
-          }
+          </div>
+          <button 
+            [disabled]="isOfflineMode()" 
+            title="Create Cloud Folder"
+            (click)="$event.stopPropagation(); selectedSource.set('cloud'); addFolder()" 
+            class="btn btn-ghost btn-sm btn-circle text-primary hover:bg-primary/10">
+            <i class="fa-solid fa-folder-plus text-[16px]"></i>
+          </button>
         </div>
+        
+        @if (!cloudCollapsed()) {
+          <div class="animate-in slide-in-from-top-1 duration-200">
+            @for (folder of cloudFolders(); track folder.id) {
+              <app-list-item
+                [itemData]="getFolderListItemData(folder)"
+                [menuItems]="getFolderMenuItems(folder, 'cloud')"
+                (itemClicked)="selectFolder(folder, 'cloud')" />
+            } @empty {
+              @if (isOfflineMode()) {
+                <div class="px-4 py-2 text-xs text-slate-400 italic">Cloud unavailable in offline mode</div>
+              } @else {
+                <div class="px-4 py-2 text-xs text-slate-400 italic">No cloud folders</div>
+              }
+            }
+          </div>
+        }
+        
+        <hr class="border-t border-gray-200 my-4" />
       }
-      
-      <hr class="border-t border-gray-200 my-4" />
 
       <!-- Local Only Section -->
       <div 
-        class="px-2 pt-2 pb-1 flex items-center justify-between group cursor-pointer hover:bg-black/5 rounded-lg transition-colors"
+        class="px-2 pb-1 flex items-center justify-between group rounded-lg transition-colors"
+        [ngClass]="{
+          'pt-2 cursor-pointer hover:bg-black/5': localCollapsed()
+        }"
         tabindex="0"
         (keydown.enter)="toggleLocal()"
         (keydown.space)="toggleLocal()"
         (click)="toggleLocal()">
         <div class="flex items-center gap-2 text-slate-500">
-          <i class="fas fa-chevron-right text-[10px] transition-transform duration-200"
-             [ngClass]="{'rotate-90': !localCollapsed()}"></i>
+          @if (backendEnabled) {
+            <i class="fas fa-chevron-right text-[10px] transition-transform duration-200"[ngClass]="{'rotate-90': !localCollapsed()}"></i>
+          }
           <i class="fa-solid fa-laptop text-[10px]"></i>
           <span class="text-[10px] font-bold uppercase tracking-widest">Local Saved</span>
         </div>
