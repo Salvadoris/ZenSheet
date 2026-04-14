@@ -1376,8 +1376,12 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
   };
 
   onWindowBlur = () => {
-    this.#firstMove = false;
-    this.changeToHover();
+    if (this.#mouseDown) {
+      this.onMouseUp(new MouseEvent('mouseup'));
+    } else {
+      this.#firstMove = false;
+      this.changeToHover();
+    }
   };
 
   private updateCursor(screenX: number, screenY: number) {
