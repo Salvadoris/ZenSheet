@@ -1,0 +1,85 @@
+{
+  "configVersion": 1,
+  "timestamp": 1776187620909,
+  "index": "/ZenSheet/index.html",
+  "assetGroups": [
+    {
+      "name": "app",
+      "installMode": "prefetch",
+      "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [
+        "/ZenSheet/favicon.ico",
+        "/ZenSheet/index.html",
+        "/ZenSheet/main-CW6KPWII.js",
+        "/ZenSheet/manifest.webmanifest",
+        "/ZenSheet/styles-C7GJDZKM.css"
+      ],
+      "patterns": []
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [
+        "/ZenSheet/icons/icon-128x128.png",
+        "/ZenSheet/icons/icon-144x144.png",
+        "/ZenSheet/icons/icon-152x152.png",
+        "/ZenSheet/icons/icon-192x192.png",
+        "/ZenSheet/icons/icon-384x384.png",
+        "/ZenSheet/icons/icon-512x512.png",
+        "/ZenSheet/icons/icon-72x72.png",
+        "/ZenSheet/icons/icon-96x96.png",
+        "/ZenSheet/media/fa-brands-400-E7XUCEPO.woff2",
+        "/ZenSheet/media/fa-regular-400-LBQEIAJB.woff2",
+        "/ZenSheet/media/fa-solid-900-XY6737PV.woff2",
+        "/ZenSheet/media/fa-v4compatibility-RGK6JUWD.woff2"
+      ],
+      "patterns": []
+    }
+  ],
+  "dataGroups": [],
+  "hashTable": {
+    "/ZenSheet/favicon.ico": "9c39f434fe1261f68c5e3eefdf734630d99c5670",
+    "/ZenSheet/icons/icon-128x128.png": "f912963bdc6d5a38d8f1dd0afbaab2ce8d657acb",
+    "/ZenSheet/icons/icon-144x144.png": "b155fd5f2fd5d2ea7760721063003c4cd95fd783",
+    "/ZenSheet/icons/icon-152x152.png": "eae6e0f0c8afb8aaae339e2a569b43e9238e5e6c",
+    "/ZenSheet/icons/icon-192x192.png": "15c4180454633880d98674aa7394656196c91584",
+    "/ZenSheet/icons/icon-384x384.png": "94a915751ef6c9282df9aea405ad679230631814",
+    "/ZenSheet/icons/icon-512x512.png": "1de182f76f7329dfa8f9fcdd1fdcdd695bea6a99",
+    "/ZenSheet/icons/icon-72x72.png": "aa88a6096bd973be7f6d7a5489bfa6bc2463f8c4",
+    "/ZenSheet/icons/icon-96x96.png": "7fb8f59c30ce2ff12c700321a0b39e14b3dc8f95",
+    "/ZenSheet/index.html": "09de1b40847da3c2e5529eef820045efb1fdff20",
+    "/ZenSheet/main-CW6KPWII.js": "6ce523d843028d3b13154bbef0252fbb24999129",
+    "/ZenSheet/manifest.webmanifest": "7e375691e17e69cbf1642223e1b5889061b51406",
+    "/ZenSheet/media/fa-brands-400-E7XUCEPO.woff2": "ed94030ca212e1857a6014496e7a6a43e64789e4",
+    "/ZenSheet/media/fa-regular-400-LBQEIAJB.woff2": "a1e663df38f3616e677a2ffd0c20cc58c87b7703",
+    "/ZenSheet/media/fa-solid-900-XY6737PV.woff2": "49c2d746beabbaa5b1a58d660b217feb34272636",
+    "/ZenSheet/media/fa-v4compatibility-RGK6JUWD.woff2": "ed95837812146abe9cb9293922f80205785e8c6b",
+    "/ZenSheet/styles-C7GJDZKM.css": "757f804d12e56b9ee4d2d705a34c99b76896c7b4"
+  },
+  "navigationUrls": [
+    {
+      "positive": true,
+      "regex": "^\\/.*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*\\.[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*\\/.*$"
+    }
+  ],
+  "navigationRequestStrategy": "performance"
+}
