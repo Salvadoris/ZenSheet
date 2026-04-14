@@ -16,6 +16,7 @@
   <!-- Content -->
   <div class="p-6 space-y-6">
     <!-- Username Form -->
+     @if (backendEnabled) {
     <div [formGroup]="usernameForm" class="space-y-2">
       <span class="text-sm font-semibold text-slate-600"
         >Collaborator Name</span
@@ -45,7 +46,7 @@
     </div>
 
     <hr class="border-slate-100" />
-
+  }
     <!-- Switches -->
     <div class="space-y-4">
       <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400">

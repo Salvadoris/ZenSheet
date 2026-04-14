@@ -14,6 +14,8 @@ import {
 import { NavigationEnd, Router } from '@angular/router';
 import { concatMap, debounceTime, filter, Subject, Subscription } from 'rxjs';
 
+import { environment } from '../environments/environment';
+
 import { ConnectionStatusBadge } from './components/connection-status-badge/connection-status-badge';
 import { DialogSettingsComponent } from './components/dialogs/dialog-settings/dialog-settings.component';
 import { ActionType } from './layout/canvas/Actions/ActionType';
@@ -537,5 +539,9 @@ export class App implements OnInit, OnDestroy {
     if (this.#router.url !== '/') {
       await this.#router.navigateByUrl('/');
     }
+  }
+
+  getBackendEnabled() {
+    return environment.backendEnabled;
   }
 }

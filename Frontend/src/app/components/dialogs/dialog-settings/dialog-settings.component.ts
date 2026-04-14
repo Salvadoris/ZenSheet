@@ -31,24 +31,8 @@ export class DialogSettingsComponent {
     username: [this.#settingsService.username(), [Validators.required, Validators.minLength(3), Validators.maxLength(20)]]
   });
 
+  readonly forcedOfflineDesc = "Forced offline: Backend unavailable on GitHub Pages"
   settings: SettingItem[] = [
-    {
-      label: 'Offline Mode',
-      description: environment.backendEnabled ? 'Local storage only, no cloud sync' : 'Forced offline: Backend unavailable on GitHub Pages',
-      checked: () => this.#settingsService.isOfflineMode(),
-      toggle: () => this.toggleOfflineMode(),
-      disabled: !environment.backendEnabled, 
-    },
-    // {
-    //   label: 'Dark Mode (Beta)',
-    //   description: 'Coming soon...',
-    //   disabled: true,
-    // },
-    // {
-    //   label: 'High Performance',
-    //   description: 'Reduce animations',
-    //   disabled: true,
-    // },
     {
       label: 'Show Grid',
       description: 'Display a background grid on the canvas',
@@ -64,12 +48,29 @@ export class DialogSettingsComponent {
       disabled: false,
     },
     {
+      label: 'Offline Mode',
+      description: this.backendEnabled ? 'Local storage only, no cloud sync' : this.forcedOfflineDesc,
+      checked: () => this.#settingsService.isOfflineMode(),
+      toggle: () => this.toggleOfflineMode(),
+      disabled: !this.backendEnabled, 
+    },
+    {
       label: 'Show Cursors',
-      description: 'See other collaborators\' cursors',
+      description: this.backendEnabled ? 'See other collaborators\' cursors' : this.forcedOfflineDesc,
       checked: () => this.#settingsService.showCursors(),
       toggle: () => this.#settingsService.setShowCursors(!this.#settingsService.showCursors()),
-      disabled: false,
+      disabled: !this.backendEnabled, 
     }
+    // {
+    //   label: 'Dark Mode (Beta)',
+    //   description: 'Coming soon...',
+    //   disabled: true,
+    // },
+    // {
+    //   label: 'High Performance',
+    //   description: 'Reduce animations',
+    //   disabled: true,
+    // },
   ];
 
   developerSettings: SettingItem[] = [
@@ -93,5 +94,9 @@ export class DialogSettingsComponent {
 
   toggleOfflineMode() {
     this.#settingsService.setOfflineMode(!this.#settingsService.isOfflineMode());
+  }
+
+  get backendEnabled() {
+    return environment.backendEnabled;
   }
 }
