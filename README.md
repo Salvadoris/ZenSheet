@@ -1,10 +1,14 @@
-# ZenSheet
+<p align="center">
+  <img src="Resources/Zensheet_Icon.png" alt="ZenSheet Logo" width="128">
+</p>
+
+<h1 align="center">ZenSheet</h1>
 
 [**Live Demo**](https://salvadoris.github.io/ZenSheet/)
 
 ZenSheet is an infinite-canvas note-taking web application that combines the freedom of an infinite whiteboard with the structure of a file system, letting users draw, type, and organize their thoughts.
 
-> **Note**: 🚧 This repository is a work in progress.
+> **Note**: 🚧 This repository is a work in progress. The icon is a temporary placeholder.
 
 ## Features
 
@@ -26,6 +30,8 @@ This project is built with:
 - **[SignalR Client](https://dotnet.microsoft.com/apps/aspnet/signalr)**
 
 ## Getting Started
+
+### Local Development
 
 To run the application locally:
 
@@ -50,6 +56,20 @@ To run the application locally:
 4. **Open in Browser**:
    Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
 
+### Running with Docker
+
+You can also run the entire stack (Frontend, Backend, and MongoDB) using Docker Compose.
+
+1.  **Set up environment variables**:
+    Copy the example environment file (and rename it to `.env`) and adjust the values if needed
+
+2.  **Build and Run**:
+    ```bash
+    docker compose up --build
+    ```
+
+The application will be accessible at the ports specified in your `.env` file (by default, `http://localhost:4200` for the frontend).
+
 ## Building
 
 To build the project for production:
@@ -59,27 +79,3 @@ ng build
 ```
 
 This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
-
-[Paper Ship](https://icons8.com/icon/XjQsm2o4LxaW/paper-ship) icon by [Icons8](https://icons8.com)
