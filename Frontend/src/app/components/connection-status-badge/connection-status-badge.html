@@ -1,40 +1,48 @@
-<div
-  class="fixed top-2 right-4 z-50 p-2.5 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-top-10 duration-500 backdrop-blur-xl border border-white/20"
-  [ngClass]="{
-    'bg-error': connectivityStateInput() === eConnectivityState.Offline,
-    'bg-warning': connectivityStateInput() === eConnectivityState.DatabaseUnreachable,
-    'bg-slate-700': connectivityStateInput() === eConnectivityState.OfflineMode,
-  }">
+@if (!isDismissed()) {
   <div
-    class="flex items-center justify-center w-8 h-8 rounded-full bg-white/20">
-    <i
-      class="fas text-white"
-      [ngClass]="{
-        'fa-plug-circle-xmark': connectivityStateInput() === eConnectivityState.Offline,
-        'fa-database': connectivityStateInput() === eConnectivityState.DatabaseUnreachable,
-        'fa-plane-slash': connectivityStateInput() === eConnectivityState.OfflineMode,
-      }"></i>
+    class="fixed top-2 right-4 z-50 p-2.5 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-top-10 duration-500 backdrop-blur-xl border border-white/20"
+    [ngClass]="{
+      'bg-error': connectivityStateInput() === eConnectivityState.Offline,
+      'bg-warning': connectivityStateInput() === eConnectivityState.DatabaseUnreachable,
+      'bg-slate-700': connectivityStateInput() === eConnectivityState.OfflineMode,
+    }">
+    <div
+      class="flex items-center justify-center w-8 h-8 rounded-full bg-white/20">
+      <i
+        class="fas text-white"
+        [ngClass]="{
+          'fa-plug-circle-xmark': connectivityStateInput() === eConnectivityState.Offline,
+          'fa-database': connectivityStateInput() === eConnectivityState.DatabaseUnreachable,
+          'fa-plane-slash': connectivityStateInput() === eConnectivityState.OfflineMode,
+        }"></i>
+    </div>
+    <div class="flex flex-col">
+      <span
+        class="text-white font-bold text-xs uppercase tracking-widest leading-none mb-0.5">
+        {{
+          connectivityStateInput() === eConnectivityState.OfflineMode
+            ? 'Offline'
+            : connectivityStateInput() === eConnectivityState.Offline
+              ? 'Server'
+              : 'Database'
+        }}
+      </span>
+      <span
+        class="text-white/90 text-[10px] font-medium uppercase tracking-tight leading-none">
+        {{
+          connectivityStateInput() === eConnectivityState.OfflineMode
+            ? 'Local Only'
+            : connectivityStateInput() === eConnectivityState.Offline
+              ? 'Check Connection'
+              : 'Unreachable'
+        }}
+      </span>
+    </div>
+    
+    <button 
+      (click)="dismiss()"
+      class="flex items-center justify-center w-6 h-6 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors">
+      <i class="fas fa-xmark text-sm"></i>
+    </button>
   </div>
-  <div class="flex flex-col">
-    <span
-      class="text-white font-bold text-xs uppercase tracking-widest leading-none mb-0.5">
-      {{
-        connectivityStateInput() === eConnectivityState.OfflineMode
-          ? 'Offline'
-          : connectivityStateInput() === eConnectivityState.Offline
-            ? 'Server'
-            : 'Database'
-      }}
-    </span>
-    <span
-      class="text-white/90 text-[10px] font-medium uppercase tracking-tight leading-none">
-      {{
-        connectivityStateInput() === eConnectivityState.OfflineMode
-          ? 'Local Only'
-          : connectivityStateInput() === eConnectivityState.Offline
-            ? 'Check Connection'
-            : 'Unreachable'
-      }}
-    </span>
-  </div>
-</div>
+}
