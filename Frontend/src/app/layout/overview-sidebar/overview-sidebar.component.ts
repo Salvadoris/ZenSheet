@@ -119,10 +119,23 @@ export class OverviewSidebarComponent implements OnInit {
     this.folderSelected.emit({ folderId: folder.id, source: s });
   }
 
-  async navigateToFolder(folderId: string, note?: Note) {
-    const allFolders = [...this.cloudFolders(), ...this.localFolders()];
-    const folder = this.#findFolderRecursive(allFolders, folderId);
+  async navigateToFolder(folderId: string, source?: 'cloud' | 'local', note?: Note) {
+    if (source) {
+      this.selectedSource.set(source);
+    }
+
+    const targetFolders = source === 'cloud' 
+      ? this.cloudFolders() 
+      : source === 'local' 
+        ? this.localFolders() 
+        : [...this.cloudFolders(), ...this.localFolders()];
+
+    const folder = this.#findFolderRecursive(targetFolders, folderId);
     if (folder) {
+      if (!source) {
+        const inCloud = this.#findFolderRecursive(this.cloudFolders(), folderId);
+        this.selectedSource.set(inCloud ? 'cloud' : 'local');
+      }
       this.selectedFolder.set(folder);
       this.view.set(SidebarMode.Folder);
       if (note) {
@@ -134,11 +147,12 @@ export class OverviewSidebarComponent implements OnInit {
     this.loading.set(false);
   }
 
-  resetToRoot() {
+  resetToRoot(navigate = false) {
     this.selectedFolder.set(null);
-    this.selectedNoteId.set(null);
     this.view.set(SidebarMode.Root);
-    this.#router.navigateByUrl('/');
+    if (navigate) {
+      this.#router.navigateByUrl('/');
+    }
   }
 
   goBack() {

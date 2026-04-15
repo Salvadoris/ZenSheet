@@ -199,8 +199,11 @@ export class App implements OnInit, OnDestroy {
   }
 
   async updateGlobalNoteStatus() {
-    const folders = await this.#folderService.getFolders();
-    this.hasFolders.set(folders.length > 0);
+    const [cloudFolders, localFolders] = await Promise.all([
+      this.#folderService.getFolders('cloud'),
+      this.#folderService.getFolders('local')
+    ]);
+    this.hasFolders.set(cloudFolders.length > 0 || localFolders.length > 0);
 
     const count = await this.#folderService.getTotalNotesCount();
     this.hasNotes.set(count > 0);
@@ -233,13 +236,14 @@ export class App implements OnInit, OnDestroy {
     if (isFolderUrl && folder) {
       this.selectedFolderId.set(folder.id);
       this.selectedNote.set(null);
-      await this.overviewSidebar()?.navigateToFolder(folder.id);
+      await this.overviewSidebar()?.navigateToFolder(folder.id, (pathSource as 'cloud' | 'local' || undefined));
     } else if (!isFolderUrl && note) {
       if (this.selectedNote()?.id !== note.id) {
         this.selectedFolderId.set(note.parentFolderId);
         await this.loadNote(note, (pathSource as 'cloud' | 'local') || 'cloud');
         await this.overviewSidebar()?.navigateToFolder(
           note.parentFolderId,
+          (pathSource as 'cloud' | 'local' || undefined),
           note
         );
       }
@@ -255,18 +259,25 @@ export class App implements OnInit, OnDestroy {
   async #loadDefaultNote() {
     if (this.selectedNote()) return;
 
-    const folders = await this.#folderService.getFolders();
-    const allNotes = folders.flatMap(f => this.#getAllNotesRecursive(f));
+    const [cloudFolders, localFolders] = await Promise.all([
+      this.#folderService.getFolders('cloud'),
+      this.#folderService.getFolders('local')
+    ]);
+
+    const cloudNotes = cloudFolders.flatMap(f => this.#getAllNotesRecursive(f)).map(n => ({ note: n, source: 'cloud' as const }));
+    const localNotes = localFolders.flatMap(f => this.#getAllNotesRecursive(f)).map(n => ({ note: n, source: 'local' as const }));
+
+    const allNotes = [...cloudNotes, ...localNotes];
 
     if (allNotes.length === 0) return;
 
-    const recentNote = allNotes.sort(
+    const recent = allNotes.sort(
       (a, b) =>
-        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        new Date(b.note.updatedAt).getTime() - new Date(a.note.updatedAt).getTime()
     )[0];
 
-    if (recentNote) {
-      await this.onNoteSelected({ note: recentNote, source: 'cloud' });
+    if (recent) {
+      await this.onNoteSelected({ note: recent.note, source: recent.source });
     }
   }
 
@@ -321,7 +332,7 @@ export class App implements OnInit, OnDestroy {
     return undefined;
   }
 
-  /** Checks if `candidateId` is an ancestor of `currentFolderId` in the loaded cloud folder tree. */
+  // Checks if candidateId is an ancestor of currentFolderId in the loaded cloud folder tree.
   #isAncestorFolder(candidateId: string, currentFolderId: string): boolean {
     const findParent = (folders: Folder[], targetId: string): string | null => {
       for (const f of folders) {
@@ -343,23 +354,33 @@ export class App implements OnInit, OnDestroy {
 
   async onFolderSelected(event: { folderId: string, source: 'cloud' | 'local' }) {
     const { folderId, source } = event;
+    const isNoteActive = !!this.selectedNote();
+
     if (!folderId) {
       this.selectedFolderId.set('');
-      await this.#router.navigateByUrl('/');
+      if (isNoteActive) {
+        this.overviewSidebar()?.resetToRoot(false);
+      } else {
+        await this.#router.navigateByUrl('/');
+      }
       return;
     }
 
     this.selectedFolderId.set(folderId);
-    const path = await this.#folderService.getFolderPath(folderId, source);
-    const targetUrl = '/' + path.join('/') + '/';
+    if (isNoteActive) {
+      await this.overviewSidebar()?.navigateToFolder(folderId, source);
+    } else {
+      const path = await this.#folderService.getFolderPath(folderId, source);
+      const targetUrl = '/' + path.join('/') + '/';
 
-    const currentUrl = decodeURIComponent(this.#router.url.split('?')[0]);
-    if (currentUrl === targetUrl || currentUrl === targetUrl.slice(0, -1)) {
-      if (currentUrl !== targetUrl) {
+      const currentUrl = decodeURIComponent(this.#router.url.split('?')[0]);
+      if (currentUrl === targetUrl || currentUrl === targetUrl.slice(0, -1)) {
+        if (currentUrl !== targetUrl) {
+          await this.#router.navigateByUrl(targetUrl);
+        }
+      } else {
         await this.#router.navigateByUrl(targetUrl);
       }
-    } else {
-      await this.#router.navigateByUrl(targetUrl);
     }
   }
 
@@ -445,7 +466,7 @@ export class App implements OnInit, OnDestroy {
     const { clientId, noteId, cursorPosition: _cursorPosition } = latestPresence;
 
     if (noteId && noteId !== this.selectedNote()?.id) {
-      const folders = await this.#folderService.getFolders();
+      const folders = await this.#folderService.getFolders('cloud');
       const findNote = (f: Folder[]): Note | null => {
         for (const folder of f) {
           const note = folder.notes.find(n => n.id === noteId);
