@@ -15,8 +15,7 @@
   @if (
     !selectedNote() &&
     !isLoadingNote() &&
-    !lastActiveNote() &&
-    connectivity.state() === eConnectivityState.Online
+    (!lastActiveNote() || (getBackendEnabled() && connectivity.state() === eConnectivityState.Online))
   ) {
     <div
       class="absolute inset-0 z-10 animate-in fade-in duration-700 pointer-events-none">
@@ -57,7 +56,7 @@
     (actionReceived)="onLocalActionEmitted($event)">
   </app-canvas>
 
-  @if (!selectedNote() && !isLoadingNote()) {
+  @if (!selectedNote() && !isLoadingNote() && !lastActiveNote()) {
     <div
       class="absolute inset-0 bg-black/40 backdrop-blur-sm z-5 animate-in fade-in duration-500">
     </div>
@@ -73,7 +72,7 @@
     <div class="relative m-5 z-10 flex flex-col items-start gap-8">
       <app-overview-sidebar
         #overviewSidebar
-        [isNoteSelected]="!!selectedNote()"
+        [isNoteSelected]="!!selectedNote() || !!lastActiveNote()"
         (noteSelected)="onNoteSelected($event)"
         (folderSelected)="onFolderSelected($event)"
         (itemsChanged)="updateGlobalNoteStatus()">
@@ -114,9 +113,7 @@
           <i class="fa-solid fa-gear"></i>
         </button>
       </div>
-      @if (getBackendEnabled()) {
-        <app-presence-bar class="pointer-events-auto" (teleport)="onTeleport($event)"></app-presence-bar>
-      }
+      <app-presence-bar class="pointer-events-auto" (teleport)="onTeleport($event)"></app-presence-bar>
     </div>
   </div>
 </div>

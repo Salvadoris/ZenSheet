@@ -36,7 +36,7 @@ export class PresenceBarComponent {
   }
 
   async loadFolders() {
-    const folders = await this.#folderService.getFolders();
+    const folders = await this.#folderService.getFolders('cloud');
     this.folders.set(folders);
   }
 

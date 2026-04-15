@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, input, signal } from '@angular/core';
 
 import { EConnectivityState } from '../../services/connectivity.service';
 
@@ -12,4 +12,17 @@ import { EConnectivityState } from '../../services/connectivity.service';
 export class ConnectionStatusBadge { 
   readonly connectivityStateInput = input.required<EConnectivityState>();
   readonly eConnectivityState = EConnectivityState;
+
+  readonly isDismissed = signal(false);
+
+  constructor() {
+    effect(() => {
+      this.connectivityStateInput();
+      this.isDismissed.set(false);
+    });
+  }
+
+  dismiss() {
+    this.isDismissed.set(true);
+  }
 }
