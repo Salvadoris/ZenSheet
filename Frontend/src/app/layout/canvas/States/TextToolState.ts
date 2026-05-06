@@ -18,9 +18,7 @@ export class TextToolState extends CanvasToolState {
   constructor(canvas: CanvasComponent) {
     super(canvas);
     this.canvas.changeStyle(new TextBoxStyle(this.canvas.style));
-    if (this.canvas.selectFrameCtx) {
-      this.canvas.changeCursor('text');
-    }
+    this.canvas.changeCursor('text');
   }
 
   get currentTextBox() {
@@ -37,7 +35,8 @@ export class TextToolState extends CanvasToolState {
           properties: properties,
         },
       ]);
-      this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
+      // TODO
+      // this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
     }
   }
 
@@ -53,7 +52,8 @@ export class TextToolState extends CanvasToolState {
 
   override remove(): void {
     this.releaseCurrentTextBox();
-    this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
+    // TODO
+    // this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
   }
 
   private releaseCurrentTextBox() {
@@ -79,12 +79,6 @@ export class TextToolState extends CanvasToolState {
 
   renderTextBoxRect(): void {
     if (this.#currentTextBox) {
-      this.#currentTextBox.renderEditedShape(
-        this.canvas.trueRect,
-        this.canvas.shapeCtx,
-        this.#selectedStart,
-        this.#selectedEnd
-      );
       this.drawTextBoxRect(this.#currentTextBox);
     }
     if (this.#hoveredTextBox && this.#hoveredTextBox !== this.#currentTextBox) {
@@ -108,7 +102,7 @@ export class TextToolState extends CanvasToolState {
     if (
       this.#currentTextBox &&
       this.#currentTextBox.pointInside(
-        this.canvas.shapeCtx,
+        this.canvas.bufferCtx,
         this.canvas.cursor[0],
         this.canvas.cursor[1]
       )
@@ -119,7 +113,7 @@ export class TextToolState extends CanvasToolState {
         if (
           shape instanceof TextBoxShape &&
           shape.pointInside(
-            this.canvas.shapeCtx,
+            this.canvas.bufferCtx,
             this.canvas.cursor[0],
             this.canvas.cursor[1]
           )
@@ -241,7 +235,8 @@ export class TextToolState extends CanvasToolState {
           this.canvas.cursor[1]
         )
       );
-      this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
+      // TODO
+      // this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
     }
   }
 
@@ -252,7 +247,8 @@ export class TextToolState extends CanvasToolState {
     } else {
       this.#hoveredTextBox = null;
     }
-    this.canvas.renderCanvas({ shapesEdited: true });
+    // TODO
+    // this.canvas.renderCanvas({ shapesEdited: true });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -265,7 +261,8 @@ export class TextToolState extends CanvasToolState {
       } else {
         this.insertText(event.key);
       }
-      this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
+      // TODO
+      // this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
     }
   }
 
@@ -365,7 +362,8 @@ export class TextToolState extends CanvasToolState {
           this.moveEditToLineEnd();
           break;
       }
-      this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
+      // TODO
+      // this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
     }
   }
 
@@ -383,7 +381,8 @@ export class TextToolState extends CanvasToolState {
         [this.#selectedStart, this.#selectedEnd] =
           this.#currentTextBox.lineChunkRangeAtIndex(index);
       }
-      this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
+      // TODO
+      // this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
     }
   }
 
@@ -423,7 +422,8 @@ export class TextToolState extends CanvasToolState {
     navigator.clipboard.readText().then(text => {
       const inserted = this.insertText(text);
       if (inserted) {
-        this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
+        // TODO
+        // this.canvas.renderCanvas({ shapesChanged: true, shapesEdited: true });
       }
     });
   }

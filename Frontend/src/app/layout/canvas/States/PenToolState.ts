@@ -16,9 +16,7 @@ export class PenToolState extends CanvasToolState {
   constructor(canvas: CanvasComponent) {
     super(canvas);
     this.canvas.changeStyle(new LineStyle(this.canvas.style));
-    if (this.canvas.selectFrameCtx) {
-      this.canvas.changeCursor('default');
-    }
+    this.canvas.changeCursor('default');
   }
 
   override setStyleProperty(styleProperty: ShapeStyleProperty): void {
@@ -63,8 +61,13 @@ export class PenToolState extends CanvasToolState {
             },
             this.canvas.bufferCtx
           );
+          this.#currentDrawing.chunkMap.addChunkMap(
+            this.canvas.rendering.canvasChunkSize,
+            this.canvas.rendering.visibleChunkRange
+          );
           this.canvas.addDrawings([this.#currentDrawing]);
-          this.canvas.renderCanvas({ drawingsChanged: true });
+          this.canvas.rendering.renderAddDrawing(this.#currentDrawing);
+
           this.#lastPoint = [this.canvas.cursor[0], this.canvas.cursor[1]];
         }
       } else if (this.#lastPoint) {
@@ -78,7 +81,7 @@ export class PenToolState extends CanvasToolState {
           const changeProperties = this.#currentDrawing.update(
             this.roundPoint([this.canvas.cursor[0], this.canvas.cursor[1]])
           );
-          this.canvas.renderCanvas({ drawingsChanged: true });
+          this.canvas.rendering.renderChangeDrawing(this.#currentDrawing);
           if (changeProperties) {
             this.canvas.changeDrawingsProperties(
               [this.#currentDrawing.properties[FormPropertyName.id]],
@@ -107,12 +110,20 @@ export class PenToolState extends CanvasToolState {
           const roundedPoints = this.roundPoints(canvasPoints);
           this.#currentDrawing.points = this.simplifyLine(roundedPoints, 0.3);
         }
-        this.canvas.drawingToShape(this.#currentDrawing);
+        this.#currentDrawing.chunkMap.setChunkMap(
+          this.canvas.rendering.canvasChunkSize,
+          this.canvas.rendering.visibleChunkRange
+        );
+        const shape = this.canvas.drawingToShape(this.#currentDrawing);
+        shape.chunkMap.set(
+          this.canvas.rendering.canvasChunkSize,
+          this.#currentDrawing.chunkMap.chunkMap(
+            this.canvas.rendering.canvasChunkSize,
+            this.canvas.rendering.visibleChunkRange
+          )
+        );
+        this.canvas.rendering.renderDrawingToShape(this.#currentDrawing, shape);
         this.#currentDrawing = null;
-        this.canvas.renderCanvas({
-          drawingsChanged: true,
-          shapesChanged: true,
-        });
       }
       this.#lastPoint = null;
     }

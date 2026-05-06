@@ -2,12 +2,12 @@ import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { StraightLineStyle } from '../ShapeStyles/StraightLineStyle';
 
 import {
-  BaseDrawingProperties,
   ChangableDrawingProperties,
+  NonLineDrawingProperties,
 } from './DrawingProperties';
 
 export type StraightLineDrawingProperties = Omit<
-  BaseDrawingProperties,
+  NonLineDrawingProperties,
   FormPropertyName.style
 > & { [FormPropertyName.style]: StraightLineStyle };
 

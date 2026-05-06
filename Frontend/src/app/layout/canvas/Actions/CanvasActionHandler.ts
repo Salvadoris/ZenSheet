@@ -85,16 +85,21 @@ export class CanvasActionHandler {
       return this.canvas.shapeSerializer.deserialized(s);
     });
     this.canvas.shapes = this.canvas.shapes.concat(shapes);
-    this.canvas.renderCanvas({ shapesChanged: true });
+    this.canvas.rendering.renderAddShapes(shapes);
   }
 
   private removeShapes(action: RemoveShapesAction) {
+    const shapes = (this.canvas.shapes = this.canvas.shapes.filter(s => {
+      return action.data.shapeIdList.includes(
+        s.properties[FormPropertyName.id]
+      );
+    }));
     this.canvas.shapes = this.canvas.shapes.filter(s => {
       return !action.data.shapeIdList.includes(
         s.properties[FormPropertyName.id]
       );
     });
-    this.canvas.renderCanvas({ shapesChanged: true });
+    this.canvas.rendering.renderRemoveShapes(shapes);
   }
 
   private changeShapesProperties(
@@ -180,7 +185,8 @@ export class CanvasActionHandler {
         }
       }
     });
-    this.canvas.renderCanvas({ shapesChanged: true });
+    // TODO
+    // this.canvas.rendering.renderChangeShapes(localShapes);
   }
 
   private updatedStyle(
@@ -222,15 +228,18 @@ export class CanvasActionHandler {
       this.canvas.drawingSerializer.deserialized(d)
     );
     this.canvas.drawings = this.canvas.drawings.concat(drawings);
-    this.canvas.renderCanvas({ drawingsChanged: true });
+    this.canvas.rendering.renderAddDrawings(drawings);
   }
 
   private removeDrawings(action: RemoveDrawingsAction) {
+    const drawings = this.canvas.drawings.filter(d =>
+      action.data.drawingIdList.includes(d.properties[FormPropertyName.id])
+    );
     this.canvas.drawings = this.canvas.drawings.filter(
       d =>
         !action.data.drawingIdList.includes(d.properties[FormPropertyName.id])
     );
-    this.canvas.renderCanvas({ drawingsChanged: true });
+    this.canvas.rendering.renderRemoveDrawings(drawings);
   }
 
   private changeDrawingsProperties(action: ChangeDrawingsPropertiesAction) {
@@ -251,7 +260,7 @@ export class CanvasActionHandler {
             : drawing.properties[FormPropertyName.points],
       };
     });
-    this.canvas.renderCanvas({ drawingsChanged: true });
+    this.canvas.rendering.renderChangeDrawings(drawings);
   }
 
   private drawingToShape(action: DrawingToShapeAction) {
@@ -259,12 +268,14 @@ export class CanvasActionHandler {
       d => d.properties[FormPropertyName.id] == action.data.drawingId
     );
     if (idx !== -1) {
+      const drawing = this.canvas.drawings[idx];
       this.canvas.drawings.splice(idx, 1);
+      const shape = this.canvas.shapeSerializer.deserialized(action.data.shape);
+      this.canvas.shapes.push(
+        this.canvas.shapeSerializer.deserialized(action.data.shape)
+      );
+      this.canvas.rendering.renderDrawingToShape(drawing, shape);
     }
-    this.canvas.shapes.push(
-      this.canvas.shapeSerializer.deserialized(action.data.shape)
-    );
-    this.canvas.renderCanvas({ drawingsChanged: true, shapesChanged: true });
   }
 
   private addGroupShape(action: AddGroupShapeAction) {
@@ -288,7 +299,8 @@ export class CanvasActionHandler {
       groupShape.shapeToLocal(shape);
     }
     this.canvas.shapes.push(groupShape);
-    this.canvas.renderCanvas({ shapesChanged: true });
+    // TODO
+    // this.canvas.renderCanvas({ shapesChanged: true });
   }
 
   private removeGroupShape(action: RemoveGroupShapeAction) {
@@ -302,7 +314,8 @@ export class CanvasActionHandler {
 
       this.canvas.shapes.splice(idx, 1);
       this.canvas.shapes = this.canvas.shapes.concat(shapes);
-      this.canvas.renderCanvas({ shapesChanged: true });
+      // TODO
+      // this.canvas.renderCanvas({ shapesChanged: true });
     }
   }
 
@@ -310,6 +323,8 @@ export class CanvasActionHandler {
     action.data.shapes.sort((a, b) => {
       return a.newIndex > b.newIndex ? -1 : 1;
     });
+
+    const shapes: Shape[] = [];
     for (const { id, newIndex } of action.data.shapes) {
       const idx = this.canvas.shapes.findIndex(
         s => s.properties[FormPropertyName.id] === id
@@ -322,6 +337,8 @@ export class CanvasActionHandler {
       ) {
         break;
       }
+
+      shapes.push(this.canvas.shapes[idx]);
 
       if (newIndex === idx - 1 || newIndex === idx + 1) {
         const tmp = this.canvas.shapes[idx];
@@ -339,6 +356,6 @@ export class CanvasActionHandler {
         );
       }
     }
-    this.canvas.renderCanvas({ shapesChanged: true });
+    this.canvas.rendering.renderChangeShapesLayers(shapes);
   }
 }

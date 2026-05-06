@@ -1,10 +1,12 @@
+import { ChunkIndex } from '../Chunks/ChunkIndex';
+import { StraightLineDrawingChunkMap } from '../Chunks/StraightLineMap/StraightLineDrawingChunkMap';
 import { generateUuid } from '../../../utils/uuid';
 import {
   ChangableStraightLineDrawingProperties,
   StraightLineDrawingProperties,
 } from '../DrawingProperties/StraightLineDrawingProperties';
 import { FormPropertyName } from '../FormProperties/FormPropertyName';
-import { Point, Rect } from '../Geometry';
+import { Point } from '../Geometry';
 import { Shape } from '../Shapes/Shape';
 import { StraightLineShape } from '../Shapes/StraightLineShape';
 import { StraightLineStyle } from '../ShapeStyles/StraightLineStyle';
@@ -13,17 +15,23 @@ import { StyleName } from '../ShapeStyles/StyleName';
 import { Drawing } from './Drawing';
 
 export class StraightLineDrawing extends Drawing {
-  declare properties: StraightLineDrawingProperties;
+  declare protected _properties: StraightLineDrawingProperties;
+  #chunkMap = new StraightLineDrawingChunkMap(this.properties);
+
+  override get properties() {
+    return this._properties;
+  }
+
+  override set properties(properties: StraightLineDrawingProperties) {
+    this._properties = properties;
+  }
+
+  override get chunkMap(): StraightLineDrawingChunkMap {
+    return this.#chunkMap;
+  }
 
   override get style(): StraightLineStyle {
     return this.properties[FormPropertyName.style];
-  }
-
-  path(): Path2D {
-    const path = new Path2D();
-    path.moveTo(this.originX, this.originY);
-    path.lineTo(this.originX + this.width, this.originY + this.height);
-    return path;
   }
 
   toShape(): Shape {
@@ -57,23 +65,37 @@ export class StraightLineDrawing extends Drawing {
     return properties;
   }
 
-  render(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
-    this.bufferCtx.save();
-    this.bufferCtx.lineWidth = this.style[StyleName.LineWidth];
-    this.bufferCtx.lineCap = this.style[StyleName.LineCap];
-    this.bufferCtx.strokeStyle = this.style[StyleName.Color];
-    this.bufferCtx.stroke(this.path());
+  loadChunkImage(chunkSize: number, chunkIndex: ChunkIndex): HTMLCanvasElement {
+    const chunkIndexes = this.#chunkMap.get(chunkSize);
+    if (chunkIndexes) {
+      if (chunkIndexes.hasIndex(chunkIndex[0], chunkIndex[1])) {
+        this.bufferCtx.save();
+        this.bufferCtx.clearRect(0, 0, chunkSize, chunkSize);
+        this.bufferCtx.lineWidth = this.style[StyleName.LineWidth];
+        this.bufferCtx.strokeStyle = this.style[StyleName.Color];
+        this.bufferCtx.lineCap = this.style[StyleName.LineCap];
+        this.bufferCtx.translate(
+          -chunkIndex[0] * chunkSize,
+          -chunkIndex[1] * chunkSize
+        );
 
-    ctx.save();
-    ctx.globalAlpha = this.style[StyleName.Opacity];
-    ctx.drawImage(this.bufferCtx.canvas, 0, 0);
-    ctx.restore();
+        this.bufferCtx.stroke(this.path());
+        this.bufferCtx.restore();
+        return this.bufferCtx.canvas;
+      }
+      throw new Error(`chunkMap does not contain chunkIndex: ${chunkIndex}`);
+    }
+    throw new Error(`chunkMap does not contain chunkSize: ${chunkSize}`);
+  }
 
-    this.bufferCtx.clearRect(
-      canvasRect[0],
-      canvasRect[1],
-      canvasRect[2] - canvasRect[0],
-      canvasRect[3] - canvasRect[1]
-    );
+  private path() {
+    const path = new Path2D();
+    path.moveTo(this.originX, this.originY);
+    path.lineTo(this.originX + this.width, this.originY + this.height);
+    return path;
+  }
+
+  override offset(): number {
+    return this.style[StyleName.LineWidth] / 2;
   }
 }

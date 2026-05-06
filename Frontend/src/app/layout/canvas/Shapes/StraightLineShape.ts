@@ -1,5 +1,7 @@
+import { ChunkIndex, ChunkIndexSet } from '../Chunks/ChunkIndex';
+import { ChunkChange } from '../Chunks/FormChunkMap';
+import { StraightLineShapeChunkMap } from '../Chunks/StraightLineMap/StraightLineShapeChunkMap';
 import { FormPropertyName } from '../FormProperties/FormPropertyName';
-import { Rect } from '../Geometry';
 import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
 import { StraightLineShapeProperties } from '../ShapeProperties/StraightLineShapeProperties';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
@@ -10,6 +12,7 @@ import { Shape } from './Shape';
 
 export class StraightLineShape extends Shape {
   declare protected _properties: Required<StraightLineShapeProperties>;
+  #chunkMap = new StraightLineShapeChunkMap(this.properties);
 
   constructor(
     properties: StraightLineShapeProperties,
@@ -26,6 +29,10 @@ export class StraightLineShape extends Shape {
 
   override get properties(): Required<StraightLineShapeProperties> {
     return this._properties;
+  }
+
+  override get chunkMap(): StraightLineShapeChunkMap {
+    return this.#chunkMap;
   }
 
   override get style(): StraightLineStyle {
@@ -46,28 +53,25 @@ export class StraightLineShape extends Shape {
     return {};
   }
 
-  override renderShape(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
+  override loadChunkImage(
+    chunkSize: number,
+    chunkIndex: ChunkIndex
+  ): HTMLCanvasElement {
     this.bufferCtx.save();
+    this.bufferCtx.clearRect(0, 0, chunkSize, chunkSize);
     this.bufferCtx.lineWidth = this.style[StyleName.LineWidth];
-    this.bufferCtx.lineCap = this.style[StyleName.LineCap];
     this.bufferCtx.strokeStyle = this.style[StyleName.Color];
+    this.bufferCtx.lineCap = this.style[StyleName.LineCap];
+    this.bufferCtx.translate(
+      -chunkIndex[0] * chunkSize,
+      -chunkIndex[1] * chunkSize
+    );
     this.bufferCtx.stroke(this.path());
     this.bufferCtx.restore();
-
-    ctx.save();
-    ctx.globalAlpha = this.style[StyleName.Opacity];
-    ctx.drawImage(this.bufferCtx.canvas, 0, 0);
-    ctx.restore();
-
-    this.bufferCtx.clearRect(
-      canvasRect[0],
-      canvasRect[1],
-      canvasRect[2] - canvasRect[0],
-      canvasRect[3] - canvasRect[1]
-    );
+    return this.bufferCtx.canvas;
   }
 
-  override path(): Path2D {
+  path(): Path2D {
     const path = new Path2D();
     path.moveTo(this.originX, this.originY);
     path.lineTo(this.originX + this.width, this.originY + this.height);
@@ -82,24 +86,11 @@ export class StraightLineShape extends Shape {
     return this.style[StyleName.LineWidth] / 2;
   }
 
-  override offsetRect(): Rect {
-    const trueRect = this.trueRect();
-    const offset = this.offset();
-    return [
-      trueRect[0] - offset,
-      trueRect[1] - offset,
-      trueRect[2] + offset,
-      trueRect[3] + offset,
-    ];
-  }
-
   override pointInside(
     ctx: CanvasRenderingContext2D,
     x: number,
     y: number
   ): boolean {
-    ctx.lineWidth = this.style[StyleName.LineWidth];
-    ctx.lineCap = this.style[StyleName.LineCap];
     return ctx.isPointInStroke(this.path(), x, y);
   }
 

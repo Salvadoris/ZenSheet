@@ -7,9 +7,7 @@ export class HandToolState extends CanvasToolState {
   constructor(canvas: CanvasComponent) {
     super(canvas);
     this.canvas.removeCurrentStyle();
-    if (this.canvas.selectFrameCtx) {
-      this.canvas.changeCursor('grab');
-    }
+    this.canvas.changeCursor('grab');
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -29,7 +27,7 @@ export class HandToolState extends CanvasToolState {
     if (this.canvas.leftmouseDown) {
       this.canvas.origin[0] = event.clientX - this.canvas.dragStart[0];
       this.canvas.origin[1] = event.clientY - this.canvas.dragStart[1];
-      this.canvas.renderCanvas({ transformed: true });
+      this.canvas.rendering.renderTransformedCanvas();
     }
   }
 

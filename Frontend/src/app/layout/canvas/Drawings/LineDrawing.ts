@@ -1,10 +1,13 @@
+import { ChunkIndex, chunkIndexToString } from '../Chunks/ChunkIndex';
+import { LineSegment } from '../Chunks/LineChunkMap/LineChunkMap';
+import { LineDrawingChunkMap } from '../Chunks/LineChunkMap/LineDrawingChunkMap';
 import { generateUuid } from '../../../utils/uuid';
 import {
   ChangableLineDrawingProperties,
   LineDrawingProperties,
 } from '../DrawingProperties/LineDrawingProperties';
 import { FormPropertyName } from '../FormProperties/FormPropertyName';
-import { Point, Rect } from '../Geometry';
+import { Point } from '../Geometry';
 import { LinePoints } from '../ShapeProperties/LineShapeProperties';
 import { LineShape } from '../Shapes/LineShape';
 import { Shape } from '../Shapes/Shape';
@@ -14,20 +17,19 @@ import { StyleName } from '../ShapeStyles/StyleName';
 import { Drawing } from './Drawing';
 
 export class LineDrawing extends Drawing {
-  declare properties: LineDrawingProperties;
-  #path = new Path2D();
-  #pathPointsCount = 0;
+  declare protected _properties: LineDrawingProperties;
+  #chunkMap = new LineDrawingChunkMap(this.properties);
 
-  constructor(
-    properties: LineDrawingProperties,
-    bufferCtx: CanvasRenderingContext2D
-  ) {
-    super(properties, bufferCtx);
-    this.#path.moveTo(this.points[0][0], this.points[0][1]);
-    for (let i = 1; i < this.points.length; i++) {
-      this.#path.lineTo(this.points[i][0], this.points[i][1]);
-    }
-    this.#pathPointsCount = this.points.length;
+  override get properties() {
+    return this._properties;
+  }
+
+  override set properties(properties: LineDrawingProperties) {
+    this._properties = properties;
+  }
+
+  get chunkMap(): LineDrawingChunkMap {
+    return this.#chunkMap;
   }
 
   get points() {
@@ -91,38 +93,46 @@ export class LineDrawing extends Drawing {
         p[1] + halflineWidth - this.originY;
       properties[FormPropertyName.height] = this.height;
     }
-    this.#path.lineTo(p[0], p[1]);
     return properties;
   }
 
-  render(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
-    if (this.#pathPointsCount !== this.points.length) {
-      this.#path = new Path2D();
-      this.#path.moveTo(this.points[0][0], this.points[0][1]);
-      for (let i = 1; i < this.points.length; i++) {
-        this.#path.lineTo(this.points[i][0], this.points[i][1]);
+  loadChunkImage(chunkSize: number, chunkIndex: ChunkIndex): HTMLCanvasElement {
+    const chunkMap = this.#chunkMap.get(chunkSize);
+    if (chunkMap) {
+      const lineSegments = chunkMap.get(chunkIndexToString(chunkIndex));
+
+      if (lineSegments) {
+        this.bufferCtx.save();
+        this.bufferCtx.clearRect(0, 0, chunkSize, chunkSize);
+        this.bufferCtx.lineWidth = this.style[StyleName.LineWidth];
+        this.bufferCtx.lineCap = this.style[StyleName.LineCap];
+        this.bufferCtx.strokeStyle = this.style[StyleName.Color];
+        this.bufferCtx.lineJoin = 'round';
+        this.bufferCtx.translate(
+          -chunkIndex[0] * chunkSize,
+          -chunkIndex[1] * chunkSize
+        );
+        this.bufferCtx.stroke(this.chunkPath(lineSegments));
+        this.bufferCtx.restore();
+        return this.bufferCtx.canvas;
       }
-      this.#pathPointsCount = this.points.length;
+      throw new Error(`chunkMap does not contain chunkIndex: ${chunkIndex}`);
     }
+    throw new Error(`chunkMap does not contain chunkSize: ${chunkSize}`);
+  }
 
-    this.bufferCtx.save();
-    this.bufferCtx.lineWidth = this.style[StyleName.LineWidth];
-    this.bufferCtx.lineCap = this.style[StyleName.LineCap];
-    this.bufferCtx.strokeStyle = this.style[StyleName.Color];
-    this.bufferCtx.lineJoin = 'round';
-    this.bufferCtx.stroke(this.#path);
-    this.bufferCtx.restore();
+  private chunkPath(segments: LineSegment[]) {
+    const path = new Path2D();
+    for (const [startIdx, endIdx] of segments) {
+      path.moveTo(this.points[startIdx][0], this.points[startIdx][1]);
+      for (let i = startIdx + 1; i <= endIdx; i++) {
+        path.lineTo(this.points[i][0], this.points[i][1]);
+      }
+    }
+    return path;
+  }
 
-    ctx.save();
-    ctx.globalAlpha = this.style[StyleName.Opacity];
-    ctx.drawImage(this.bufferCtx.canvas, 0, 0);
-    ctx.restore();
-
-    this.bufferCtx.clearRect(
-      canvasRect[0],
-      canvasRect[1],
-      canvasRect[2] - canvasRect[0],
-      canvasRect[3] - canvasRect[1]
-    );
+  override offset(): number {
+    return 0;
   }
 }

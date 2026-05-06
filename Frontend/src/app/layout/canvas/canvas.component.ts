@@ -39,10 +39,15 @@ import { DrawingToShapeAction } from './Actions/DrawingToShapeAction';
 import { RemoveDrawingsAction } from './Actions/RemoveDrawingsAction';
 import { RemoveGroupShapeAction } from './Actions/RemoveGroupShapeAction';
 import { RemoveShapesAction } from './Actions/RemoveShapesAction';
+import { CanvasRendering } from './Chunks/CanvasRendering';
 import { CanvasContextMenu } from './ContextMenus/canvas-context-menu/canvas-context-menu.component';
 import { ShapeContextMenu } from './ContextMenus/shape-context-menu/shape-context-menu.component';
 import { ChangableDrawingProperties } from './DrawingProperties/DrawingProperties';
 import { Drawing } from './Drawings/Drawing';
+import { EllipseDrawing } from './Drawings/EllipseDrawing';
+import { LineDrawing } from './Drawings/LineDrawing';
+import { RectangleDrawing } from './Drawings/RectangleDrawing';
+import { StraightLineDrawing } from './Drawings/StraightLineDrawing';
 import { FormPropertyName } from './FormProperties/FormPropertyName';
 import { Point, Rect } from './Geometry';
 import { RemoteActionHandler } from './RemoteActionHandler';
@@ -51,8 +56,12 @@ import {
   SerializedDrawing,
 } from './Serializer/DrawingSerializer';
 import { SerializedShape, ShapeSerializer } from './Serializer/ShapeSerializer';
+import { EllipseShape } from './Shapes/EllipseShape';
 import { GroupShape } from './Shapes/GroupShape';
+import { LineShape } from './Shapes/LineShape';
+import { RectangleShape } from './Shapes/RectangleShape';
 import { Shape } from './Shapes/Shape';
+import { StraightLineShape } from './Shapes/StraightLineShape';
 import { CanvasStyle } from './ShapeStyles/CanvasStyle';
 import { LineAlignment } from './ShapeStyles/LineAlignment';
 import {
@@ -170,11 +179,8 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
 
   #currentNoteId: string | null = null;
 
-  #shapeCtx!: CanvasRenderingContext2D;
-  #drawingCtx!: CanvasRenderingContext2D;
   #bufferCtx!: CanvasRenderingContext2D;
   #selectFrameCtx!: CanvasRenderingContext2D;
-  #backgroundCtx!: CanvasRenderingContext2D;
 
   #toolState!: CanvasToolState;
   modeChange = output<Mode>();
@@ -189,12 +195,15 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
   #shapes: Shape[] = [];
   #drawings: Drawing[] = [];
 
+  #rendering!: CanvasRendering;
+
   #scale = 1;
   #minScale = 0.1;
   #maxScale = 5;
   scaleChanged = output<number>();
 
-  #smallChunkSize = 1;
+  #backgroundIsGrid = true;
+  #snapByGrid = true;
 
   #origin: Point = [window.innerWidth / 2, window.innerHeight / 2];
 
@@ -257,33 +266,35 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
 
     effect(() => {
       this.#settingsService.showGrid();
-      this.renderCanvas({ backgroundChanged: true });
+      this.#rendering.renderBackgroundCanvas();
     });
 
     effect(() => {
       this.#settingsService.showCursors();
-      this.renderCanvas({ presenceChanged: true });
+      // this.renderCanvas({ presenceChanged: true });
     });
   }
 
   ngAfterViewInit() {
     const bufferCanvas = this.bufferCanvasRef.nativeElement;
     this.#bufferCtx = bufferCanvas.getContext('2d')!;
-    const shapeCanvas = this.shapeCanvasRef.nativeElement;
-    this.#shapeCtx = shapeCanvas.getContext('2d')!;
-    const drawingCanvas = this.drawingCanvasRef.nativeElement;
-    this.#drawingCtx = drawingCanvas.getContext('2d')!;
     const selectFrameCanvas = this.selectFrameCanvasRef.nativeElement;
     this.#selectFrameCtx = selectFrameCanvas.getContext('2d')!;
-    const backgroundCanvas = this.backgroundCanvasRef.nativeElement;
-    this.#backgroundCtx = backgroundCanvas.getContext('2d')!;
+
+    this.#rendering = new CanvasRendering(
+      this,
+      this.#bufferCtx,
+      this.shapeCanvasRef.nativeElement.getContext('2d')!,
+      this.drawingCanvasRef.nativeElement.getContext('2d')!,
+      this.#selectFrameCtx,
+      this.backgroundCanvasRef.nativeElement.getContext('2d')!
+    );
 
     this.#shapeSerializer = new ShapeSerializer(this.#bufferCtx);
     this.#drawingSerializer = new DrawingSerializer(this.#bufferCtx);
     this.#actionHandler = new CanvasActionHandler(this);
 
     this.changeToHover();
-    this.renderCanvas({ transformed: true });
   }
 
   ngOnDestroy() {
@@ -303,24 +314,24 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.#remoteActionHandler.sendCursorPosition(cursorPosition);
   }
 
-  get shapeCtx() {
-    return this.#shapeCtx;
-  }
-
-  get drawingCtx() {
-    return this.#drawingCtx;
-  }
-
   get bufferCtx() {
     return this.#bufferCtx;
+  }
+
+  get shapeCtx() {
+    return this.#rendering.shapeCtx;
   }
 
   get selectFrameCtx() {
     return this.#selectFrameCtx;
   }
 
-  get backgroundCtx() {
-    return this.#backgroundCtx;
+  get rendering() {
+    return this.#rendering;
+  }
+
+  get toolState() {
+    return this.#toolState;
   }
 
   get shapeSerializer() {
@@ -333,6 +344,14 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
 
   get actionHandler() {
     return this.#actionHandler;
+  }
+
+  get backgroundIsGrid() {
+    return this.#backgroundIsGrid;
+  }
+
+  get snapByGrid() {
+    return this.#snapByGrid;
   }
 
   get shapes() {
@@ -448,17 +467,17 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     if (zoom !== this.#scale) {
       this.applyZoom(
         zoom,
-        this.#shapeCtx.canvas.width / 2,
-        this.#shapeCtx.canvas.height / 2
+        this.#rendering.width / 2,
+        this.#rendering.height / 2
       );
       this.scaleChanged.emit(this.scale);
-      this.renderCanvas({ transformed: true });
+      this.#rendering.renderTransformedCanvas();
     }
   }
 
   resetOrigin() {
     this.#origin = [window.innerWidth / 2, window.innerHeight / 2];
-    this.renderCanvas({ transformed: true });
+    this.#rendering.renderTransformedCanvas();
   }
 
   addShapes(shapes: Shape[]) {
@@ -540,7 +559,11 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.canvasChanged.emit();
   }
 
-  drawingToShape(drawing: Drawing) {
+  drawingToShape(drawing: EllipseDrawing): EllipseShape;
+  drawingToShape(drawing: LineDrawing): LineShape;
+  drawingToShape(drawing: RectangleDrawing): RectangleShape;
+  drawingToShape(drawing: StraightLineDrawing): StraightLineShape;
+  drawingToShape(drawing: Drawing): Shape {
     const shape = drawing.toShape();
     this.shapes.push(shape);
     const serializedShape = this.shapeSerializer.serialized(shape);
@@ -558,6 +581,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
       },
     } as DrawingToShapeAction);
     this.canvasChanged.emit();
+    return shape;
   }
 
   addGroupShape(groupShape: GroupShape) {
@@ -646,6 +670,11 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.canvasChanged.emit();
   }
 
+  changeBackground(grid: boolean) {
+    this.#backgroundIsGrid = grid;
+    this.#rendering.renderBackgroundCanvas();
+  }
+
   changeMode(mode: Mode) {
     if (
       this.#toolState instanceof TextToolState &&
@@ -657,7 +686,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
       if (this.#toolState instanceof SelectToolState) {
         this.#toolState.selectSingleShape(textBox);
       }
-      this.renderCanvas({ shapesEdited: true });
+      this.#rendering.renderSeletedFrameCanvas();
       return;
     }
 
@@ -780,7 +809,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.#scale = clampedScale;
     this.scaleChanged.emit(this.#scale);
 
-    this.renderCanvas({ transformed: true });
+    this.#rendering.renderTransformedCanvas();
   }
 
   private panBy(deltaX: number, deltaY: number) {
@@ -793,210 +822,25 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.#origin[0] -= deltaX;
     this.#origin[1] -= deltaY;
 
-    this.renderCanvas({ transformed: true });
+    this.#rendering.renderTransformedCanvas();
   }
 
   @HostListener('window:resize')
   onResize() {
-    this.renderCanvas({ transformed: true });
-  }
-
-  renderCanvas(renderType: CanvasRenderType) {
-    if (
-      !this.#backgroundCtx ||
-      !this.#drawingCtx ||
-      !this.#shapeCtx ||
-      !this.#bufferCtx ||
-      !this.#selectFrameCtx
-    ) {
-      return;
-    }
-
-    const originX = -this.#origin[0] / this.#scale;
-    const originY = -this.#origin[1] / this.#scale;
-    const xMax = originX + window.innerWidth / this.#scale;
-    const yMax = originY + window.innerHeight / this.#scale;
-    this.#trueRect = [originX, originY, xMax, yMax];
-
-    this.#smallChunkSize = this.scaleToSmallGridChunkSize();
-
-    if (
-      this.#backgroundCtx &&
-      this.#drawingCtx &&
-      (renderType.backgroundChanged || renderType.transformed)
-    ) {
-      this.#backgroundCtx.canvas.width = window.innerWidth;
-      this.#backgroundCtx.canvas.height = window.innerHeight;
-      this.#backgroundCtx.translate(this.#origin[0], this.#origin[1]);
-      this.#backgroundCtx.scale(this.#scale, this.#scale);
-
-      this.#backgroundCtx.clearRect(
-        0,
-        0,
-        this.#backgroundCtx.canvas.width,
-        this.#backgroundCtx.canvas.height
-      );
-
-      if (this.#settingsService.showGrid()) {
-        this.drawGrid();
-      }
-    }
-
-    if (renderType.shapesChanged || renderType.transformed) {
-      this.#bufferCtx.canvas.width = window.innerWidth;
-      this.#bufferCtx.canvas.height = window.innerHeight;
-      this.#bufferCtx.translate(this.#origin[0], this.#origin[1]);
-      this.#bufferCtx.scale(this.#scale, this.#scale);
-
-      this.#shapeCtx.canvas.width = window.innerWidth;
-      this.#shapeCtx.canvas.height = window.innerHeight;
-      this.#shapeCtx.save();
-
-      this.#shapeCtx.clearRect(
-        0,
-        0,
-        this.#shapeCtx.canvas.width,
-        this.#shapeCtx.canvas.height
-      );
-
-      if (this.#toolState instanceof SelectToolState) {
-        this.#toolState.selectedShapesToGlobal();
-      }
-      for (const shape of this.#shapes) {
-        if (this.shapeInside(shape)) {
-          shape.render(this.#trueRect, this.#shapeCtx);
-        }
-      }
-      if (this.#toolState instanceof SelectToolState) {
-        this.#toolState.selectedShapesToLocal();
-      }
-
-      this.#shapeCtx.restore();
-    }
-
-    if (
-      renderType.shapesEdited ||
-      renderType.transformed ||
-      renderType.presenceChanged
-    ) {
-      this.#selectFrameCtx.canvas.width = window.innerWidth;
-      this.#selectFrameCtx.canvas.height = window.innerHeight;
-      this.#selectFrameCtx.translate(this.#origin[0], this.#origin[1]);
-      this.#selectFrameCtx.scale(this.#scale, this.#scale);
-
-      if (this.#toolState instanceof SelectToolState) {
-        this.#toolState.renderSelectedFrame();
-      } else if (this.#toolState instanceof TextToolState) {
-        this.#toolState.renderTextBoxRect();
-      }
-
-      if (this.#settingsService.showCursors()) {
-        this.#remoteActionHandler.renderRemoteSelections(
-          this.#selectFrameCtx,
-          this.#scale
-        );
-      }
-    }
-
-    if (
-      this.#drawingCtx &&
-      (renderType.drawingsChanged ||
-        renderType.transformed ||
-        renderType.presenceChanged)
-    ) {
-      this.#drawingCtx.canvas.width = window.innerWidth;
-      this.#drawingCtx.canvas.height = window.innerHeight;
-      this.#drawingCtx.save();
-
-      this.#drawingCtx.clearRect(
-        0,
-        0,
-        this.#drawingCtx.canvas.width,
-        this.#drawingCtx.canvas.height
-      );
-
-      this.#bufferCtx.canvas.width = window.innerWidth;
-      this.#bufferCtx.canvas.height = window.innerHeight;
-      this.#bufferCtx.save();
-      this.#bufferCtx.translate(this.#origin[0], this.#origin[1]);
-      this.#bufferCtx.scale(this.#scale, this.#scale);
-
-      for (const drawing of this.#drawings) {
-        drawing.render(this.#trueRect, this.#drawingCtx, this.#bufferCtx);
-      }
-
-      this.#bufferCtx.restore();
-
-      if (this.#settingsService.showCursors()) {
-        this.#drawingCtx.save();
-        this.#drawingCtx.translate(this.#origin[0], this.#origin[1]);
-        this.#drawingCtx.scale(this.#scale, this.#scale);
-        this.#remoteActionHandler.renderRemoteCursors(
-          this.#drawingCtx,
-          this.#scale
-        );
-        this.#drawingCtx.restore();
-      }
-
-      this.#drawingCtx.restore();
-
-      if (this.#settingsService.showCursors()) {
-        const { width, height } = this.#drawingCtx.canvas;
-        this.#remoteActionHandler.renderOffScreenIndicators(
-          this.#drawingCtx,
-          this.#origin,
-          this.#scale,
-          width,
-          height
-        );
-      }
-    }
+    this.#rendering.renderTransformedCanvas();
   }
 
   isShapeLocked(shapeId: string): boolean {
     return this.#remoteActionHandler.isShapeLocked(shapeId);
   }
 
-  private drawGrid() {
-    const bigChunkSize = this.#smallChunkSize * 5;
-    this.drawGridChunksBySize(this.#smallChunkSize, '#d0d0d0');
-    this.drawGridChunksBySize(bigChunkSize, '#808080');
-  }
-
-  private scaleToSmallGridChunkSize(): number {
-    if (this.scale <= 0) return 0;
-    const index = Math.floor(Math.log2(this.scale / 0.1));
-    return 256 / Math.pow(2, index);
-  }
-
-  private drawGridChunksBySize(chunkSize: number, color: string) {
-    this.backgroundCtx.strokeStyle = color;
-    this.backgroundCtx.lineWidth = 1 / this.scale;
-
-    const path = new Path2D();
-
-    const startX = Math.ceil(this.trueRect[0] / chunkSize) * chunkSize;
-    const countX = Math.ceil((this.trueRect[2] - startX) / chunkSize);
-    for (let x = startX; x < startX + countX * chunkSize; x += chunkSize) {
-      path.moveTo(x, this.trueRect[1]);
-      path.lineTo(x, this.trueRect[3]);
-    }
-
-    const startY = Math.ceil(this.trueRect[1] / chunkSize) * chunkSize;
-    const countY = Math.ceil((this.trueRect[3] - startY) / chunkSize);
-    for (let y = startY; y < startY + countY * chunkSize; y += chunkSize) {
-      path.moveTo(this.trueRect[0], y);
-      path.lineTo(this.trueRect[2], y);
-    }
-
-    this.backgroundCtx.stroke(path);
-  }
-
   pointToGrid(p: Point): Point {
     return this.#settingsService.snapToGrid()
       ? [
-          Math.round(p[0] / this.#smallChunkSize) * this.#smallChunkSize,
-          Math.round(p[1] / this.#smallChunkSize) * this.#smallChunkSize,
+          Math.round(p[0] / this.#rendering.smallChunkSize) *
+            this.#rendering.smallChunkSize,
+          Math.round(p[1] / this.#rendering.smallChunkSize) *
+            this.#rendering.smallChunkSize,
         ]
       : [p[0], p[1]];
   }
@@ -1325,11 +1169,12 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
 
     this.#toolState.onMouseDown(event);
 
-    this.renderCanvas({
-      drawingsChanged: true,
-      shapesChanged: true,
-      shapesEdited: true,
-    });
+    // TODO
+    // this.renderCanvas({
+    //   drawingsChanged: true,
+    //   shapesChanged: true,
+    //   shapesEdited: true,
+    // });
   };
 
   onHoveringMouseMove = (event: MouseEvent) => {
@@ -1346,7 +1191,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     if (this.#isPanning) {
       this.#origin[0] = event.clientX - this.#dragStart[0];
       this.#origin[1] = event.clientY - this.#dragStart[1];
-      this.renderCanvas({ transformed: true });
+      this.#rendering.renderTransformedCanvas();
       return;
     }
     this.#toolState.onPressedMouseMove(event);
@@ -1388,18 +1233,6 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.#prevCursor[1] = this.#cursor[1];
     this.#cursor[0] = (screenX - this.#origin[0]) / this.#scale;
     this.#cursor[1] = (screenY - this.#origin[1]) / this.#scale;
-
-    this.#sendCursorPosition({ x: this.#cursor[0], y: this.#cursor[1] });
-  }
-
-  shapeInside(shape: Shape) {
-    return this.rectsOverlap(shape.trueRect(), this.#trueRect);
-  }
-
-  private rectsOverlap(a: Rect, b: Rect): boolean {
-    if (a[2] < b[0] || b[2] < a[0]) return false;
-    if (a[3] < b[1] || b[3] < a[1]) return false;
-    return true;
   }
 
   async loadCanvasData(
@@ -1416,7 +1249,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
 
     this.#drawings = drawings.map(d => this.#drawingSerializer.deserialized(d));
 
-    this.renderCanvas({ transformed: true });
+    this.#rendering.renderTransformedCanvas();
   }
 
   /**

@@ -53,7 +53,7 @@ import { SettingsService } from './services/settings.service';
     PresenceBarComponent,
     ConnectionStatusBadge,
     JsonViewerComponent,
-    DialogModule
+    DialogModule,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
@@ -91,25 +91,26 @@ export class App implements OnInit, OnDestroy {
   readonly eConnectivityState = EConnectivityState;
 
   constructor() {
-    this.#actionSubscription = this.#canvasConnection.actionReceived$.subscribe((receivedAction) => {
-      if (
-        receivedAction &&
-        receivedAction.noteId &&
-        this.selectedNote()?.id === receivedAction.noteId
-      ) {
+    this.#actionSubscription = this.#canvasConnection.actionReceived$.subscribe(
+      receivedAction => {
+        if (
+          receivedAction &&
+          receivedAction.noteId &&
+          this.selectedNote()?.id === receivedAction.noteId
+        ) {
+          if (receivedAction.clientId === this.#canvasConnection.clientId()) {
+            return;
+          }
 
-        if (receivedAction.clientId === this.#canvasConnection.clientId()) {
-          return;
+          const payload = receivedAction.payload as Record<string, unknown>;
+          const canvasAction: CanvasAction = {
+            type: (payload['type'] || receivedAction.actionType) as ActionType,
+            data: (payload['data'] || payload) as Record<string, unknown>,
+          };
+          this.canvas()?.applyRemoteAction(canvasAction);
         }
-
-        const payload = receivedAction.payload as Record<string, unknown>;
-        const canvasAction: CanvasAction = {
-          type: (payload['type'] || receivedAction.actionType) as ActionType,
-          data: (payload['data'] || payload) as Record<string, unknown>,
-        };
-        this.canvas()?.applyRemoteAction(canvasAction);
       }
-    });
+    );
 
     effect(() => {
       const affectedFolderId = this.#canvasConnection.hierarchyChanged();
@@ -143,7 +144,7 @@ export class App implements OnInit, OnDestroy {
 
     effect(() => {
       this.settingsService.isOfflineMode();
-      
+
       if (this.#isFirstModeLoad) {
         this.#isFirstModeLoad = false;
         return;
@@ -201,7 +202,7 @@ export class App implements OnInit, OnDestroy {
   async updateGlobalNoteStatus() {
     const [cloudFolders, localFolders] = await Promise.all([
       this.#folderService.getFolders('cloud'),
-      this.#folderService.getFolders('local')
+      this.#folderService.getFolders('local'),
     ]);
     this.hasFolders.set(cloudFolders.length > 0 || localFolders.length > 0);
 
@@ -229,26 +230,36 @@ export class App implements OnInit, OnDestroy {
     }
 
     const path = url.split('/').filter(s => s.length > 0);
-    const { folder, note, source: pathSource } = await this.#folderService.getItemByPath(path);
+    const {
+      folder,
+      note,
+      source: pathSource,
+    } = await this.#folderService.getItemByPath(path);
 
     const isFolderUrl = url.endsWith('/');
 
     if (isFolderUrl && folder) {
       this.selectedFolderId.set(folder.id);
       this.selectedNote.set(null);
-      await this.overviewSidebar()?.navigateToFolder(folder.id, (pathSource as 'cloud' | 'local' || undefined));
+      await this.overviewSidebar()?.navigateToFolder(
+        folder.id,
+        (pathSource as 'cloud' | 'local') || undefined
+      );
     } else if (!isFolderUrl && note) {
       if (this.selectedNote()?.id !== note.id) {
         this.selectedFolderId.set(note.parentFolderId);
         await this.loadNote(note, (pathSource as 'cloud' | 'local') || 'cloud');
         await this.overviewSidebar()?.navigateToFolder(
           note.parentFolderId,
-          (pathSource as 'cloud' | 'local' || undefined),
+          (pathSource as 'cloud' | 'local') || undefined,
           note
         );
       }
     } else if (!isFolderUrl && folder) {
-      await this.onFolderSelected({ folderId: folder.id, source: (pathSource || 'cloud') as 'cloud' | 'local' });
+      await this.onFolderSelected({
+        folderId: folder.id,
+        source: (pathSource || 'cloud') as 'cloud' | 'local',
+      });
     } else {
       if (!this.hasFolders()) {
         await this.#loadDefaultNote();
@@ -261,11 +272,15 @@ export class App implements OnInit, OnDestroy {
 
     const [cloudFolders, localFolders] = await Promise.all([
       this.#folderService.getFolders('cloud'),
-      this.#folderService.getFolders('local')
+      this.#folderService.getFolders('local'),
     ]);
 
-    const cloudNotes = cloudFolders.flatMap(f => this.#getAllNotesRecursive(f)).map(n => ({ note: n, source: 'cloud' as const }));
-    const localNotes = localFolders.flatMap(f => this.#getAllNotesRecursive(f)).map(n => ({ note: n, source: 'local' as const }));
+    const cloudNotes = cloudFolders
+      .flatMap(f => this.#getAllNotesRecursive(f))
+      .map(n => ({ note: n, source: 'cloud' as const }));
+    const localNotes = localFolders
+      .flatMap(f => this.#getAllNotesRecursive(f))
+      .map(n => ({ note: n, source: 'local' as const }));
 
     const allNotes = [...cloudNotes, ...localNotes];
 
@@ -273,7 +288,8 @@ export class App implements OnInit, OnDestroy {
 
     const recent = allNotes.sort(
       (a, b) =>
-        new Date(b.note.updatedAt).getTime() - new Date(a.note.updatedAt).getTime()
+        new Date(b.note.updatedAt).getTime() -
+        new Date(a.note.updatedAt).getTime()
     )[0];
 
     if (recent) {
@@ -289,7 +305,7 @@ export class App implements OnInit, OnDestroy {
     return notes;
   }
 
-  async onNoteSelected(event: { note: Note, source: 'cloud' | 'local' }) {
+  async onNoteSelected(event: { note: Note; source: 'cloud' | 'local' }) {
     const { note, source } = event;
     if (this.selectedNote()?.id === note.id) return;
 
@@ -307,7 +323,10 @@ export class App implements OnInit, OnDestroy {
 
     this.selectedFolderId.set(note.parentFolderId);
 
-    const path = await this.#folderService.getFolderPath(note.parentFolderId, source);
+    const path = await this.#folderService.getFolderPath(
+      note.parentFolderId,
+      source
+    );
     this.#router.navigate([...path, note.title]);
 
     const folders = await this.#folderService.getFolders(source);
@@ -352,7 +371,10 @@ export class App implements OnInit, OnDestroy {
     return false;
   }
 
-  async onFolderSelected(event: { folderId: string, source: 'cloud' | 'local' }) {
+  async onFolderSelected(event: {
+    folderId: string;
+    source: 'cloud' | 'local';
+  }) {
     const { folderId, source } = event;
     const isNoteActive = !!this.selectedNote();
 
@@ -390,8 +412,14 @@ export class App implements OnInit, OnDestroy {
 
     let fullNote = note;
     const isOffline = this.settingsService.isOfflineMode();
-    
-    if (source === 'cloud' && (isOffline || !note.content || (note.content.drawings.length === 0 && note.content.shapes.length === 0))) {
+
+    if (
+      source === 'cloud' &&
+      (isOffline ||
+        !note.content ||
+        (note.content.drawings.length === 0 &&
+          note.content.shapes.length === 0))
+    ) {
       const fetchedNote = await this.#notesService.getNote(note.id, source);
       if (fetchedNote) {
         fullNote = fetchedNote;
@@ -416,8 +444,8 @@ export class App implements OnInit, OnDestroy {
         await canvas.loadCanvasData(
           fullNote.content.shapes ?? [],
           fullNote.content.drawings ?? [],
-          fullNote.viewPosition 
-            ? [fullNote.viewPosition.x, fullNote.viewPosition.y] 
+          fullNote.viewPosition
+            ? [fullNote.viewPosition.x, fullNote.viewPosition.y]
             : [window.innerWidth / 2, window.innerHeight / 2],
           fullNote.zoomScale
         );
@@ -463,7 +491,11 @@ export class App implements OnInit, OnDestroy {
       return;
     }
 
-    const { clientId, noteId, cursorPosition: _cursorPosition } = latestPresence;
+    const {
+      clientId,
+      noteId,
+      cursorPosition: _cursorPosition,
+    } = latestPresence;
 
     if (noteId && noteId !== this.selectedNote()?.id) {
       const folders = await this.#folderService.getFolders('cloud');
@@ -502,8 +534,10 @@ export class App implements OnInit, OnDestroy {
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
 
-      const newOriginX = viewportWidth / 2 - finalPresence.cursorPosition.x * canvas.scale;
-      const newOriginY = viewportHeight / 2 - finalPresence.cursorPosition.y * canvas.scale;
+      const newOriginX =
+        viewportWidth / 2 - finalPresence.cursorPosition.x * canvas.scale;
+      const newOriginY =
+        viewportHeight / 2 - finalPresence.cursorPosition.y * canvas.scale;
 
       canvas.origin = [newOriginX, newOriginY];
       canvas.renderCanvas({ transformed: true });
@@ -527,11 +561,17 @@ export class App implements OnInit, OnDestroy {
     if (source === 'local') {
       note.content = new NoteContent({
         shapes: canvas.shapes.map(s => canvas.shapeSerializer.serialized(s)),
-        drawings: canvas.drawings.map(d => canvas.drawingSerializer.serialized(d))
+        drawings: canvas.drawings.map(d =>
+          canvas.drawingSerializer.serialized(d)
+        ),
       });
     }
 
-    await this.#notesService.updateNoteContent(note, source, source === 'local');
+    await this.#notesService.updateNoteContent(
+      note,
+      source,
+      source === 'local'
+    );
     this.isDirty.set(false);
   }
 
@@ -542,21 +582,26 @@ export class App implements OnInit, OnDestroy {
     });
   }
 
-  async handleModeTransition() {    
+  async handleModeTransition() {
     this.selectedNote.set(null);
     this.selectedNoteSource.set(null);
     this.selectedFolderId.set('');
-    
+
     const canvas = this.canvas();
     if (canvas) {
       canvas.toolstate.remove();
-      await canvas.loadCanvasData([], [], [window.innerWidth / 2, window.innerHeight / 2], 1);
+      await canvas.loadCanvasData(
+        [],
+        [],
+        [window.innerWidth / 2, window.innerHeight / 2],
+        1
+      );
     }
-    
+
     this.updateGlobalNoteStatus();
     this.overviewSidebar()?.loadFolders();
     this.overviewSidebar()?.resetToRoot();
-    
+
     if (this.#router.url !== '/') {
       await this.#router.navigateByUrl('/');
     }

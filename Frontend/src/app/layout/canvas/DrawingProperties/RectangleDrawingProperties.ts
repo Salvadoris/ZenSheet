@@ -2,12 +2,12 @@ import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { RectangleStyle } from '../ShapeStyles/RectangleStyle';
 
 import {
-  BaseDrawingProperties,
   ChangableDrawingProperties,
+  NonLineDrawingProperties,
 } from './DrawingProperties';
 
 export type RectangleDrawingProperties = Omit<
-  BaseDrawingProperties,
+  NonLineDrawingProperties,
   FormPropertyName.style
 > & { [FormPropertyName.style]: RectangleStyle };
 

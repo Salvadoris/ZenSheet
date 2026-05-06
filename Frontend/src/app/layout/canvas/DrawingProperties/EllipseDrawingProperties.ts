@@ -2,12 +2,12 @@ import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { EllipseStyle } from '../ShapeStyles/EllipseStyle';
 
 import {
-  BaseDrawingProperties,
   ChangableDrawingProperties,
+  NonLineDrawingProperties,
 } from './DrawingProperties';
 
 export type EllipseDrawingProperties = Omit<
-  BaseDrawingProperties,
+  NonLineDrawingProperties,
   FormPropertyName.style
 > & { [FormPropertyName.style]: EllipseStyle };
 

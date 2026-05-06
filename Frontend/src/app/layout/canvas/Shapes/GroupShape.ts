@@ -1,3 +1,5 @@
+import { ChunkIndex, ChunkIndexSet } from '../Chunks/ChunkIndex';
+import { ChunkChange, FormChunkMap } from '../Chunks/FormChunkMap';
 import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { Rect } from '../Geometry';
 import { GroupShapeProperties } from '../ShapeProperties/GroupShapeProperties';
@@ -59,6 +61,11 @@ export class GroupShape extends Shape {
     return this._properties;
   }
 
+  override get chunkMap(): FormChunkMap {
+    throw new Error('function not implemented');
+    // TODO
+  }
+
   override get style(): GroupShapeStyle {
     return this.properties[FormPropertyName.style];
   }
@@ -88,20 +95,12 @@ export class GroupShape extends Shape {
     return {};
   }
 
-  override renderShape(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
-    for (const shape of this.shapes) {
-      this.shapeToGlobal(shape);
-      shape.render(canvasRect, ctx);
-      this.shapeToLocal(shape);
-    }
-  }
-
-  override path(): Path2D {
-    const path = new Path2D();
-    for (const shape of this.shapes) {
-      path.addPath(shape.path());
-    }
-    return path;
+  override loadChunkImage(
+    chunkSize: number,
+    chunkIndex: ChunkIndex
+  ): HTMLCanvasElement {
+    throw new Error('function not implemented');
+    // TODO
   }
 
   override offsetPath(): Path2D {
@@ -170,12 +169,14 @@ export class GroupShape extends Shape {
   override pointInside(
     ctx: CanvasRenderingContext2D,
     x: number,
-    y: number
+    y: number,
+    chunkSize: number,
+    chunkIndex: ChunkIndex
   ): boolean {
     const localX = this.toLocalX(x);
     const localY = this.toLocalY(y);
     for (const shape of this.shapes) {
-      if (shape.pointInside(ctx, localX, localY)) {
+      if (shape.pointInside(ctx, localX, localY, chunkSize, chunkIndex)) {
         return true;
       }
     }

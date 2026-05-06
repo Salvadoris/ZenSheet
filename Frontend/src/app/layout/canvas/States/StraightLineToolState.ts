@@ -13,9 +13,7 @@ export class StraightLineToolState extends CanvasToolState {
   constructor(canvas: CanvasComponent) {
     super(canvas);
     this.canvas.changeStyle(new StraightLineStyle(this.canvas.style));
-    if (this.canvas.selectFrameCtx) {
-      this.canvas.changeCursor('default');
-    }
+    this.canvas.changeCursor('default');
   }
 
   override setStyleProperty(styleProperty: ShapeStyleProperty): void {
@@ -45,7 +43,7 @@ export class StraightLineToolState extends CanvasToolState {
           this.canvas.bufferCtx
         );
         this.canvas.addDrawings([this.#currentDrawing]);
-        this.canvas.renderCanvas({ drawingsChanged: true });
+        this.canvas.rendering.renderAddDrawing(this.#currentDrawing);
       }
     } else {
       const newPoint = this.canvas.pointToGrid(this.canvas.cursor);
@@ -60,7 +58,7 @@ export class StraightLineToolState extends CanvasToolState {
         )
       ) {
         const changeProperties = this.#currentDrawing.update(newPoint);
-        this.canvas.renderCanvas({ drawingsChanged: true });
+        this.canvas.rendering.renderChangeDrawing(this.#currentDrawing);
         this.canvas.changeDrawingsProperties(
           [this.#currentDrawing.properties[FormPropertyName.id]],
           changeProperties
@@ -74,9 +72,16 @@ export class StraightLineToolState extends CanvasToolState {
 
   override onMouseUp(_event: MouseEvent): void {
     if (this.#currentDrawing) {
-      this.canvas.drawingToShape(this.#currentDrawing);
+      const shape = this.canvas.drawingToShape(this.#currentDrawing);
+      shape.chunkMap.set(
+        this.canvas.rendering.canvasChunkSize,
+        this.#currentDrawing.chunkMap.chunkIndexes(
+          this.canvas.rendering.canvasChunkSize,
+          this.canvas.rendering.visibleChunkRange
+        )
+      );
+      this.canvas.rendering.renderDrawingToShape(this.#currentDrawing, shape);
       this.#currentDrawing = null;
-      this.canvas.renderCanvas({ drawingsChanged: true, shapesChanged: true });
     }
   }
 

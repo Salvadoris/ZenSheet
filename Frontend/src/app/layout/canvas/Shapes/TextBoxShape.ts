@@ -1,9 +1,8 @@
+import { ChunkIndex } from '../Chunks/ChunkIndex';
+import { FormChunkMap } from '../Chunks/FormChunkMap';
 import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { Point, Rect } from '../Geometry';
-import {
-  ChangableSerializedShapeProperties,
-  ChangableShapeProperties,
-} from '../ShapeProperties/ShapeProperties';
+import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
 import {
   tabSize,
   TextBoxShapeProperties,
@@ -60,6 +59,11 @@ export class TextBoxShape extends Shape {
     return this._properties;
   }
 
+  override get chunkMap(): FormChunkMap {
+    throw new Error('function not implemented');
+    // TODO
+  }
+
   get text() {
     return this.properties[FormPropertyName.text];
   }
@@ -76,26 +80,22 @@ export class TextBoxShape extends Shape {
     return this.properties[FormPropertyName.style];
   }
 
-  override renderShape(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
-    this.renderEditedShape(canvasRect, ctx);
+  override loadChunkImage(
+    chunkSize: number,
+    chunkIndex: ChunkIndex
+  ): HTMLCanvasElement {
+    throw new Error('function not implemented');
+    // TODO
   }
 
-  override path(): Path2D {
+  override offsetPath(): Path2D {
     const path = new Path2D();
     path.rect(this.originX, this.originY, this.width, this.height);
     return path;
   }
 
-  override offsetPath(): Path2D {
-    return this.path();
-  }
-
   override offset(): number {
     return 0;
-  }
-
-  override offsetRect(): Rect {
-    return this.trueRect();
   }
 
   override setStyleProperty(
@@ -120,16 +120,16 @@ export class TextBoxShape extends Shape {
     return {};
   }
 
-  override updateProperties(properties: ChangableShapeProperties) {
-    super.updateProperties(properties);
-    if (
-      (properties[FormPropertyName.width] !== undefined && this.wrap) ||
-      properties[FormPropertyName.text] !== undefined ||
-      properties[FormPropertyName.wrap] !== undefined
-    ) {
-      this.resizeContent();
-    }
-  }
+  // override updateProperties(properties: ChangableShapeProperties) {
+  //   super.updateProperties(properties);
+  //   if (
+  //     (properties[FormPropertyName.width] !== undefined && this.wrap) ||
+  //     properties[FormPropertyName.text] !== undefined ||
+  //     properties[FormPropertyName.wrap] !== undefined
+  //   ) {
+  //     this.resizeContent();
+  //   }
+  // }
 
   private applyFontStyle() {
     let font = '';
@@ -148,7 +148,8 @@ export class TextBoxShape extends Shape {
     x: number,
     y: number
   ): boolean {
-    return ctx.isPointInPath(this.path(), x, y);
+    throw new Error('function not implemented');
+    // TODO
   }
 
   override resizeTop(_y: number): ChangableSerializedShapeProperties {

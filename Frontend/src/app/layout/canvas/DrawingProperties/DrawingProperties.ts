@@ -26,3 +26,15 @@ export type ChangableDrawingProperties = Partial<
     | FormPropertyName.height
   >
 > & { [FormPropertyName.points]?: { lastPoint: Point } };
+
+export type NonLineDrawingProperties = Required<
+  Pick<
+    DrawingProperties,
+    | FormPropertyName.id
+    | FormPropertyName.style
+    | FormPropertyName.originX
+    | FormPropertyName.originY
+    | FormPropertyName.width
+    | FormPropertyName.height
+  >
+>;

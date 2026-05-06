@@ -1,5 +1,6 @@
+import { ChunkIndex } from '../Chunks/ChunkIndex';
+import { RectangleShapeChunkMap } from '../Chunks/RectangleChunkMap/RectangleShapeChunkMap';
 import { FormPropertyName } from '../FormProperties/FormPropertyName';
-import { Rect } from '../Geometry';
 import { RectangleShapeProperties } from '../ShapeProperties/RectangleShapeProperties';
 import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
 import { RectangleStyle } from '../ShapeStyles/RectangleStyle';
@@ -10,6 +11,7 @@ import { Shape } from './Shape';
 
 export class RectangleShape extends Shape {
   declare protected _properties: Required<RectangleShapeProperties>;
+  #chunkMap = new RectangleShapeChunkMap(this.properties);
 
   constructor(
     properties: RectangleShapeProperties,
@@ -24,6 +26,10 @@ export class RectangleShape extends Shape {
 
   override get properties(): Required<RectangleShapeProperties> {
     return this._properties;
+  }
+
+  override get chunkMap(): RectangleShapeChunkMap {
+    return this.#chunkMap;
   }
 
   override get style(): RectangleStyle {
@@ -44,31 +50,27 @@ export class RectangleShape extends Shape {
     return {};
   }
 
-  override renderShape(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
+  override loadChunkImage(
+    chunkSize: number,
+    chunkIndex: ChunkIndex
+  ): HTMLCanvasElement {
     this.bufferCtx.save();
+    this.bufferCtx.clearRect(0, 0, chunkSize, chunkSize);
     this.bufferCtx.lineWidth = this.style[StyleName.LineWidth];
     this.bufferCtx.strokeStyle = this.style[StyleName.Color];
     this.bufferCtx.fillStyle = this.style[StyleName.BackgroundColor];
-
+    this.bufferCtx.translate(
+      -chunkIndex[0] * chunkSize,
+      -chunkIndex[1] * chunkSize
+    );
     const path = this.path();
     this.bufferCtx.fill(path);
     this.bufferCtx.stroke(path);
     this.bufferCtx.restore();
-
-    ctx.save();
-    ctx.globalAlpha = this.style[StyleName.Opacity];
-    ctx.drawImage(this.bufferCtx.canvas, 0, 0);
-    ctx.restore();
-
-    this.bufferCtx.clearRect(
-      canvasRect[0],
-      canvasRect[1],
-      canvasRect[2] - canvasRect[0],
-      canvasRect[3] - canvasRect[1]
-    );
+    return this.bufferCtx.canvas;
   }
 
-  override path(): Path2D {
+  path(): Path2D {
     const path = new Path2D();
     path.rect(this.originX, this.originY, this.width, this.height);
     return path;
@@ -79,17 +81,6 @@ export class RectangleShape extends Shape {
     const rect = this.offsetRect();
     path.rect(rect[0], rect[1], rect[2] - rect[0], rect[3] - rect[1]);
     return path;
-  }
-
-  override offsetRect(): Rect {
-    const trueRect = this.trueRect();
-    const offset = this.offset();
-    return [
-      trueRect[0] - offset,
-      trueRect[1] - offset,
-      trueRect[2] + offset,
-      trueRect[3] + offset,
-    ];
   }
 
   override offset(): number {

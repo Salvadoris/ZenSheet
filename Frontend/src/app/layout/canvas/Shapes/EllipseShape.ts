@@ -1,5 +1,6 @@
+import { ChunkIndex } from '../Chunks/ChunkIndex';
+import { EllipseShapeChunkMap } from '../Chunks/EllipseChunkMap/EllipseShapeChunkMap';
 import { FormPropertyName } from '../FormProperties/FormPropertyName';
-import { Rect } from '../Geometry';
 import { EllipseShapeProperties } from '../ShapeProperties/EllipseShapeProperties';
 import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
 import { EllipseStyle } from '../ShapeStyles/EllipseStyle';
@@ -10,6 +11,7 @@ import { Shape } from './Shape';
 
 export class EllipseShape extends Shape {
   declare protected _properties: Required<EllipseShapeProperties>;
+  #chunkMap = new EllipseShapeChunkMap(this.properties);
 
   constructor(
     properties: EllipseShapeProperties,
@@ -24,6 +26,10 @@ export class EllipseShape extends Shape {
 
   override get properties(): Required<EllipseShapeProperties> {
     return this._properties;
+  }
+
+  override get chunkMap(): EllipseShapeChunkMap {
+    return this.#chunkMap;
   }
 
   override get style(): EllipseStyle {
@@ -44,41 +50,34 @@ export class EllipseShape extends Shape {
     return {};
   }
 
-  override renderShape(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
+  override loadChunkImage(
+    chunkSize: number,
+    chunkIndex: ChunkIndex
+  ): HTMLCanvasElement {
     this.bufferCtx.save();
+    this.bufferCtx.clearRect(0, 0, chunkSize, chunkSize);
     this.bufferCtx.lineWidth = this.style[StyleName.LineWidth];
     this.bufferCtx.strokeStyle = this.style[StyleName.Color];
     this.bufferCtx.fillStyle = this.style[StyleName.BackgroundColor];
-
+    this.bufferCtx.translate(
+      -chunkIndex[0] * chunkSize,
+      -chunkIndex[1] * chunkSize
+    );
     const path = this.path();
     this.bufferCtx.fill(path);
     this.bufferCtx.stroke(path);
     this.bufferCtx.restore();
-
-    ctx.save();
-    ctx.globalAlpha = this.style[StyleName.Opacity];
-    ctx.drawImage(this.bufferCtx.canvas, 0, 0);
-    ctx.restore();
-
-    this.bufferCtx.clearRect(
-      canvasRect[0],
-      canvasRect[1],
-      canvasRect[2] - canvasRect[0],
-      canvasRect[3] - canvasRect[1]
-    );
+    return this.bufferCtx.canvas;
   }
 
-  override path(): Path2D {
+  private path() {
+    const radiusX = Math.abs(this.width / 2);
+    const radiusY = Math.abs(this.height / 2);
+    const centerX = this.originX + this.width / 2;
+    const centerY = this.originY + this.height / 2;
+
     const path = new Path2D();
-    path.ellipse(
-      this.originX + this.width / 2,
-      this.originY + this.height / 2,
-      Math.abs(this.width) / 2,
-      Math.abs(this.height) / 2,
-      0,
-      0,
-      2 * Math.PI
-    );
+    path.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
     return path;
   }
 
@@ -101,17 +100,6 @@ export class EllipseShape extends Shape {
     return this.style[StyleName.Color] === 'transparent'
       ? 0
       : this.style[StyleName.LineWidth] / 2;
-  }
-
-  override offsetRect(): Rect {
-    const trueRect = this.trueRect();
-    const offset = this.offset();
-    return [
-      trueRect[0] - offset,
-      trueRect[1] - offset,
-      trueRect[2] + offset,
-      trueRect[3] + offset,
-    ];
   }
 
   override pointInside(

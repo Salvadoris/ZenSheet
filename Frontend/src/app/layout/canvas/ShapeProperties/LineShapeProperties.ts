@@ -1,5 +1,5 @@
 import { FormPropertyName } from '../FormProperties/FormPropertyName';
-import { Point, Rect } from '../Geometry';
+import { Point } from '../Geometry';
 import { LineStyle, LineStyleType } from '../ShapeStyles/LineStyle';
 
 import {
@@ -13,16 +13,6 @@ export type LinePoints =
   | [Point, Point, ...Point[]]
   | [Point, ...Point[], Point]
   | [...Point[], Point, Point];
-
-export interface Chunk {
-  rect: Rect;
-  visible: boolean;
-}
-
-export interface Segment {
-  points: Point[];
-  chunkIndex: number;
-}
 
 export type LineShapeProperties = Omit<
   BaseShapeProperties,

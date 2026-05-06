@@ -55,7 +55,6 @@ export type ChangableShapeProperties = Partial<
     | FormPropertyName.src
     | FormPropertyName.text
     | FormPropertyName.wrap
-    | FormPropertyName.points
   >
 >;
 

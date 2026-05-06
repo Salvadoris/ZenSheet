@@ -1,18 +1,17 @@
+import { ChunkIndex } from '../Chunks/ChunkIndex';
+import { Form } from '../Chunks/Form';
 import { FormPropertyName } from '../FormProperties/FormPropertyName';
-import { Rect } from '../Geometry';
 import {
   BaseShapeProperties,
   ChangableSerializedShapeProperties,
-  ChangableShapeProperties,
 } from '../ShapeProperties/ShapeProperties';
 import {
   NullableShapeStyle,
   ShapeStyleProperty,
 } from '../ShapeStyles/ShapeStyle';
 
-export abstract class Shape {
-  protected _properties!: Required<BaseShapeProperties>;
-  #bufferCtx: CanvasRenderingContext2D;
+export abstract class Shape extends Form {
+  declare protected _properties: Required<BaseShapeProperties>;
   constructor(
     properties: BaseShapeProperties,
     bufferCtx: CanvasRenderingContext2D,
@@ -26,7 +25,7 @@ export abstract class Shape {
         throw new Error('Shape height cannot be zero');
       }
     }
-    this.#bufferCtx = bufferCtx;
+
     const width =
       properties[FormPropertyName.width] !== undefined
         ? properties[FormPropertyName.width]
@@ -36,7 +35,7 @@ export abstract class Shape {
         ? properties[FormPropertyName.height]
         : properties[FormPropertyName.originalHeight];
 
-    this._properties = {
+    const newProperties: Required<BaseShapeProperties> = {
       ...properties,
       [FormPropertyName.width]: width,
       [FormPropertyName.height]: height,
@@ -73,17 +72,14 @@ export abstract class Shape {
           ? properties[FormPropertyName.verticallyInverted]
           : height < 0,
     };
+    super(newProperties, bufferCtx);
   }
 
-  get bufferCtx() {
-    return this.#bufferCtx;
-  }
-
-  get properties(): Required<BaseShapeProperties> {
+  override get properties(): Required<BaseShapeProperties> {
     return this._properties;
   }
 
-  set properties(properties: BaseShapeProperties) {
+  override set properties(properties: BaseShapeProperties) {
     const width =
       properties[FormPropertyName.width] !== undefined
         ? properties[FormPropertyName.width]
@@ -132,22 +128,8 @@ export abstract class Shape {
     };
   }
 
-  get style(): NullableShapeStyle {
+  override get style(): NullableShapeStyle {
     return this.properties[FormPropertyName.style];
-  }
-
-  get originX() {
-    return this.properties[FormPropertyName.originX];
-  }
-  set originX(originX: number) {
-    this.properties[FormPropertyName.originX] = originX;
-  }
-
-  get originY() {
-    return this.properties[FormPropertyName.originY];
-  }
-  set originY(originY: number) {
-    this.properties[FormPropertyName.originY] = originY;
   }
 
   get originalWidth() {
@@ -156,20 +138,6 @@ export abstract class Shape {
 
   get originalHeight() {
     return this.properties[FormPropertyName.originalHeight];
-  }
-
-  get width() {
-    return this.properties[FormPropertyName.width];
-  }
-  set width(width: number) {
-    this.properties[FormPropertyName.width] = width;
-  }
-
-  get height() {
-    return this.properties[FormPropertyName.height];
-  }
-  set height(height: number) {
-    this.properties[FormPropertyName.height] = height;
   }
 
   get scaleX() {
@@ -210,55 +178,45 @@ export abstract class Shape {
     return this.properties[FormPropertyName.verticallyInverted];
   }
 
-  render(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
-    this.properties[FormPropertyName.horizontalInverted] = this.width < 0;
-    this.properties[FormPropertyName.verticallyInverted] = this.height < 0;
-    this.renderShape(canvasRect, ctx);
-  }
-
-  abstract renderShape(canvasRect: Rect, ctx: CanvasRenderingContext2D): void;
-
-  abstract path(): Path2D;
-
   abstract offsetPath(): Path2D;
 
-  abstract offsetRect(): Rect;
-
-  abstract offset(): number;
+  abstract override offset(): number;
 
   abstract setStyleProperty(
     styleProperty: ShapeStyleProperty
   ): ChangableSerializedShapeProperties;
 
-  updateProperties(properties: ChangableShapeProperties) {
-    this.properties = {
-      ...this.properties,
-      ...properties,
-      [FormPropertyName.style]: {
-        ...this.properties[FormPropertyName.style],
-        ...properties[FormPropertyName.style],
-      },
-    };
-    if (properties[FormPropertyName.width] !== undefined) {
-      this.properties[FormPropertyName.scaleX] =
-        this.width / this.originalWidth;
-    }
-    if (properties[FormPropertyName.height] !== undefined) {
-      this.properties[FormPropertyName.scaleY] =
-        this.height / this.originalHeight;
-    }
-    if (properties[FormPropertyName.width] !== undefined) {
-      this.properties[FormPropertyName.horizontalInverted] = this.width < 0;
-    }
-    if (properties[FormPropertyName.height] !== undefined) {
-      this.properties[FormPropertyName.verticallyInverted] = this.height < 0;
-    }
-  }
+  // updateProperties(properties: ChangableShapeProperties) {
+  //   this.properties = {
+  //     ...this.properties,
+  //     ...properties,
+  //     [FormPropertyName.style]: {
+  //       ...this.properties[FormPropertyName.style],
+  //       ...properties[FormPropertyName.style],
+  //     },
+  //   };
+  //   if (properties[FormPropertyName.width] !== undefined) {
+  //     this.properties[FormPropertyName.scaleX] =
+  //       this.width / this.originalWidth;
+  //   }
+  //   if (properties[FormPropertyName.height] !== undefined) {
+  //     this.properties[FormPropertyName.scaleY] =
+  //       this.height / this.originalHeight;
+  //   }
+  //   if (properties[FormPropertyName.width] !== undefined) {
+  //     this.properties[FormPropertyName.horizontalInverted] = this.width < 0;
+  //   }
+  //   if (properties[FormPropertyName.height] !== undefined) {
+  //     this.properties[FormPropertyName.verticallyInverted] = this.height < 0;
+  //   }
+  // }
 
   abstract pointInside(
     ctx: CanvasRenderingContext2D,
     x: number,
-    y: number
+    y: number,
+    chunkSize: number,
+    chunkIndex: ChunkIndex
   ): boolean;
 
   resizeTop(
@@ -391,26 +349,4 @@ export abstract class Shape {
   }
 
   abstract resizeContent(): ChangableSerializedShapeProperties;
-
-  trueRect(): Rect {
-    let minX = 0;
-    let maxX = 0;
-    if (this.horizontalInverted) {
-      minX = this.originX + this.width;
-      maxX = this.originX;
-    } else {
-      minX = this.originX;
-      maxX = this.originX + this.width;
-    }
-    let minY = 0;
-    let maxY = 0;
-    if (this.verticallyInverted) {
-      minY = this.originY + this.height;
-      maxY = this.originY;
-    } else {
-      minY = this.originY;
-      maxY = this.originY + this.height;
-    }
-    return [minX, minY, maxX, maxY];
-  }
 }

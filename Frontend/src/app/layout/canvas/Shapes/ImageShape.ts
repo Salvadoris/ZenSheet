@@ -1,3 +1,5 @@
+import { ChunkIndex, ChunkIndexSet } from '../Chunks/ChunkIndex';
+import { ChunkChange, FormChunkMap } from '../Chunks/FormChunkMap';
 import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { Rect } from '../Geometry';
 import { ImageShapeProperties } from '../ShapeProperties/ImageShapeProperties';
@@ -10,8 +12,6 @@ import { Shape } from './Shape';
 
 export class ImageShape extends Shape {
   declare protected _properties: Required<ImageShapeProperties>;
-  private img = new Image();
-  private loaded = false;
 
   constructor(
     properties: ImageShapeProperties,
@@ -26,6 +26,11 @@ export class ImageShape extends Shape {
 
   override get properties(): Required<ImageShapeProperties> {
     return this._properties;
+  }
+
+  override get chunkMap(): FormChunkMap {
+    throw new Error('function not implemented');
+    // TODO
   }
 
   override get style(): ImageStyle {
@@ -46,72 +51,33 @@ export class ImageShape extends Shape {
     return {};
   }
 
-  override renderShape(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
-    if (this.loaded) {
-      this.renderImage(canvasRect, ctx);
-    } else {
-      this.img.onload = () => {
-        this.loaded = true;
-        this.renderImage(canvasRect, ctx);
-      };
-    }
-  }
-
-  private renderImage(canvasRect: Rect, ctx: CanvasRenderingContext2D) {
-    this.bufferCtx.save();
-    this.bufferCtx.translate(this.originX, this.originY);
-    this.bufferCtx.scale(this.scaleX, this.scaleY);
-    this.bufferCtx.drawImage(
-      this.img,
-      0,
-      0,
-      this.originalWidth,
-      this.originalHeight
-    );
-    this.bufferCtx.restore();
-
-    ctx.save();
-    ctx.globalAlpha = this.style[StyleName.Opacity];
-    ctx.drawImage(this.bufferCtx.canvas, 0, 0);
-    ctx.restore();
-
-    this.bufferCtx.clearRect(
-      canvasRect[0],
-      canvasRect[1],
-      canvasRect[2] - canvasRect[0],
-      canvasRect[3] - canvasRect[1]
-    );
-  }
-
-  override path(): Path2D {
-    const path = new Path2D();
-    path.rect(0, 0, this.width, this.height);
-    return path;
+  override loadChunkImage(
+    chunkSize: number,
+    chunkIndex: ChunkIndex
+  ): HTMLCanvasElement {
+    throw new Error('function not implemented');
+    // TODO
   }
 
   override offsetPath(): Path2D {
-    return this.path();
+    const path = new Path2D();
+    path.rect(0, 0, this.width, this.height);
+    return path;
   }
 
   override offset(): number {
     return 0;
   }
 
-  override offsetRect(): Rect {
-    return this.trueRect();
-  }
-
   override pointInside(
     ctx: CanvasRenderingContext2D,
     x: number,
-    y: number
+    y: number,
+    chunkSize: number,
+    chunkIndex: ChunkIndex
   ): boolean {
-    ctx.save();
-    ctx.translate(this.originX, this.originY);
-    ctx.scale(this.scaleX, this.scaleY);
-    const inside = ctx.isPointInPath(this.path(), x, y);
-    ctx.restore();
-    return inside;
+    throw new Error('function not implemented');
+    // TODO
   }
 
   override resizeContent(): ChangableSerializedShapeProperties {
