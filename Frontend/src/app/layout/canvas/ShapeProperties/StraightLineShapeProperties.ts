@@ -1,3 +1,4 @@
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import {
   StraightLineStyle,
   StraightLineStyleType,
@@ -7,18 +8,17 @@ import {
   BaseSerializedShapeProperties,
   BaseShapeProperties,
 } from './ShapeProperties';
-import { ShapePropertyName } from './ShapePropertyName';
 
 export type StraightLineShapeProperties = Omit<
   BaseShapeProperties,
-  ShapePropertyName.style
+  FormPropertyName.style
 > & {
-  [ShapePropertyName.style]: StraightLineStyle;
+  [FormPropertyName.style]: StraightLineStyle;
 };
 
 export type SerializedStraightLineShapeProperties = Omit<
   BaseSerializedShapeProperties,
-  ShapePropertyName.style
+  FormPropertyName.style
 > & {
-  [ShapePropertyName.style]: StraightLineStyleType;
+  [FormPropertyName.style]: StraightLineStyleType;
 };

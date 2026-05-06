@@ -1,7 +1,7 @@
 import { generateUuid } from '../../../utils/uuid';
 import { CanvasComponent } from '../canvas.component';
-import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { RectangleDrawing } from '../Drawings/RectangleDrawing';
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { RectangleStyle } from '../ShapeStyles/RectangleStyle';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 
@@ -36,12 +36,12 @@ export class RectangleToolState extends CanvasToolState {
         if (startOrigin[0] !== newPoint[0] && startOrigin[1] !== newPoint[1]) {
           this.#currentDrawing = new RectangleDrawing(
             {
-              [DrawingPropertyName.id]: generateUuid(),
-              [DrawingPropertyName.p0]: startOrigin,
-              [DrawingPropertyName.p1]: newPoint,
-              [DrawingPropertyName.style]: new RectangleStyle(
-                this.canvas.style
-              ),
+              [FormPropertyName.id]: generateUuid(),
+              [FormPropertyName.originX]: startOrigin[0],
+              [FormPropertyName.originY]: startOrigin[1],
+              [FormPropertyName.width]: newPoint[0] - startOrigin[0],
+              [FormPropertyName.height]: newPoint[1] - startOrigin[1],
+              [FormPropertyName.style]: new RectangleStyle(this.canvas.style),
             },
             this.canvas.bufferCtx
           );
@@ -53,19 +53,17 @@ export class RectangleToolState extends CanvasToolState {
         if (
           !(
             (newPoint[0] ===
-              this.#currentDrawing.properties[DrawingPropertyName.p1][0] &&
+              this.#currentDrawing.originX + this.#currentDrawing.width &&
               newPoint[1] ===
-                this.#currentDrawing.properties[DrawingPropertyName.p1][1]) ||
-            (newPoint[0] ===
-              this.#currentDrawing.properties[DrawingPropertyName.p0][0] &&
-              newPoint[1] ===
-                this.#currentDrawing.properties[DrawingPropertyName.p0][1])
+                this.#currentDrawing.originY + this.#currentDrawing.height) ||
+            newPoint[0] === this.#currentDrawing.originX ||
+            newPoint[1] === this.#currentDrawing.originY
           )
         ) {
           const changeProperties = this.#currentDrawing.update(newPoint);
           this.canvas.renderCanvas({ drawingsChanged: true });
           this.canvas.changeDrawingsProperties(
-            [this.#currentDrawing.properties[DrawingPropertyName.id]],
+            [this.#currentDrawing.properties[FormPropertyName.id]],
             changeProperties
           );
         }

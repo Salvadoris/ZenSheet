@@ -1,12 +1,12 @@
 import { generateUuid } from '../../../utils/uuid';
 import { ChangedShapeProperties } from '../Actions/ChangeShapesPropertiesAction';
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { Point, Rect } from '../Geometry';
 import {
-    ChangableBaseSerializedShapeProperties,
-    ChangableSerializedShape,
-    ChangableSerializedShapeProperties,
+  ChangableBaseSerializedShapeProperties,
+  ChangableSerializedShape,
+  ChangableSerializedShapeProperties,
 } from '../ShapeProperties/ShapeProperties';
-import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { GroupShape } from '../Shapes/GroupShape';
 import { Shape } from '../Shapes/Shape';
 
@@ -15,10 +15,10 @@ import { Resize, SelectedShape } from './SelectedShape';
 type ShapeTransformProperties = Required<
   Pick<
     ChangableBaseSerializedShapeProperties,
-    | ShapePropertyName.originX
-    | ShapePropertyName.originY
-    | ShapePropertyName.width
-    | ShapePropertyName.height
+    | FormPropertyName.originX
+    | FormPropertyName.originY
+    | FormPropertyName.width
+    | FormPropertyName.height
   >
 >;
 
@@ -29,10 +29,10 @@ export class SelectedMultiShape extends SelectedShape {
   constructor(shapes: Shape[], bufferCtx: CanvasRenderingContext2D) {
     const groupShape = new GroupShape(
       {
-        [ShapePropertyName.id]: generateUuid(),
-        [ShapePropertyName.shapes]: shapes,
-        [ShapePropertyName.edited]: true,
-        [ShapePropertyName.selected]: true,
+        [FormPropertyName.id]: generateUuid(),
+        [FormPropertyName.shapes]: shapes,
+        [FormPropertyName.edited]: true,
+        [FormPropertyName.selected]: true,
       },
       bufferCtx
     );
@@ -76,20 +76,20 @@ export class SelectedMultiShape extends SelectedShape {
     const properties: ChangableSerializedShapeProperties = {};
     if (this.shape.originX !== newOrigin[0]) {
       this.shape.originX = newOrigin[0];
-      properties[ShapePropertyName.originX] = this.shape.originX;
+      properties[FormPropertyName.originX] = this.shape.originX;
     }
     if (this.shape.originY !== newOrigin[1]) {
       this.shape.originY = newOrigin[1];
-      properties[ShapePropertyName.originY] = this.shape.originY;
+      properties[FormPropertyName.originY] = this.shape.originY;
     }
     if (Object.keys(properties).length > 0) {
       this.updateOffsetRect();
       return this.shape.shapes.map((shape): ChangedShapeProperties => {
         return {
-          [ShapePropertyName.id]: shape.properties[ShapePropertyName.id],
+          [FormPropertyName.id]: shape.properties[FormPropertyName.id],
           properties: {
-            [ShapePropertyName.originX]: this.shape.originX + shape.originX,
-            [ShapePropertyName.originY]: this.shape.originY + shape.originY,
+            [FormPropertyName.originX]: this.shape.originX + shape.originX,
+            [FormPropertyName.originY]: this.shape.originY + shape.originY,
           },
         };
       });
@@ -126,9 +126,9 @@ export class SelectedMultiShape extends SelectedShape {
         break;
     }
     this.updateOffsetRect();
-    this.shape.properties[ShapePropertyName.horizontalInverted] =
+    this.shape.properties[FormPropertyName.horizontalInverted] =
       this.shape.width < 0;
-    this.shape.properties[ShapePropertyName.verticallyInverted] =
+    this.shape.properties[FormPropertyName.verticallyInverted] =
       this.shape.height < 0;
     return properties;
   }
@@ -138,7 +138,7 @@ export class SelectedMultiShape extends SelectedShape {
     const resizeProperties = this.shape.resizeTop(y);
     return this.resizeShapes(
       shapesTransformProperties,
-      resizeProperties[ShapePropertyName.shapes]
+      resizeProperties[FormPropertyName.shapes]
     );
   }
 
@@ -147,7 +147,7 @@ export class SelectedMultiShape extends SelectedShape {
     const resizeProperties = this.shape.resizeBottom(y);
     return this.resizeShapes(
       shapesTransformProperties,
-      resizeProperties[ShapePropertyName.shapes]
+      resizeProperties[FormPropertyName.shapes]
     );
   }
 
@@ -156,7 +156,7 @@ export class SelectedMultiShape extends SelectedShape {
     const resizeProperties = this.shape.resizeLeft(x);
     return this.resizeShapes(
       shapesTransformProperties,
-      resizeProperties[ShapePropertyName.shapes]
+      resizeProperties[FormPropertyName.shapes]
     );
   }
 
@@ -165,7 +165,7 @@ export class SelectedMultiShape extends SelectedShape {
     const resizeProperties = this.shape.resizeRight(x);
     return this.resizeShapes(
       shapesTransformProperties,
-      resizeProperties[ShapePropertyName.shapes]
+      resizeProperties[FormPropertyName.shapes]
     );
   }
 
@@ -175,8 +175,8 @@ export class SelectedMultiShape extends SelectedShape {
     const resizeTopProperties = this.shape.resizeTop(y);
     return this.resizeShapes(
       shapesTransformProperties,
-      resizeLeftProperties[ShapePropertyName.shapes],
-      resizeTopProperties[ShapePropertyName.shapes]
+      resizeLeftProperties[FormPropertyName.shapes],
+      resizeTopProperties[FormPropertyName.shapes]
     );
   }
 
@@ -186,8 +186,8 @@ export class SelectedMultiShape extends SelectedShape {
     const resizeTopProperties = this.shape.resizeTop(y);
     return this.resizeShapes(
       shapesTransformProperties,
-      resizeRightProperties[ShapePropertyName.shapes],
-      resizeTopProperties[ShapePropertyName.shapes]
+      resizeRightProperties[FormPropertyName.shapes],
+      resizeTopProperties[FormPropertyName.shapes]
     );
   }
 
@@ -197,8 +197,8 @@ export class SelectedMultiShape extends SelectedShape {
     const resizeBottomProperties = this.shape.resizeBottom(y);
     return this.resizeShapes(
       shapesTransformProperties,
-      resizeLeftProperties[ShapePropertyName.shapes],
-      resizeBottomProperties[ShapePropertyName.shapes]
+      resizeLeftProperties[FormPropertyName.shapes],
+      resizeBottomProperties[FormPropertyName.shapes]
     );
   }
 
@@ -208,8 +208,8 @@ export class SelectedMultiShape extends SelectedShape {
     const resizeBottomProperties = this.shape.resizeBottom(y);
     return this.resizeShapes(
       shapesTransformProperties,
-      resizeRightProperties[ShapePropertyName.shapes],
-      resizeBottomProperties[ShapePropertyName.shapes]
+      resizeRightProperties[FormPropertyName.shapes],
+      resizeBottomProperties[FormPropertyName.shapes]
     );
   }
 
@@ -240,8 +240,7 @@ export class SelectedMultiShape extends SelectedShape {
         this.globalShapeTransformProperties(shape);
       if (changableSerializedShapes !== undefined) {
         const idx = changableSerializedShapes.findIndex(
-          s =>
-            s[ShapePropertyName.id] === shape.properties[ShapePropertyName.id]
+          s => s[FormPropertyName.id] === shape.properties[FormPropertyName.id]
         );
         if (idx !== -1) {
           shapeProperties = changableSerializedShapes[idx].properties;
@@ -249,8 +248,7 @@ export class SelectedMultiShape extends SelectedShape {
       }
       if (changableSerializedShapes2 !== undefined) {
         const idx = changableSerializedShapes2.findIndex(
-          s =>
-            s[ShapePropertyName.id] === shape.properties[ShapePropertyName.id]
+          s => s[FormPropertyName.id] === shape.properties[FormPropertyName.id]
         );
         if (idx !== -1) {
           shapeProperties = {
@@ -260,35 +258,35 @@ export class SelectedMultiShape extends SelectedShape {
         }
       }
       if (
-        globalTransFormProperties[ShapePropertyName.originY] !==
-        shapesTransformProperties[i][ShapePropertyName.originY]
+        globalTransFormProperties[FormPropertyName.originY] !==
+        shapesTransformProperties[i][FormPropertyName.originY]
       ) {
-        shapeProperties[ShapePropertyName.originY] =
-          globalTransFormProperties[ShapePropertyName.originY];
+        shapeProperties[FormPropertyName.originY] =
+          globalTransFormProperties[FormPropertyName.originY];
       }
       if (
-        globalTransFormProperties[ShapePropertyName.originX] !==
-        shapesTransformProperties[i][ShapePropertyName.originX]
+        globalTransFormProperties[FormPropertyName.originX] !==
+        shapesTransformProperties[i][FormPropertyName.originX]
       ) {
-        shapeProperties[ShapePropertyName.originX] =
-          globalTransFormProperties[ShapePropertyName.originX];
+        shapeProperties[FormPropertyName.originX] =
+          globalTransFormProperties[FormPropertyName.originX];
       }
       if (
-        globalTransFormProperties[ShapePropertyName.height] !==
-        shapesTransformProperties[i][ShapePropertyName.height]
+        globalTransFormProperties[FormPropertyName.height] !==
+        shapesTransformProperties[i][FormPropertyName.height]
       ) {
-        shapeProperties[ShapePropertyName.height] =
-          globalTransFormProperties[ShapePropertyName.height];
+        shapeProperties[FormPropertyName.height] =
+          globalTransFormProperties[FormPropertyName.height];
       }
       if (
-        globalTransFormProperties[ShapePropertyName.width] !==
-        shapesTransformProperties[i][ShapePropertyName.width]
+        globalTransFormProperties[FormPropertyName.width] !==
+        shapesTransformProperties[i][FormPropertyName.width]
       ) {
-        shapeProperties[ShapePropertyName.width] =
-          globalTransFormProperties[ShapePropertyName.width];
+        shapeProperties[FormPropertyName.width] =
+          globalTransFormProperties[FormPropertyName.width];
       }
       properties.push({
-        [ShapePropertyName.id]: shape.properties[ShapePropertyName.id],
+        [FormPropertyName.id]: shape.properties[FormPropertyName.id],
         properties: shapeProperties,
       });
     });

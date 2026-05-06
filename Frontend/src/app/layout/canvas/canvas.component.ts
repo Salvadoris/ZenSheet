@@ -42,8 +42,8 @@ import { RemoveShapesAction } from './Actions/RemoveShapesAction';
 import { CanvasContextMenu } from './ContextMenus/canvas-context-menu/canvas-context-menu.component';
 import { ShapeContextMenu } from './ContextMenus/shape-context-menu/shape-context-menu.component';
 import { ChangableDrawingProperties } from './DrawingProperties/DrawingProperties';
-import { DrawingPropertyName } from './DrawingProperties/DrawingPropertyName';
 import { Drawing } from './Drawings/Drawing';
+import { FormPropertyName } from './FormProperties/FormPropertyName';
 import { Point, Rect } from './Geometry';
 import { RemoteActionHandler } from './RemoteActionHandler';
 import {
@@ -51,7 +51,6 @@ import {
   SerializedDrawing,
 } from './Serializer/DrawingSerializer';
 import { SerializedShape, ShapeSerializer } from './Serializer/ShapeSerializer';
-import { ShapePropertyName } from './ShapeProperties/ShapePropertyName';
 import { GroupShape } from './Shapes/GroupShape';
 import { Shape } from './Shapes/Shape';
 import { CanvasStyle } from './ShapeStyles/CanvasStyle';
@@ -251,7 +250,10 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
   #smoothLineFactor = 4;
 
   constructor() {
-    this.#remoteActionHandler = new RemoteActionHandler(this, this.#canvasConnection);
+    this.#remoteActionHandler = new RemoteActionHandler(
+      this,
+      this.#canvasConnection
+    );
 
     effect(() => {
       this.#settingsService.showGrid();
@@ -296,7 +298,6 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
   get currentNoteId(): string | null {
     return this.#currentNoteId;
   }
-
 
   #sendCursorPosition(cursorPosition: CursorPosition) {
     this.#remoteActionHandler.sendCursorPosition(cursorPosition);
@@ -481,7 +482,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
 
   removeShapes(shapeIdList: string[]) {
     this.shapes = this.shapes.filter(
-      s => !shapeIdList.includes(s.properties[ShapePropertyName.id])
+      s => !shapeIdList.includes(s.properties[FormPropertyName.id])
     );
     this.#actionHandler.receiveAction({
       type: ActionType.RemoveShapes,
@@ -516,7 +517,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
 
   removeDrawings(drawingIdList: string[]) {
     this.#drawings = this.drawings.filter(
-      d => !drawingIdList.includes(d.properties[DrawingPropertyName.id])
+      d => !drawingIdList.includes(d.properties[FormPropertyName.id])
     );
     this.#actionHandler.receiveAction({
       type: ActionType.RemoveDrawings,
@@ -552,7 +553,7 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.#actionHandler.receiveAction({
       type: ActionType.DrawingToShape,
       data: {
-        drawingId: drawing.properties[DrawingPropertyName.id],
+        drawingId: drawing.properties[FormPropertyName.id],
         shape: serializedShape,
       },
     } as DrawingToShapeAction);
@@ -563,50 +564,48 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.shapes.push(groupShape);
 
     const shapeIdList = groupShape.shapes.map(
-      s => s.properties[ShapePropertyName.id]
+      s => s.properties[FormPropertyName.id]
     );
     this.#shapes = this.shapes.filter(
-      s => !shapeIdList.includes(s.properties[ShapePropertyName.id])
+      s => !shapeIdList.includes(s.properties[FormPropertyName.id])
     );
     this.#actionHandler.receiveAction({
       type: ActionType.AddGroupShape,
       data: {
         groupShape: {
-          [ShapePropertyName.id]: groupShape.properties[ShapePropertyName.id],
-          [ShapePropertyName.style]:
-            groupShape.properties[ShapePropertyName.style],
-          [ShapePropertyName.originX]:
-            groupShape.properties[ShapePropertyName.originX],
-          [ShapePropertyName.originY]:
-            groupShape.properties[ShapePropertyName.originY],
-          [ShapePropertyName.originalWidth]:
-            groupShape.properties[ShapePropertyName.originalWidth],
-          [ShapePropertyName.originalHeight]:
-            groupShape.properties[ShapePropertyName.originalHeight],
-          [ShapePropertyName.width]:
-            groupShape.properties[ShapePropertyName.width],
-          [ShapePropertyName.height]:
-            groupShape.properties[ShapePropertyName.height],
-          [ShapePropertyName.minWidth]:
-            groupShape.properties[ShapePropertyName.minWidth],
-          [ShapePropertyName.minHeight]:
-            groupShape.properties[ShapePropertyName.minHeight],
-          [ShapePropertyName.horizontallyInvertable]:
-            groupShape.properties[ShapePropertyName.horizontallyInvertable],
-          [ShapePropertyName.verticallyInvertable]:
-            groupShape.properties[ShapePropertyName.verticallyInvertable],
-          [ShapePropertyName.edited]:
-            groupShape.properties[ShapePropertyName.edited],
+          [FormPropertyName.id]: groupShape.properties[FormPropertyName.id],
+          [FormPropertyName.style]:
+            groupShape.properties[FormPropertyName.style],
+          [FormPropertyName.originX]:
+            groupShape.properties[FormPropertyName.originX],
+          [FormPropertyName.originY]:
+            groupShape.properties[FormPropertyName.originY],
+          [FormPropertyName.originalWidth]:
+            groupShape.properties[FormPropertyName.originalWidth],
+          [FormPropertyName.originalHeight]:
+            groupShape.properties[FormPropertyName.originalHeight],
+          [FormPropertyName.width]:
+            groupShape.properties[FormPropertyName.width],
+          [FormPropertyName.height]:
+            groupShape.properties[FormPropertyName.height],
+          [FormPropertyName.minWidth]:
+            groupShape.properties[FormPropertyName.minWidth],
+          [FormPropertyName.minHeight]:
+            groupShape.properties[FormPropertyName.minHeight],
+          [FormPropertyName.horizontallyInvertable]:
+            groupShape.properties[FormPropertyName.horizontallyInvertable],
+          [FormPropertyName.verticallyInvertable]:
+            groupShape.properties[FormPropertyName.verticallyInvertable],
+          [FormPropertyName.edited]:
+            groupShape.properties[FormPropertyName.edited],
         },
         shapesProperties: groupShape.shapes.map(s => {
           return {
-            [ShapePropertyName.id]: s.properties[ShapePropertyName.id],
-            [ShapePropertyName.originX]:
-              s.properties[ShapePropertyName.originX],
-            [ShapePropertyName.originY]:
-              s.properties[ShapePropertyName.originY],
-            [ShapePropertyName.width]: s.properties[ShapePropertyName.width],
-            [ShapePropertyName.height]: s.properties[ShapePropertyName.height],
+            [FormPropertyName.id]: s.properties[FormPropertyName.id],
+            [FormPropertyName.originX]: s.properties[FormPropertyName.originX],
+            [FormPropertyName.originY]: s.properties[FormPropertyName.originY],
+            [FormPropertyName.width]: s.properties[FormPropertyName.width],
+            [FormPropertyName.height]: s.properties[FormPropertyName.height],
           };
         }),
       },
@@ -624,16 +623,14 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     this.#actionHandler.receiveAction({
       type: ActionType.RemoveGroupShape,
       data: {
-        groupShapeId: groupShape.properties[ShapePropertyName.id],
+        groupShapeId: groupShape.properties[FormPropertyName.id],
         shapesProperties: groupShape.shapes.map(s => {
           return {
-            [ShapePropertyName.id]: s.properties[ShapePropertyName.id],
-            [ShapePropertyName.originX]:
-              s.properties[ShapePropertyName.originX],
-            [ShapePropertyName.originY]:
-              s.properties[ShapePropertyName.originY],
-            [ShapePropertyName.width]: s.properties[ShapePropertyName.width],
-            [ShapePropertyName.height]: s.properties[ShapePropertyName.height],
+            [FormPropertyName.id]: s.properties[FormPropertyName.id],
+            [FormPropertyName.originX]: s.properties[FormPropertyName.originX],
+            [FormPropertyName.originY]: s.properties[FormPropertyName.originY],
+            [FormPropertyName.width]: s.properties[FormPropertyName.width],
+            [FormPropertyName.height]: s.properties[FormPropertyName.height],
           };
         }),
       },
@@ -648,8 +645,6 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
     } as ChangeShapesLayerAction);
     this.canvasChanged.emit();
   }
-
-
 
   changeMode(mode: Mode) {
     if (
@@ -825,7 +820,11 @@ export class CanvasComponent implements AfterViewInit, OnDestroy {
 
     this.#smallChunkSize = this.scaleToSmallGridChunkSize();
 
-    if (this.#backgroundCtx && this.#drawingCtx && (renderType.backgroundChanged || renderType.transformed)) {
+    if (
+      this.#backgroundCtx &&
+      this.#drawingCtx &&
+      (renderType.backgroundChanged || renderType.transformed)
+    ) {
       this.#backgroundCtx.canvas.width = window.innerWidth;
       this.#backgroundCtx.canvas.height = window.innerHeight;
       this.#backgroundCtx.translate(this.#origin[0], this.#origin[1]);

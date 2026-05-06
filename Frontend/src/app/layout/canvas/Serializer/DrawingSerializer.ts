@@ -1,5 +1,4 @@
 import { DrawingProperties } from '../DrawingProperties/DrawingProperties';
-import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { EllipseDrawingProperties } from '../DrawingProperties/EllipseDrawingProperties';
 import { LineDrawingProperties } from '../DrawingProperties/LineDrawingProperties';
 import { RectangleDrawingProperties } from '../DrawingProperties/RectangleDrawingProperties';
@@ -9,6 +8,7 @@ import { EllipseDrawing } from '../Drawings/EllipseDrawing';
 import { LineDrawing } from '../Drawings/LineDrawing';
 import { RectangleDrawing } from '../Drawings/RectangleDrawing';
 import { StraightLineDrawing } from '../Drawings/StraightLineDrawing';
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { EllipseStyle, EllipseStyleType } from '../ShapeStyles/EllipseStyle';
 import { LineStyle, LineStyleType } from '../ShapeStyles/LineStyle';
 import {
@@ -45,11 +45,11 @@ export class DrawingSerializer {
         type: DrawingType.Line,
         properties: {
           ...drawing.properties,
-          [DrawingPropertyName.style]: {
-            ...drawing.properties[DrawingPropertyName.style],
+          [FormPropertyName.style]: {
+            ...drawing.properties[FormPropertyName.style],
           },
-          [DrawingPropertyName.points]: [
-            ...drawing.properties[DrawingPropertyName.points],
+          [FormPropertyName.points]: [
+            ...drawing.properties[FormPropertyName.points],
           ],
         },
       };
@@ -58,13 +58,9 @@ export class DrawingSerializer {
         type: DrawingType.StraightLine,
         properties: {
           ...drawing.properties,
-          [DrawingPropertyName.style]: {
-            ...drawing.properties[DrawingPropertyName.style],
+          [FormPropertyName.style]: {
+            ...drawing.properties[FormPropertyName.style],
           },
-          [DrawingPropertyName.p1]: [
-            drawing.properties[DrawingPropertyName.p1][0],
-            drawing.properties[DrawingPropertyName.p1][1],
-          ],
         },
       };
     } else if (drawing instanceof RectangleDrawing) {
@@ -72,13 +68,9 @@ export class DrawingSerializer {
         type: DrawingType.Rectangle,
         properties: {
           ...drawing.properties,
-          [DrawingPropertyName.style]: {
-            ...drawing.properties[DrawingPropertyName.style],
+          [FormPropertyName.style]: {
+            ...drawing.properties[FormPropertyName.style],
           },
-          [DrawingPropertyName.p1]: [
-            drawing.properties[DrawingPropertyName.p1][0],
-            drawing.properties[DrawingPropertyName.p1][1],
-          ],
         },
       };
     } else if (drawing instanceof EllipseDrawing) {
@@ -86,13 +78,9 @@ export class DrawingSerializer {
         type: DrawingType.Ellipse,
         properties: {
           ...drawing.properties,
-          [DrawingPropertyName.style]: {
-            ...drawing.properties[DrawingPropertyName.style],
+          [FormPropertyName.style]: {
+            ...drawing.properties[FormPropertyName.style],
           },
-          [DrawingPropertyName.p1]: [
-            drawing.properties[DrawingPropertyName.p1][0],
-            drawing.properties[DrawingPropertyName.p1][1],
-          ],
         },
       };
     }
@@ -105,9 +93,9 @@ export class DrawingSerializer {
         return new LineDrawing(
           {
             ...serializedDrawing.properties,
-            [DrawingPropertyName.style]: new LineStyle(
+            [FormPropertyName.style]: new LineStyle(
               serializedDrawing.properties[
-                DrawingPropertyName.style
+                FormPropertyName.style
               ] as LineStyleType
             ),
           } as LineDrawingProperties,
@@ -117,9 +105,9 @@ export class DrawingSerializer {
         return new StraightLineDrawing(
           {
             ...serializedDrawing.properties,
-            [DrawingPropertyName.style]: new StraightLineStyle(
+            [FormPropertyName.style]: new StraightLineStyle(
               serializedDrawing.properties[
-                DrawingPropertyName.style
+                FormPropertyName.style
               ] as StraightLineStyleType
             ),
           } as StraightLineDrawingProperties,
@@ -129,9 +117,9 @@ export class DrawingSerializer {
         return new RectangleDrawing(
           {
             ...serializedDrawing.properties,
-            [DrawingPropertyName.style]: new RectangleStyle(
+            [FormPropertyName.style]: new RectangleStyle(
               serializedDrawing.properties[
-                DrawingPropertyName.style
+                FormPropertyName.style
               ] as RectangleStyleType
             ),
           } as RectangleDrawingProperties,
@@ -141,9 +129,9 @@ export class DrawingSerializer {
         return new EllipseDrawing(
           {
             ...serializedDrawing.properties,
-            [DrawingPropertyName.style]: new EllipseStyle(
+            [FormPropertyName.style]: new EllipseStyle(
               serializedDrawing.properties[
-                DrawingPropertyName.style
+                FormPropertyName.style
               ] as EllipseStyleType
             ),
           } as EllipseDrawingProperties,

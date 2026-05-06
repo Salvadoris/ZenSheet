@@ -1,3 +1,4 @@
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { generateUuid } from '../../../utils/uuid';
 import {
   EllipseShapeProperties,
@@ -23,7 +24,6 @@ import {
   SerializedShapeProperties,
   ShapeProperties,
 } from '../ShapeProperties/ShapeProperties';
-import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import {
   SerializedStraightLineShapeProperties,
   StraightLineShapeProperties,
@@ -63,56 +63,56 @@ export class ShapePropertiesSerializer {
       case ShapeType.Line:
         return {
           ...(properties as LineShapeProperties),
-          [ShapePropertyName.style]: {
-            ...properties[ShapePropertyName.style],
+          [FormPropertyName.style]: {
+            ...properties[FormPropertyName.style],
           },
-          [ShapePropertyName.points]: [
-            ...(properties as LineShapeProperties)[ShapePropertyName.points],
+          [FormPropertyName.points]: [
+            ...(properties as LineShapeProperties)[FormPropertyName.points],
           ],
         } as SerializedLineShapeProperties;
       case ShapeType.StraightLine:
         return {
           ...(properties as StraightLineShapeProperties),
-          [ShapePropertyName.style]: {
-            ...properties[ShapePropertyName.style],
+          [FormPropertyName.style]: {
+            ...properties[FormPropertyName.style],
           },
         } as SerializedStraightLineShapeProperties;
       case ShapeType.Rectangle:
         return {
           ...(properties as RectangleShapeProperties),
-          [ShapePropertyName.style]: {
-            ...properties[ShapePropertyName.style],
+          [FormPropertyName.style]: {
+            ...properties[FormPropertyName.style],
           },
         } as SerializedRectangleShapeProperties;
       case ShapeType.Ellipse:
         return {
           ...(properties as EllipseShapeProperties),
-          [ShapePropertyName.style]: {
-            ...properties[ShapePropertyName.style],
+          [FormPropertyName.style]: {
+            ...properties[FormPropertyName.style],
           },
         } as SerializedEllipseShapeProperties;
       case ShapeType.Image:
         return {
           ...(properties as ImageShapeProperties),
-          [ShapePropertyName.style]: {
-            ...properties[ShapePropertyName.style],
+          [FormPropertyName.style]: {
+            ...properties[FormPropertyName.style],
           },
         } as SerializedImageShapeProperties;
       case ShapeType.Text:
         return {
           ...(properties as TextBoxShapeProperties),
-          [ShapePropertyName.style]: {
-            ...properties[ShapePropertyName.style],
+          [FormPropertyName.style]: {
+            ...properties[FormPropertyName.style],
           },
         } as SerializedTextBoxShapeProperties;
       case ShapeType.Group: {
         return {
           ...(properties as GroupShapeProperties),
-          [ShapePropertyName.style]: {
-            ...properties[ShapePropertyName.style],
+          [FormPropertyName.style]: {
+            ...properties[FormPropertyName.style],
           },
-          [ShapePropertyName.shapes]: (properties as GroupShapeProperties)[
-            ShapePropertyName.shapes
+          [FormPropertyName.shapes]: (properties as GroupShapeProperties)[
+            FormPropertyName.shapes
           ].map(s => this.shapeSerializer.serialized(s)),
         } as SerializedGroupShapeProperties;
       }
@@ -127,110 +127,110 @@ export class ShapePropertiesSerializer {
     copy = false
   ): ShapeProperties {
     const properties = {
-      [ShapePropertyName.scaleX]:
-        serializedProperties[ShapePropertyName.width] /
-        serializedProperties[ShapePropertyName.originalWidth],
-      [ShapePropertyName.scaleY]:
-        serializedProperties[ShapePropertyName.height] /
-        serializedProperties[ShapePropertyName.originalHeight],
-      [ShapePropertyName.horizontalInverted]:
-        serializedProperties[ShapePropertyName.width] < 0,
-      [ShapePropertyName.verticallyInverted]:
-        serializedProperties[ShapePropertyName.height] < 0,
+      [FormPropertyName.scaleX]:
+        serializedProperties[FormPropertyName.width] /
+        serializedProperties[FormPropertyName.originalWidth],
+      [FormPropertyName.scaleY]:
+        serializedProperties[FormPropertyName.height] /
+        serializedProperties[FormPropertyName.originalHeight],
+      [FormPropertyName.horizontalInverted]:
+        serializedProperties[FormPropertyName.width] < 0,
+      [FormPropertyName.verticallyInverted]:
+        serializedProperties[FormPropertyName.height] < 0,
     };
     switch (type) {
       case ShapeType.Line:
         return {
           ...(serializedProperties as SerializedLineShapeProperties),
           ...properties,
-          [ShapePropertyName.style]: new LineStyle(
-            serializedProperties[ShapePropertyName.style] as LineStyleType
+          [FormPropertyName.style]: new LineStyle(
+            serializedProperties[FormPropertyName.style] as LineStyleType
           ),
-          [ShapePropertyName.id]: copy
+          [FormPropertyName.id]: copy
             ? generateUuid()
-            : serializedProperties[ShapePropertyName.id],
+            : serializedProperties[FormPropertyName.id],
         } as Required<LineShapeProperties>;
       case ShapeType.StraightLine:
         return {
           ...(serializedProperties as SerializedStraightLineShapeProperties),
           ...properties,
-          [ShapePropertyName.style]: new StraightLineStyle(
+          [FormPropertyName.style]: new StraightLineStyle(
             serializedProperties[
-              ShapePropertyName.style
+              FormPropertyName.style
             ] as StraightLineStyleType
           ),
-          [ShapePropertyName.id]: copy
+          [FormPropertyName.id]: copy
             ? generateUuid()
-            : serializedProperties[ShapePropertyName.id],
+            : serializedProperties[FormPropertyName.id],
         } as Required<StraightLineShapeProperties>;
       case ShapeType.Rectangle:
         return {
           ...(serializedProperties as SerializedRectangleShapeProperties),
           ...properties,
-          [ShapePropertyName.style]: new RectangleStyle(
-            serializedProperties[ShapePropertyName.style] as RectangleStyleType
+          [FormPropertyName.style]: new RectangleStyle(
+            serializedProperties[FormPropertyName.style] as RectangleStyleType
           ),
-          [ShapePropertyName.id]: copy
+          [FormPropertyName.id]: copy
             ? generateUuid()
-            : serializedProperties[ShapePropertyName.id],
+            : serializedProperties[FormPropertyName.id],
         } as Required<RectangleShapeProperties>;
       case ShapeType.Ellipse:
         return {
           ...(serializedProperties as SerializedEllipseShapeProperties),
           ...properties,
-          [ShapePropertyName.style]: new EllipseStyle(
-            serializedProperties[ShapePropertyName.style] as EllipseStyleType
+          [FormPropertyName.style]: new EllipseStyle(
+            serializedProperties[FormPropertyName.style] as EllipseStyleType
           ),
-          [ShapePropertyName.id]: copy
+          [FormPropertyName.id]: copy
             ? generateUuid()
-            : serializedProperties[ShapePropertyName.id],
+            : serializedProperties[FormPropertyName.id],
         } as Required<EllipseShapeProperties>;
       case ShapeType.Image:
         return {
           ...(serializedProperties as SerializedImageShapeProperties),
           ...properties,
-          [ShapePropertyName.style]: new ImageStyle(
-            serializedProperties[ShapePropertyName.style] as ImageStyleType
+          [FormPropertyName.style]: new ImageStyle(
+            serializedProperties[FormPropertyName.style] as ImageStyleType
           ),
-          [ShapePropertyName.id]: copy
+          [FormPropertyName.id]: copy
             ? generateUuid()
-            : serializedProperties[ShapePropertyName.id],
+            : serializedProperties[FormPropertyName.id],
         } as Required<ImageShapeProperties>;
       case ShapeType.Text:
         return {
           ...(serializedProperties as SerializedTextBoxShapeProperties),
           ...properties,
-          [ShapePropertyName.style]: new TextBoxStyle(
-            serializedProperties[ShapePropertyName.style] as TextBoxStyleType
+          [FormPropertyName.style]: new TextBoxStyle(
+            serializedProperties[FormPropertyName.style] as TextBoxStyleType
           ),
-          [ShapePropertyName.id]: copy
+          [FormPropertyName.id]: copy
             ? generateUuid()
-            : serializedProperties[ShapePropertyName.id],
+            : serializedProperties[FormPropertyName.id],
         } as Required<TextBoxShapeProperties>;
       case ShapeType.Group: {
         const style = new GroupShapeStyle([
-          serializedProperties[ShapePropertyName.style] as GroupShapeStyleType,
+          serializedProperties[FormPropertyName.style] as GroupShapeStyleType,
         ]);
         let shapes: Shape[] = [];
         if (
           (serializedProperties as SerializedGroupShapeProperties)[
-            ShapePropertyName.shapes
+            FormPropertyName.shapes
           ] !== undefined
         ) {
           shapes = (
             (serializedProperties as SerializedGroupShapeProperties)[
-              ShapePropertyName.shapes
+              FormPropertyName.shapes
             ] as SerializedShape[]
           ).map(s => this.shapeSerializer.deserialized(s, copy));
         }
         return {
           ...(serializedProperties as SerializedGroupShapeProperties),
           ...properties,
-          [ShapePropertyName.style]: style,
-          [ShapePropertyName.id]: copy
+          [FormPropertyName.style]: style,
+          [FormPropertyName.id]: copy
             ? generateUuid()
-            : serializedProperties[ShapePropertyName.id],
-          [ShapePropertyName.shapes]: shapes,
+            : serializedProperties[FormPropertyName.id],
+          [FormPropertyName.shapes]: shapes,
         } as Required<GroupShapeProperties>;
       }
       default:

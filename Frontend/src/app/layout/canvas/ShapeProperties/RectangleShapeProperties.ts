@@ -1,3 +1,4 @@
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import {
   RectangleStyle,
   RectangleStyleType,
@@ -7,18 +8,17 @@ import {
   BaseSerializedShapeProperties,
   BaseShapeProperties,
 } from './ShapeProperties';
-import { ShapePropertyName } from './ShapePropertyName';
 
 export type RectangleShapeProperties = Omit<
   BaseShapeProperties,
-  ShapePropertyName.style
+  FormPropertyName.style
 > & {
-  [ShapePropertyName.style]: RectangleStyle;
+  [FormPropertyName.style]: RectangleStyle;
 };
 
 export type SerializedRectangleShapeProperties = Omit<
   BaseSerializedShapeProperties,
-  ShapePropertyName.style
+  FormPropertyName.style
 > & {
-  [ShapePropertyName.style]: RectangleStyleType;
+  [FormPropertyName.style]: RectangleStyleType;
 };

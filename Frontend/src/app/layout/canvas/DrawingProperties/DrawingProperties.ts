@@ -1,21 +1,28 @@
+import { FormProperties } from '../FormProperties/FormProperties';
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { Point } from '../Geometry';
-import { LinePoints } from '../ShapeProperties/LineShapeProperties';
-import { ShapeStyle } from '../ShapeStyles/ShapeStyle';
 
-import { DrawingPropertyName } from './DrawingPropertyName';
-
-export interface DrawingProperties {
-  [DrawingPropertyName.id]: string;
-  [DrawingPropertyName.style]: ShapeStyle;
-  [DrawingPropertyName.p0]?: Point;
-  [DrawingPropertyName.p1]?: Point;
-  [DrawingPropertyName.points]?: LinePoints;
-}
+export type DrawingProperties = BaseDrawingProperties &
+  Partial<Pick<FormProperties, FormPropertyName.points>>;
 
 export type BaseDrawingProperties = Required<
-  Pick<DrawingProperties, DrawingPropertyName.id | DrawingPropertyName.style>
+  Pick<
+    FormProperties,
+    | FormPropertyName.id
+    | FormPropertyName.style
+    | FormPropertyName.originX
+    | FormPropertyName.originY
+    | FormPropertyName.width
+    | FormPropertyName.height
+  >
 >;
 
 export type ChangableDrawingProperties = Partial<
-  Pick<DrawingProperties, DrawingPropertyName.p1>
-> & { [DrawingPropertyName.points]?: { lastPoint: Point } };
+  Pick<
+    DrawingProperties,
+    | FormPropertyName.originX
+    | FormPropertyName.originY
+    | FormPropertyName.width
+    | FormPropertyName.height
+  >
+> & { [FormPropertyName.points]?: { lastPoint: Point } };

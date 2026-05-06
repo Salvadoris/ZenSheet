@@ -1,9 +1,10 @@
 import { generateUuid } from '../../../utils/uuid';
-import { ChangableDrawingProperties } from '../DrawingProperties/DrawingProperties';
-import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
-import { RectangleDrawingProperties } from '../DrawingProperties/RectangleDrawingProperties';
+import {
+  ChangableRectangleDrawingProperties,
+  RectangleDrawingProperties,
+} from '../DrawingProperties/RectangleDrawingProperties';
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { Point, Rect } from '../Geometry';
-import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { RectangleShape } from '../Shapes/RectangleShape';
 import { Shape } from '../Shapes/Shape';
 import { RectangleStyle } from '../ShapeStyles/RectangleStyle';
@@ -11,48 +12,48 @@ import { StyleName } from '../ShapeStyles/StyleName';
 
 import { Drawing } from './Drawing';
 
-export class RectangleDrawing implements Drawing {
-  constructor(
-    public properties: RectangleDrawingProperties,
-    public bufferCtx: CanvasRenderingContext2D
-  ) {}
+export class RectangleDrawing extends Drawing {
+  declare properties: RectangleDrawingProperties;
 
-  get p0() {
-    return this.properties[DrawingPropertyName.p0];
-  }
-
-  get p1() {
-    return this.properties[DrawingPropertyName.p1];
-  }
-
-  get style(): RectangleStyle {
-    return this.properties[DrawingPropertyName.style];
+  override get style(): RectangleStyle {
+    return this.properties[FormPropertyName.style];
   }
 
   toShape(): Shape {
     return new RectangleShape(
       {
-        [ShapePropertyName.id]: generateUuid(),
-        [ShapePropertyName.style]: this.style,
-        [ShapePropertyName.originX]: Math.min(this.p0[0], this.p1[0]),
-        [ShapePropertyName.originY]: Math.min(this.p0[1], this.p1[1]),
-        [ShapePropertyName.originalWidth]: Math.abs(this.p1[0] - this.p0[0]),
-        [ShapePropertyName.originalHeight]: Math.abs(this.p1[1] - this.p0[1]),
-        [ShapePropertyName.edited]: false,
-        [ShapePropertyName.selected]: false,
+        [FormPropertyName.id]: generateUuid(),
+        [FormPropertyName.style]: this.style,
+        [FormPropertyName.originX]: Math.min(
+          this.originX,
+          this.originX + this.width
+        ),
+        [FormPropertyName.originY]: Math.min(
+          this.originY,
+          this.originY + this.height
+        ),
+        [FormPropertyName.originalWidth]: Math.abs(this.width),
+        [FormPropertyName.originalHeight]: Math.abs(this.height),
+        [FormPropertyName.edited]: false,
+        [FormPropertyName.selected]: false,
       },
       this.bufferCtx
     );
   }
 
-  update(
-    p: Point
-  ): Required<Pick<ChangableDrawingProperties, DrawingPropertyName.p1>> {
-    this.p1[0] = p[0];
-    this.p1[1] = p[1];
-    return {
-      [DrawingPropertyName.p1]: [this.p1[0], this.p1[1]],
-    };
+  update(p: Point): ChangableRectangleDrawingProperties {
+    const properties: ChangableRectangleDrawingProperties = {};
+    const newWidth = p[0] - this.originX;
+    if (newWidth !== this.width) {
+      this.properties[FormPropertyName.width] = newWidth;
+      properties[FormPropertyName.width] = newWidth;
+    }
+    const newHeight = p[1] - this.originY;
+    if (newHeight !== this.height) {
+      this.properties[FormPropertyName.height] = newHeight;
+      properties[FormPropertyName.height] = newHeight;
+    }
+    return properties;
   }
 
   render(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
@@ -63,12 +64,7 @@ export class RectangleDrawing implements Drawing {
     this.bufferCtx.fillStyle = this.style[StyleName.BackgroundColor];
 
     const path = new Path2D();
-    path.rect(
-      this.p0[0],
-      this.p0[1],
-      this.p1[0] - this.p0[0],
-      this.p1[1] - this.p0[1]
-    );
+    path.rect(this.originX, this.originY, this.width, this.height);
 
     this.bufferCtx.fill(path);
     this.bufferCtx.stroke(path);

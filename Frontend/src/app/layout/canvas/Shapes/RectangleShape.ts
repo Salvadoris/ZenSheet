@@ -1,7 +1,7 @@
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { Rect } from '../Geometry';
 import { RectangleShapeProperties } from '../ShapeProperties/RectangleShapeProperties';
 import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
-import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { RectangleStyle } from '../ShapeStyles/RectangleStyle';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { StyleName } from '../ShapeStyles/StyleName';
@@ -27,7 +27,7 @@ export class RectangleShape extends Shape {
   }
 
   override get style(): RectangleStyle {
-    return this.properties[ShapePropertyName.style];
+    return this.properties[FormPropertyName.style];
   }
 
   override setStyleProperty(
@@ -36,7 +36,7 @@ export class RectangleShape extends Shape {
     const updated = this.style.updateProperty(styleProperty);
     if (updated) {
       return {
-        [ShapePropertyName.style]: {
+        [FormPropertyName.style]: {
           [styleProperty.name]: styleProperty.value,
         },
       };

@@ -1,3 +1,4 @@
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import {
   GroupShapeStyle,
   GroupShapeStyleType,
@@ -9,29 +10,28 @@ import {
   SerializedShapeProperties,
   ShapeProperties,
 } from './ShapeProperties';
-import { ShapePropertyName } from './ShapePropertyName';
 
 export type GroupShapeProperties = Required<
   Pick<
     ShapeProperties,
-    | ShapePropertyName.id
-    | ShapePropertyName.shapes
-    | ShapePropertyName.edited
-    | ShapePropertyName.selected
+    | FormPropertyName.id
+    | FormPropertyName.shapes
+    | FormPropertyName.edited
+    | FormPropertyName.selected
   >
-> & { [ShapePropertyName.style]?: GroupShapeStyle } & Partial<
+> & { [FormPropertyName.style]?: GroupShapeStyle } & Partial<
     Omit<
       BaseShapeProperties,
-      | ShapePropertyName.id
-      | ShapePropertyName.style
-      | ShapePropertyName.edited
-      | ShapePropertyName.selected
+      | FormPropertyName.id
+      | FormPropertyName.style
+      | FormPropertyName.edited
+      | FormPropertyName.selected
     >
   >;
 
 export type SerializedGroupShapeProperties = Omit<
   BaseSerializedShapeProperties,
-  ShapePropertyName.style
-> & { [ShapePropertyName.style]: GroupShapeStyleType } & Required<
-    Pick<SerializedShapeProperties, ShapePropertyName.shapes>
+  FormPropertyName.style
+> & { [FormPropertyName.style]: GroupShapeStyleType } & Required<
+    Pick<SerializedShapeProperties, FormPropertyName.shapes>
   >;

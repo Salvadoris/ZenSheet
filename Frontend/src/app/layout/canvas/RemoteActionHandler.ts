@@ -8,6 +8,7 @@ import {
 
 import { CanvasAction } from './Actions/CanvasAction';
 import { CanvasComponent } from './canvas.component';
+import { FormPropertyName } from './FormProperties/FormPropertyName';
 import { Rect } from './Geometry';
 import {
   getClientLabel,
@@ -16,7 +17,6 @@ import {
   renderOffScreenIndicator,
   renderRemoteCursor,
 } from './RemoteCursor';
-import { ShapePropertyName } from './ShapeProperties/ShapePropertyName';
 import { GroupShape } from './Shapes/GroupShape';
 
 export class RemoteActionHandler {
@@ -104,7 +104,8 @@ export class RemoteActionHandler {
           this.canvas.origin[0] =
             window.innerWidth / 2 - cursor.cursorPosition.x * this.canvas.scale;
           this.canvas.origin[1] =
-            window.innerHeight / 2 - cursor.cursorPosition.y * this.canvas.scale;
+            window.innerHeight / 2 -
+            cursor.cursorPosition.y * this.canvas.scale;
           needsRender = true;
         }
       }
@@ -139,7 +140,13 @@ export class RemoteActionHandler {
     }
   }
 
-  renderOffScreenIndicators(ctx: CanvasRenderingContext2D, origin: [number, number], scale: number, width: number, height: number) {
+  renderOffScreenIndicators(
+    ctx: CanvasRenderingContext2D,
+    origin: [number, number],
+    scale: number,
+    width: number,
+    height: number
+  ) {
     for (const cursor of this.#remoteCursors.values()) {
       renderOffScreenIndicator(ctx, cursor, origin, scale, width, height);
     }
@@ -160,7 +167,7 @@ export class RemoteActionHandler {
 
       for (const shapeId of shapeIds) {
         const shape = this.canvas.shapes.find(
-          s => s.properties[ShapePropertyName.id] === shapeId
+          s => s.properties[FormPropertyName.id] === shapeId
         );
         if (shape) {
           const rect = shape.offsetRect();
@@ -174,7 +181,8 @@ export class RemoteActionHandler {
         }
       }
 
-      const label = this.#remoteCursors.get(clientId)?.label || getClientLabel(clientId);
+      const label =
+        this.#remoteCursors.get(clientId)?.label || getClientLabel(clientId);
       const fontSize = 15 / scale;
       ctx.font = `600 ${fontSize}px "Inter", "Segoe UI", sans-serif`;
       const textMetrics = ctx.measureText(label);
@@ -193,10 +201,7 @@ export class RemoteActionHandler {
           const o = other.rect;
 
           const inside =
-            c[0] >= o[0] &&
-            c[1] >= o[1] &&
-            c[2] <= o[2] &&
-            c[3] <= o[3];
+            c[0] >= o[0] && c[1] >= o[1] && c[2] <= o[2] && c[3] <= o[3];
 
           if (inside) {
             if (
@@ -227,7 +232,11 @@ export class RemoteActionHandler {
 
           ctx.fillStyle = '#ffffff';
           ctx.textBaseline = 'middle';
-          ctx.fillText(label, labelX + paddingX, labelY + rectH / 2 + 0.5 / scale);
+          ctx.fillText(
+            label,
+            labelX + paddingX,
+            labelY + rectH / 2 + 0.5 / scale
+          );
         }
       }
       ctx.restore();
@@ -237,7 +246,10 @@ export class RemoteActionHandler {
   isShapeLocked(shapeId: string): boolean {
     const isLocked = (id: string): boolean => {
       for (const [clientId, shapeIds] of this.#remoteSelections.entries()) {
-        if (clientId !== this.canvasConnection.clientId() && shapeIds.includes(id)) {
+        if (
+          clientId !== this.canvasConnection.clientId() &&
+          shapeIds.includes(id)
+        ) {
           return true;
         }
       }
@@ -248,9 +260,13 @@ export class RemoteActionHandler {
       return true;
     }
 
-    const shape = this.canvas.shapes.find(s => s.properties[ShapePropertyName.id] === shapeId);
+    const shape = this.canvas.shapes.find(
+      s => s.properties[FormPropertyName.id] === shapeId
+    );
     if (shape instanceof GroupShape) {
-      return shape.shapes.some(child => this.isShapeLocked(child.properties[ShapePropertyName.id]));
+      return shape.shapes.some(child =>
+        this.isShapeLocked(child.properties[FormPropertyName.id])
+      );
     }
 
     return false;
@@ -326,7 +342,7 @@ export class RemoteActionHandler {
     effect(() => {
       const presenceList = this.canvasConnection.presenceList();
       let changed = false;
-      
+
       for (const presence of presenceList) {
         const cursor = this.#remoteCursors.get(presence.clientId);
         if (cursor && cursor.label !== presence.username) {

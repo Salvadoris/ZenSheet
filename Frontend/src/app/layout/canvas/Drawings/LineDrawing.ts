@@ -1,10 +1,11 @@
 import { generateUuid } from '../../../utils/uuid';
-import { ChangableDrawingProperties } from '../DrawingProperties/DrawingProperties';
-import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
-import { LineDrawingProperties } from '../DrawingProperties/LineDrawingProperties';
+import {
+  ChangableLineDrawingProperties,
+  LineDrawingProperties,
+} from '../DrawingProperties/LineDrawingProperties';
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { Point, Rect } from '../Geometry';
 import { LinePoints } from '../ShapeProperties/LineShapeProperties';
-import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { LineShape } from '../Shapes/LineShape';
 import { Shape } from '../Shapes/Shape';
 import { LineStyle } from '../ShapeStyles/LineStyle';
@@ -12,14 +13,16 @@ import { StyleName } from '../ShapeStyles/StyleName';
 
 import { Drawing } from './Drawing';
 
-export class LineDrawing implements Drawing {
+export class LineDrawing extends Drawing {
+  declare properties: LineDrawingProperties;
   #path = new Path2D();
   #pathPointsCount = 0;
 
   constructor(
-    public properties: LineDrawingProperties,
-    public bufferCtx: CanvasRenderingContext2D
+    properties: LineDrawingProperties,
+    bufferCtx: CanvasRenderingContext2D
   ) {
+    super(properties, bufferCtx);
     this.#path.moveTo(this.points[0][0], this.points[0][1]);
     for (let i = 1; i < this.points.length; i++) {
       this.#path.lineTo(this.points[i][0], this.points[i][1]);
@@ -28,47 +31,68 @@ export class LineDrawing implements Drawing {
   }
 
   get points() {
-    return this.properties[DrawingPropertyName.points];
+    return this.properties[FormPropertyName.points];
   }
 
   set points(points: LinePoints) {
-    this.properties[DrawingPropertyName.points] = points;
+    this.properties[FormPropertyName.points] = points;
   }
 
-  get style(): LineStyle {
-    return this.properties[DrawingPropertyName.style];
+  override get style(): LineStyle {
+    return this.properties[FormPropertyName.style];
   }
 
   toShape(): Shape {
     return new LineShape(
       {
-        [ShapePropertyName.id]: generateUuid(),
-        [ShapePropertyName.style]: this.style,
-        [ShapePropertyName.points]: this.points,
-        [ShapePropertyName.edited]: false,
-        [ShapePropertyName.selected]: false,
+        [FormPropertyName.id]: generateUuid(),
+        [FormPropertyName.style]: this.style,
+        [FormPropertyName.originX]: this.originX,
+        [FormPropertyName.originY]: this.originY,
+        [FormPropertyName.originalWidth]: this.width,
+        [FormPropertyName.originalHeight]: this.height,
+        [FormPropertyName.points]: this.points.map((p): Point => {
+          return [p[0] - this.originX, p[1] - this.originY];
+        }) as LinePoints,
+        [FormPropertyName.edited]: false,
+        [FormPropertyName.selected]: false,
       },
       this.bufferCtx
     );
   }
 
-  update(
-    p: Point
-  ): Required<Pick<ChangableDrawingProperties, DrawingPropertyName.points>> | null {
-    const lastPoint = this.points[this.points.length - 1];
-    const dx = p[0] - lastPoint[0];
-    const dy = p[1] - lastPoint[1];
-    const distanceSq = dx * dx + dy * dy;
-
-    if (distanceSq < 0.25) {
-      return null;
-    }
-
+  update(p: Point): ChangableLineDrawingProperties {
     this.points.push([p[0], p[1]]);
-    this.#path.lineTo(p[0], p[1]);
-    return {
-      [DrawingPropertyName.points]: { lastPoint: [p[0], p[1]] },
+    const properties: ChangableLineDrawingProperties = {
+      [FormPropertyName.points]: { lastPoint: [p[0], p[1]] },
     };
+    const halflineWidth = this.style[StyleName.LineWidth];
+    if (p[0] - halflineWidth < this.originX) {
+      this.properties[FormPropertyName.width] =
+        this.originX + this.width - (p[0] - halflineWidth);
+      this.properties[FormPropertyName.originX] = p[0] - halflineWidth;
+      properties[FormPropertyName.width] = this.width;
+      properties[FormPropertyName.originX] = this.originX;
+    }
+    if (p[0] + halflineWidth > this.originX + this.width) {
+      this.properties[FormPropertyName.width] =
+        p[0] + halflineWidth - this.originX;
+      properties[FormPropertyName.width] = this.width;
+    }
+    if (p[1] - halflineWidth < this.originY) {
+      this.properties[FormPropertyName.height] =
+        this.originY + this.height - (p[1] - halflineWidth);
+      this.properties[FormPropertyName.originY] = p[1] - halflineWidth;
+      properties[FormPropertyName.height] = this.height;
+      properties[FormPropertyName.originY] = this.originY;
+    }
+    if (p[1] + halflineWidth > this.originY + this.height) {
+      this.properties[FormPropertyName.height] =
+        p[1] + halflineWidth - this.originY;
+      properties[FormPropertyName.height] = this.height;
+    }
+    this.#path.lineTo(p[0], p[1]);
+    return properties;
   }
 
   render(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {

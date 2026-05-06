@@ -1,10 +1,10 @@
-import { Point, Rect } from '../Geometry';
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
+import { Rect } from '../Geometry';
 import {
   BaseShapeProperties,
   ChangableSerializedShapeProperties,
   ChangableShapeProperties,
 } from '../ShapeProperties/ShapeProperties';
-import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import {
   NullableShapeStyle,
   ShapeStyleProperty,
@@ -19,58 +19,58 @@ export abstract class Shape {
     zeroSize = false
   ) {
     if (!zeroSize) {
-      if (properties[ShapePropertyName.originalWidth] == 0) {
+      if (properties[FormPropertyName.originalWidth] == 0) {
         throw new Error('Shape width cannot be zero');
       }
-      if (properties[ShapePropertyName.originalWidth] == 0) {
+      if (properties[FormPropertyName.originalWidth] == 0) {
         throw new Error('Shape height cannot be zero');
       }
     }
     this.#bufferCtx = bufferCtx;
     const width =
-      properties[ShapePropertyName.width] !== undefined
-        ? properties[ShapePropertyName.width]
-        : properties[ShapePropertyName.originalWidth];
+      properties[FormPropertyName.width] !== undefined
+        ? properties[FormPropertyName.width]
+        : properties[FormPropertyName.originalWidth];
     const height =
-      properties[ShapePropertyName.height] !== undefined
-        ? properties[ShapePropertyName.height]
-        : properties[ShapePropertyName.originalHeight];
+      properties[FormPropertyName.height] !== undefined
+        ? properties[FormPropertyName.height]
+        : properties[FormPropertyName.originalHeight];
 
     this._properties = {
       ...properties,
-      [ShapePropertyName.width]: width,
-      [ShapePropertyName.height]: height,
-      [ShapePropertyName.scaleX]:
-        properties[ShapePropertyName.scaleX] !== undefined
-          ? properties[ShapePropertyName.scaleX]
+      [FormPropertyName.width]: width,
+      [FormPropertyName.height]: height,
+      [FormPropertyName.scaleX]:
+        properties[FormPropertyName.scaleX] !== undefined
+          ? properties[FormPropertyName.scaleX]
           : 1,
-      [ShapePropertyName.scaleY]:
-        properties[ShapePropertyName.scaleY] !== undefined
-          ? properties[ShapePropertyName.scaleY]
+      [FormPropertyName.scaleY]:
+        properties[FormPropertyName.scaleY] !== undefined
+          ? properties[FormPropertyName.scaleY]
           : 1,
-      [ShapePropertyName.minWidth]:
-        properties[ShapePropertyName.minWidth] !== undefined
-          ? properties[ShapePropertyName.minWidth]
+      [FormPropertyName.minWidth]:
+        properties[FormPropertyName.minWidth] !== undefined
+          ? properties[FormPropertyName.minWidth]
           : 1,
-      [ShapePropertyName.minHeight]:
-        properties[ShapePropertyName.minHeight] !== undefined
-          ? properties[ShapePropertyName.minHeight]
+      [FormPropertyName.minHeight]:
+        properties[FormPropertyName.minHeight] !== undefined
+          ? properties[FormPropertyName.minHeight]
           : 1,
-      [ShapePropertyName.horizontallyInvertable]:
-        properties[ShapePropertyName.horizontallyInvertable] !== undefined
-          ? properties[ShapePropertyName.horizontallyInvertable]
+      [FormPropertyName.horizontallyInvertable]:
+        properties[FormPropertyName.horizontallyInvertable] !== undefined
+          ? properties[FormPropertyName.horizontallyInvertable]
           : true,
-      [ShapePropertyName.verticallyInvertable]:
-        properties[ShapePropertyName.verticallyInvertable] !== undefined
-          ? properties[ShapePropertyName.verticallyInvertable]
+      [FormPropertyName.verticallyInvertable]:
+        properties[FormPropertyName.verticallyInvertable] !== undefined
+          ? properties[FormPropertyName.verticallyInvertable]
           : true,
-      [ShapePropertyName.horizontalInverted]:
-        properties[ShapePropertyName.horizontalInverted] !== undefined
-          ? properties[ShapePropertyName.horizontalInverted]
+      [FormPropertyName.horizontalInverted]:
+        properties[FormPropertyName.horizontalInverted] !== undefined
+          ? properties[FormPropertyName.horizontalInverted]
           : width < 0,
-      [ShapePropertyName.verticallyInverted]:
-        properties[ShapePropertyName.verticallyInverted] !== undefined
-          ? properties[ShapePropertyName.verticallyInverted]
+      [FormPropertyName.verticallyInverted]:
+        properties[FormPropertyName.verticallyInverted] !== undefined
+          ? properties[FormPropertyName.verticallyInverted]
           : height < 0,
     };
   }
@@ -85,134 +85,134 @@ export abstract class Shape {
 
   set properties(properties: BaseShapeProperties) {
     const width =
-      properties[ShapePropertyName.width] !== undefined
-        ? properties[ShapePropertyName.width]
-        : properties[ShapePropertyName.originalWidth];
+      properties[FormPropertyName.width] !== undefined
+        ? properties[FormPropertyName.width]
+        : properties[FormPropertyName.originalWidth];
     const height =
-      properties[ShapePropertyName.height] !== undefined
-        ? properties[ShapePropertyName.height]
-        : properties[ShapePropertyName.originalHeight];
+      properties[FormPropertyName.height] !== undefined
+        ? properties[FormPropertyName.height]
+        : properties[FormPropertyName.originalHeight];
 
     this._properties = {
       ...properties,
-      [ShapePropertyName.width]: width,
-      [ShapePropertyName.height]: height,
-      [ShapePropertyName.scaleX]:
-        properties[ShapePropertyName.scaleX] !== undefined
-          ? properties[ShapePropertyName.scaleX]
+      [FormPropertyName.width]: width,
+      [FormPropertyName.height]: height,
+      [FormPropertyName.scaleX]:
+        properties[FormPropertyName.scaleX] !== undefined
+          ? properties[FormPropertyName.scaleX]
           : 1,
-      [ShapePropertyName.scaleY]:
-        properties[ShapePropertyName.scaleY] !== undefined
-          ? properties[ShapePropertyName.scaleY]
+      [FormPropertyName.scaleY]:
+        properties[FormPropertyName.scaleY] !== undefined
+          ? properties[FormPropertyName.scaleY]
           : 1,
-      [ShapePropertyName.minWidth]:
-        properties[ShapePropertyName.minWidth] !== undefined
-          ? properties[ShapePropertyName.minWidth]
+      [FormPropertyName.minWidth]:
+        properties[FormPropertyName.minWidth] !== undefined
+          ? properties[FormPropertyName.minWidth]
           : 1,
-      [ShapePropertyName.minHeight]:
-        properties[ShapePropertyName.minHeight] !== undefined
-          ? properties[ShapePropertyName.minHeight]
+      [FormPropertyName.minHeight]:
+        properties[FormPropertyName.minHeight] !== undefined
+          ? properties[FormPropertyName.minHeight]
           : 1,
-      [ShapePropertyName.horizontallyInvertable]:
-        properties[ShapePropertyName.horizontallyInvertable] !== undefined
-          ? properties[ShapePropertyName.horizontallyInvertable]
+      [FormPropertyName.horizontallyInvertable]:
+        properties[FormPropertyName.horizontallyInvertable] !== undefined
+          ? properties[FormPropertyName.horizontallyInvertable]
           : true,
-      [ShapePropertyName.verticallyInvertable]:
-        properties[ShapePropertyName.verticallyInvertable] !== undefined
-          ? properties[ShapePropertyName.verticallyInvertable]
+      [FormPropertyName.verticallyInvertable]:
+        properties[FormPropertyName.verticallyInvertable] !== undefined
+          ? properties[FormPropertyName.verticallyInvertable]
           : true,
-      [ShapePropertyName.horizontalInverted]:
-        properties[ShapePropertyName.horizontalInverted] !== undefined
-          ? properties[ShapePropertyName.horizontalInverted]
+      [FormPropertyName.horizontalInverted]:
+        properties[FormPropertyName.horizontalInverted] !== undefined
+          ? properties[FormPropertyName.horizontalInverted]
           : width < 0,
-      [ShapePropertyName.verticallyInverted]:
-        properties[ShapePropertyName.verticallyInverted] !== undefined
-          ? properties[ShapePropertyName.verticallyInverted]
+      [FormPropertyName.verticallyInverted]:
+        properties[FormPropertyName.verticallyInverted] !== undefined
+          ? properties[FormPropertyName.verticallyInverted]
           : height < 0,
     };
   }
 
   get style(): NullableShapeStyle {
-    return this.properties[ShapePropertyName.style];
+    return this.properties[FormPropertyName.style];
   }
 
   get originX() {
-    return this.properties[ShapePropertyName.originX];
+    return this.properties[FormPropertyName.originX];
   }
   set originX(originX: number) {
-    this.properties[ShapePropertyName.originX] = originX;
+    this.properties[FormPropertyName.originX] = originX;
   }
 
   get originY() {
-    return this.properties[ShapePropertyName.originY];
+    return this.properties[FormPropertyName.originY];
   }
   set originY(originY: number) {
-    this.properties[ShapePropertyName.originY] = originY;
+    this.properties[FormPropertyName.originY] = originY;
   }
 
   get originalWidth() {
-    return this.properties[ShapePropertyName.originalWidth];
+    return this.properties[FormPropertyName.originalWidth];
   }
 
   get originalHeight() {
-    return this.properties[ShapePropertyName.originalHeight];
+    return this.properties[FormPropertyName.originalHeight];
   }
 
   get width() {
-    return this.properties[ShapePropertyName.width];
+    return this.properties[FormPropertyName.width];
   }
   set width(width: number) {
-    this.properties[ShapePropertyName.width] = width;
+    this.properties[FormPropertyName.width] = width;
   }
 
   get height() {
-    return this.properties[ShapePropertyName.height];
+    return this.properties[FormPropertyName.height];
   }
   set height(height: number) {
-    this.properties[ShapePropertyName.height] = height;
+    this.properties[FormPropertyName.height] = height;
   }
 
   get scaleX() {
-    return this.properties[ShapePropertyName.scaleX];
+    return this.properties[FormPropertyName.scaleX];
   }
   set scaleX(scaleX: number) {
-    this.properties[ShapePropertyName.scaleX] = scaleX;
+    this.properties[FormPropertyName.scaleX] = scaleX;
   }
 
   get scaleY() {
-    return this.properties[ShapePropertyName.scaleY];
+    return this.properties[FormPropertyName.scaleY];
   }
   set scaleY(scaleY: number) {
-    this.properties[ShapePropertyName.scaleY] = scaleY;
+    this.properties[FormPropertyName.scaleY] = scaleY;
   }
 
   get minWidth() {
-    return this.properties[ShapePropertyName.minWidth];
+    return this.properties[FormPropertyName.minWidth];
   }
 
   get minHeight() {
-    return this.properties[ShapePropertyName.minHeight];
+    return this.properties[FormPropertyName.minHeight];
   }
 
   get horizontallyInvertable() {
-    return this.properties[ShapePropertyName.horizontallyInvertable];
+    return this.properties[FormPropertyName.horizontallyInvertable];
   }
 
   get verticallyInvertable() {
-    return this.properties[ShapePropertyName.verticallyInvertable];
+    return this.properties[FormPropertyName.verticallyInvertable];
   }
 
   get horizontalInverted() {
-    return this.properties[ShapePropertyName.horizontalInverted];
+    return this.properties[FormPropertyName.horizontalInverted];
   }
 
   get verticallyInverted() {
-    return this.properties[ShapePropertyName.verticallyInverted];
+    return this.properties[FormPropertyName.verticallyInverted];
   }
 
   render(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
-    this.properties[ShapePropertyName.horizontalInverted] = this.width < 0;
-    this.properties[ShapePropertyName.verticallyInverted] = this.height < 0;
+    this.properties[FormPropertyName.horizontalInverted] = this.width < 0;
+    this.properties[FormPropertyName.verticallyInverted] = this.height < 0;
     this.renderShape(canvasRect, ctx);
   }
 
@@ -234,24 +234,24 @@ export abstract class Shape {
     this.properties = {
       ...this.properties,
       ...properties,
-      [ShapePropertyName.style]: {
-        ...this.properties[ShapePropertyName.style],
-        ...properties[ShapePropertyName.style],
+      [FormPropertyName.style]: {
+        ...this.properties[FormPropertyName.style],
+        ...properties[FormPropertyName.style],
       },
     };
-    if (properties[ShapePropertyName.width] !== undefined) {
-      this.properties[ShapePropertyName.scaleX] =
+    if (properties[FormPropertyName.width] !== undefined) {
+      this.properties[FormPropertyName.scaleX] =
         this.width / this.originalWidth;
     }
-    if (properties[ShapePropertyName.height] !== undefined) {
-      this.properties[ShapePropertyName.scaleY] =
+    if (properties[FormPropertyName.height] !== undefined) {
+      this.properties[FormPropertyName.scaleY] =
         this.height / this.originalHeight;
     }
-    if (properties[ShapePropertyName.width] !== undefined) {
-      this.properties[ShapePropertyName.horizontalInverted] = this.width < 0;
+    if (properties[FormPropertyName.width] !== undefined) {
+      this.properties[FormPropertyName.horizontalInverted] = this.width < 0;
     }
-    if (properties[ShapePropertyName.height] !== undefined) {
-      this.properties[ShapePropertyName.verticallyInverted] = this.height < 0;
+    if (properties[FormPropertyName.height] !== undefined) {
+      this.properties[FormPropertyName.verticallyInverted] = this.height < 0;
     }
   }
 
@@ -283,8 +283,8 @@ export abstract class Shape {
       this.height = newHeight;
       this.originY = y;
       this.scaleY = this.height / this.originalHeight;
-      properties[ShapePropertyName.originY] = this.originY;
-      properties[ShapePropertyName.height] = this.height;
+      properties[FormPropertyName.originY] = this.originY;
+      properties[FormPropertyName.height] = this.height;
       if (resizeContent) {
         return {
           ...properties,
@@ -315,7 +315,7 @@ export abstract class Shape {
     ) {
       this.height = newHeight;
       this.scaleY = this.height / this.originalHeight;
-      properties[ShapePropertyName.height] = this.height;
+      properties[FormPropertyName.height] = this.height;
       if (resizeContent) {
         return {
           ...properties,
@@ -347,8 +347,8 @@ export abstract class Shape {
       this.width = newWidth;
       this.originX = x;
       this.scaleX = this.width / this.originalWidth;
-      properties[ShapePropertyName.originX] = this.originX;
-      properties[ShapePropertyName.width] = this.width;
+      properties[FormPropertyName.originX] = this.originX;
+      properties[FormPropertyName.width] = this.width;
       if (resizeContent) {
         return {
           ...properties,
@@ -379,7 +379,7 @@ export abstract class Shape {
     ) {
       this.width = newWidth;
       this.scaleX = this.width / this.originalWidth;
-      properties[ShapePropertyName.width] = this.width;
+      properties[FormPropertyName.width] = this.width;
       if (resizeContent) {
         return {
           ...properties,

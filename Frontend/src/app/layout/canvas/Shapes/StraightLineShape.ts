@@ -1,6 +1,6 @@
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { Rect } from '../Geometry';
 import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
-import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { StraightLineShapeProperties } from '../ShapeProperties/StraightLineShapeProperties';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { StraightLineStyle } from '../ShapeStyles/StraightLineStyle';
@@ -16,8 +16,8 @@ export class StraightLineShape extends Shape {
     bufferCtx: CanvasRenderingContext2D
   ) {
     super(properties, bufferCtx, true);
-    this.properties[ShapePropertyName.minWidth] = 0;
-    this.properties[ShapePropertyName.minHeight] = 0;
+    this.properties[FormPropertyName.minWidth] = 0;
+    this.properties[FormPropertyName.minHeight] = 0;
   }
 
   override set properties(properties: Required<StraightLineShapeProperties>) {
@@ -29,7 +29,7 @@ export class StraightLineShape extends Shape {
   }
 
   override get style(): StraightLineStyle {
-    return this.properties[ShapePropertyName.style];
+    return this.properties[FormPropertyName.style];
   }
 
   override setStyleProperty(
@@ -38,7 +38,7 @@ export class StraightLineShape extends Shape {
     const updated = this.style.updateProperty(styleProperty);
     if (updated) {
       return {
-        [ShapePropertyName.style]: {
+        [FormPropertyName.style]: {
           [styleProperty.name]: styleProperty.value,
         },
       };

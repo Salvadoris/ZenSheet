@@ -1,7 +1,6 @@
 import { CanvasComponent } from '../canvas.component';
-import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { ShapeType } from '../Serializer/ShapeSerializer';
-import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { GroupShape } from '../Shapes/GroupShape';
 import { Shape } from '../Shapes/Shape';
 import { TextBoxShape } from '../Shapes/TextBoxShape';
@@ -92,7 +91,7 @@ export class CanvasActionHandler {
   private removeShapes(action: RemoveShapesAction) {
     this.canvas.shapes = this.canvas.shapes.filter(s => {
       return !action.data.shapeIdList.includes(
-        s.properties[ShapePropertyName.id]
+        s.properties[FormPropertyName.id]
       );
     });
     this.canvas.renderCanvas({ shapesChanged: true });
@@ -104,16 +103,16 @@ export class CanvasActionHandler {
   ) {
     action.data.shapes.forEach(changedShapeProperties => {
       const idx = localShapes.findIndex(
-        s => s.properties[ShapePropertyName.id] === changedShapeProperties.id
+        s => s.properties[FormPropertyName.id] === changedShapeProperties.id
       );
       if (idx !== -1) {
         const shape = this.canvas.shapes[idx];
         if (
-          changedShapeProperties.properties[ShapePropertyName.shapes] !==
+          changedShapeProperties.properties[FormPropertyName.shapes] !==
             undefined &&
           shape instanceof GroupShape
         ) {
-          changedShapeProperties.properties[ShapePropertyName.shapes].forEach(
+          changedShapeProperties.properties[FormPropertyName.shapes].forEach(
             ({ id, properties }) => {
               this.changeShapesProperties(
                 {
@@ -124,15 +123,15 @@ export class CanvasActionHandler {
               );
             }
           );
-          delete changedShapeProperties.properties[ShapePropertyName.shapes];
+          delete changedShapeProperties.properties[FormPropertyName.shapes];
         }
         if (
-          changedShapeProperties.properties[ShapePropertyName.text] !==
+          changedShapeProperties.properties[FormPropertyName.text] !==
             undefined &&
           shape instanceof TextBoxShape
         ) {
           const textChange =
-            changedShapeProperties.properties[ShapePropertyName.text];
+            changedShapeProperties.properties[FormPropertyName.text];
           const firstIndex = Math.min(
             textChange.startIndex,
             textChange.endIndex
@@ -141,43 +140,43 @@ export class CanvasActionHandler {
             textChange.startIndex,
             textChange.endIndex
           );
-          shape.properties[ShapePropertyName.text] =
-            shape.properties[ShapePropertyName.text].slice(0, firstIndex) +
+          shape.properties[FormPropertyName.text] =
+            shape.properties[FormPropertyName.text].slice(0, firstIndex) +
             textChange.text +
-            shape.properties[ShapePropertyName.text].slice(lastIndex);
-          delete changedShapeProperties.properties[ShapePropertyName.text];
+            shape.properties[FormPropertyName.text].slice(lastIndex);
+          delete changedShapeProperties.properties[FormPropertyName.text];
         }
         shape.properties = {
           ...shape.properties,
           ...changedShapeProperties.properties,
-          [ShapePropertyName.style]:
-            changedShapeProperties.properties[ShapePropertyName.style] !==
+          [FormPropertyName.style]:
+            changedShapeProperties.properties[FormPropertyName.style] !==
             undefined
               ? this.updatedStyle(
-                  shape.properties[ShapePropertyName.style],
-                  changedShapeProperties.properties[ShapePropertyName.style]
+                  shape.properties[FormPropertyName.style],
+                  changedShapeProperties.properties[FormPropertyName.style]
                 )
-              : shape.properties[ShapePropertyName.style],
+              : shape.properties[FormPropertyName.style],
         };
         if (
-          changedShapeProperties.properties[ShapePropertyName.width] !==
+          changedShapeProperties.properties[FormPropertyName.width] !==
           undefined
         ) {
-          shape.properties[ShapePropertyName.scaleX] =
-            changedShapeProperties.properties[ShapePropertyName.width] /
-            shape.properties[ShapePropertyName.originalWidth];
-          shape.properties[ShapePropertyName.horizontalInverted] =
-            changedShapeProperties.properties[ShapePropertyName.width] < 0;
+          shape.properties[FormPropertyName.scaleX] =
+            changedShapeProperties.properties[FormPropertyName.width] /
+            shape.properties[FormPropertyName.originalWidth];
+          shape.properties[FormPropertyName.horizontalInverted] =
+            changedShapeProperties.properties[FormPropertyName.width] < 0;
         }
         if (
-          changedShapeProperties.properties[ShapePropertyName.height] !==
+          changedShapeProperties.properties[FormPropertyName.height] !==
           undefined
         ) {
-          shape.properties[ShapePropertyName.scaleY] =
-            changedShapeProperties.properties[ShapePropertyName.height] /
-            shape.properties[ShapePropertyName.originalHeight];
-          shape.properties[ShapePropertyName.verticallyInverted] =
-            changedShapeProperties.properties[ShapePropertyName.height] < 0;
+          shape.properties[FormPropertyName.scaleY] =
+            changedShapeProperties.properties[FormPropertyName.height] /
+            shape.properties[FormPropertyName.originalHeight];
+          shape.properties[FormPropertyName.verticallyInverted] =
+            changedShapeProperties.properties[FormPropertyName.height] < 0;
         }
       }
     });
@@ -229,29 +228,27 @@ export class CanvasActionHandler {
   private removeDrawings(action: RemoveDrawingsAction) {
     this.canvas.drawings = this.canvas.drawings.filter(
       d =>
-        !action.data.drawingIdList.includes(
-          d.properties[DrawingPropertyName.id]
-        )
+        !action.data.drawingIdList.includes(d.properties[FormPropertyName.id])
     );
     this.canvas.renderCanvas({ drawingsChanged: true });
   }
 
   private changeDrawingsProperties(action: ChangeDrawingsPropertiesAction) {
     const drawings = this.canvas.drawings.filter(d =>
-      action.data.drawingIdList.includes(d.properties[DrawingPropertyName.id])
+      action.data.drawingIdList.includes(d.properties[FormPropertyName.id])
     );
     drawings.forEach(drawing => {
       drawing.properties = {
         ...drawing.properties,
         ...action.data.properties,
-        [DrawingPropertyName.points]:
-          action.data.properties[DrawingPropertyName.points] !== undefined &&
-          drawing.properties[DrawingPropertyName.points] !== undefined
+        [FormPropertyName.points]:
+          action.data.properties[FormPropertyName.points] !== undefined &&
+          drawing.properties[FormPropertyName.points] !== undefined
             ? [
-                ...drawing.properties[DrawingPropertyName.points],
-                action.data.properties[DrawingPropertyName.points].lastPoint,
+                ...drawing.properties[FormPropertyName.points],
+                action.data.properties[FormPropertyName.points].lastPoint,
               ]
-            : drawing.properties[DrawingPropertyName.points],
+            : drawing.properties[FormPropertyName.points],
       };
     });
     this.canvas.renderCanvas({ drawingsChanged: true });
@@ -259,7 +256,7 @@ export class CanvasActionHandler {
 
   private drawingToShape(action: DrawingToShapeAction) {
     const idx = this.canvas.drawings.findIndex(
-      d => d.properties[DrawingPropertyName.id] == action.data.drawingId
+      d => d.properties[FormPropertyName.id] == action.data.drawingId
     );
     if (idx !== -1) {
       this.canvas.drawings.splice(idx, 1);
@@ -272,13 +269,13 @@ export class CanvasActionHandler {
 
   private addGroupShape(action: AddGroupShapeAction) {
     const shapeIdList = action.data.shapesProperties.map(
-      p => p[ShapePropertyName.id]
+      p => p[FormPropertyName.id]
     );
     const shapes = this.canvas.shapes.filter(s =>
-      shapeIdList.includes(s.properties[ShapePropertyName.id])
+      shapeIdList.includes(s.properties[FormPropertyName.id])
     );
     this.canvas.shapes = this.canvas.shapes.filter(
-      s => !shapeIdList.includes(s.properties[ShapePropertyName.id])
+      s => !shapeIdList.includes(s.properties[FormPropertyName.id])
     );
 
     const groupShape = this.canvas.shapeSerializer.deserialized({
@@ -286,7 +283,7 @@ export class CanvasActionHandler {
       properties: action.data.groupShape,
     }) as GroupShape;
 
-    groupShape.properties[ShapePropertyName.shapes] = shapes;
+    groupShape.properties[FormPropertyName.shapes] = shapes;
     for (const shape of groupShape.shapes) {
       groupShape.shapeToLocal(shape);
     }
@@ -296,7 +293,7 @@ export class CanvasActionHandler {
 
   private removeGroupShape(action: RemoveGroupShapeAction) {
     const idx = this.canvas.shapes.findIndex(
-      s => s.properties[ShapePropertyName.id] === action.data.groupShapeId
+      s => s.properties[FormPropertyName.id] === action.data.groupShapeId
     );
     if (idx !== -1) {
       const groupShape = this.canvas.shapes[idx] as GroupShape;
@@ -315,7 +312,7 @@ export class CanvasActionHandler {
     });
     for (const { id, newIndex } of action.data.shapes) {
       const idx = this.canvas.shapes.findIndex(
-        s => s.properties[ShapePropertyName.id] === id
+        s => s.properties[FormPropertyName.id] === id
       );
       if (
         idx === -1 ||

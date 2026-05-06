@@ -1,4 +1,4 @@
-export enum ShapePropertyName {
+export enum FormPropertyName {
   id = 'id',
   style = 'style',
   originX = 'originX',
@@ -11,7 +11,6 @@ export enum ShapePropertyName {
   scaleY = 'scaleY',
   minWidth = 'minWidth',
   minHeight = 'minHeight',
-  // invertable = 'invertable',
   horizontallyInvertable = 'horizontallyIvertable',
   verticallyInvertable = 'verticallyIvertable',
   horizontalInverted = 'horizontalInverted',
@@ -23,4 +22,5 @@ export enum ShapePropertyName {
   text = 'text',
   wrap = 'wrap',
   points = 'points',
+  p1 = 'p1',
 }

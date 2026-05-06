@@ -1,3 +1,4 @@
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { TextBoxStyle, TextBoxStyleType } from '../ShapeStyles/TextBoxStyle';
 
 import {
@@ -5,7 +6,6 @@ import {
   SerializedShapeProperties,
   ShapeProperties,
 } from './ShapeProperties';
-import { ShapePropertyName } from './ShapePropertyName';
 
 export interface TextIndex {
   line: number;
@@ -24,36 +24,36 @@ export const tabSize = 2;
 export type TextBoxShapeProperties = Partial<
   Omit<
     ShapeProperties,
-    | ShapePropertyName.id
-    | ShapePropertyName.style
-    | ShapePropertyName.text
-    | ShapePropertyName.wrap
-    | ShapePropertyName.originX
-    | ShapePropertyName.originY
+    | FormPropertyName.id
+    | FormPropertyName.style
+    | FormPropertyName.text
+    | FormPropertyName.wrap
+    | FormPropertyName.originX
+    | FormPropertyName.originY
   >
 > & {
-  [ShapePropertyName.style]: TextBoxStyle;
+  [FormPropertyName.style]: TextBoxStyle;
 } & Required<
     Pick<
       ShapeProperties,
-      | ShapePropertyName.id
-      | ShapePropertyName.text
-      | ShapePropertyName.wrap
-      | ShapePropertyName.originX
-      | ShapePropertyName.originY
-      | ShapePropertyName.edited
-      | ShapePropertyName.selected
+      | FormPropertyName.id
+      | FormPropertyName.text
+      | FormPropertyName.wrap
+      | FormPropertyName.originX
+      | FormPropertyName.originY
+      | FormPropertyName.edited
+      | FormPropertyName.selected
     >
   >;
 
 export type SerializedTextBoxShapeProperties = Omit<
   BaseSerializedShapeProperties,
-  ShapePropertyName.style
+  FormPropertyName.style
 > & {
-  [ShapePropertyName.style]: TextBoxStyleType;
+  [FormPropertyName.style]: TextBoxStyleType;
 } & Required<
     Pick<
       SerializedShapeProperties,
-      ShapePropertyName.text | ShapePropertyName.wrap | ShapePropertyName.edited
+      FormPropertyName.text | FormPropertyName.wrap | FormPropertyName.edited
     >
   >;

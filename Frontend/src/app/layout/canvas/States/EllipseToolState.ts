@@ -1,7 +1,7 @@
 import { generateUuid } from '../../../utils/uuid';
 import { CanvasComponent } from '../canvas.component';
-import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { EllipseDrawing } from '../Drawings/EllipseDrawing';
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { EllipseStyle } from '../ShapeStyles/EllipseStyle';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 
@@ -29,42 +29,44 @@ export class EllipseToolState extends CanvasToolState {
   override onMouseDown(_event: MouseEvent): void {}
 
   override onPressedMouseMove(_event: MouseEvent): void {
-    if (!this.#currentDrawing) {
-      const startOrigin = this.canvas.pointToGrid(this.canvas.startCursor);
-      const newPoint = this.canvas.pointToGrid(this.canvas.cursor);
-      if (startOrigin[0] !== newPoint[0] && startOrigin[1] !== newPoint[1]) {
-        this.#currentDrawing = new EllipseDrawing(
-          {
-            [DrawingPropertyName.id]: generateUuid(),
-            [DrawingPropertyName.p0]: startOrigin,
-            [DrawingPropertyName.p1]: newPoint,
-            [DrawingPropertyName.style]: new EllipseStyle(this.canvas.style),
-          },
-          this.canvas.bufferCtx
-        );
-        this.canvas.addDrawings([this.#currentDrawing]);
-        this.canvas.renderCanvas({ drawingsChanged: true });
-      }
-    } else {
-      const newPoint = this.canvas.pointToGrid(this.canvas.cursor);
-      if (
-        !(
-          (newPoint[0] ===
-            this.#currentDrawing.properties[DrawingPropertyName.p1][0] &&
-            newPoint[1] ===
-              this.#currentDrawing.properties[DrawingPropertyName.p1][1]) ||
-          (newPoint[0] ===
-            this.#currentDrawing.properties[DrawingPropertyName.p0][0] &&
-            newPoint[1] ===
-              this.#currentDrawing.properties[DrawingPropertyName.p0][1])
-        )
-      ) {
-        const changeProperties = this.#currentDrawing.update(newPoint);
-        this.canvas.renderCanvas({ drawingsChanged: true });
-        this.canvas.changeDrawingsProperties(
-          [this.#currentDrawing.properties[DrawingPropertyName.id]],
-          changeProperties
-        );
+    if (this.canvas.leftmouseDown) {
+      if (!this.#currentDrawing) {
+        const startOrigin = this.canvas.pointToGrid(this.canvas.startCursor);
+        const newPoint = this.canvas.pointToGrid(this.canvas.cursor);
+        if (startOrigin[0] !== newPoint[0] && startOrigin[1] !== newPoint[1]) {
+          this.#currentDrawing = new EllipseDrawing(
+            {
+              [FormPropertyName.id]: generateUuid(),
+              [FormPropertyName.originX]: startOrigin[0],
+              [FormPropertyName.originY]: startOrigin[1],
+              [FormPropertyName.width]: newPoint[0] - startOrigin[0],
+              [FormPropertyName.height]: newPoint[1] - startOrigin[1],
+              [FormPropertyName.style]: new EllipseStyle(this.canvas.style),
+            },
+            this.canvas.bufferCtx
+          );
+          this.canvas.addDrawings([this.#currentDrawing]);
+          this.canvas.renderCanvas({ drawingsChanged: true });
+        }
+      } else {
+        const newPoint = this.canvas.pointToGrid(this.canvas.cursor);
+        if (
+          !(
+            (newPoint[0] ===
+              this.#currentDrawing.originX + this.#currentDrawing.width &&
+              newPoint[1] ===
+                this.#currentDrawing.originY + this.#currentDrawing.height) ||
+            newPoint[0] === this.#currentDrawing.originX ||
+            newPoint[1] === this.#currentDrawing.originY
+          )
+        ) {
+          const changeProperties = this.#currentDrawing.update(newPoint);
+          this.canvas.renderCanvas({ drawingsChanged: true });
+          this.canvas.changeDrawingsProperties(
+            [this.#currentDrawing.properties[FormPropertyName.id]],
+            changeProperties
+          );
+        }
       }
     }
   }

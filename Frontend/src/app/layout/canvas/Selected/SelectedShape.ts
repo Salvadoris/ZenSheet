@@ -1,7 +1,7 @@
 import { ChangedShapeProperties } from '../Actions/ChangeShapesPropertiesAction';
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { Point, Rect } from '../Geometry';
 import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
-import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { Shape } from '../Shapes/Shape';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 
@@ -55,17 +55,17 @@ export class SelectedShape {
     const properties: ChangableSerializedShapeProperties = {};
     if (this.shape.originX !== newOrigin[0]) {
       this.shape.originX = newOrigin[0];
-      properties[ShapePropertyName.originX] = this.shape.originX;
+      properties[FormPropertyName.originX] = this.shape.originX;
     }
     if (this.shape.originY !== newOrigin[1]) {
       this.shape.originY = newOrigin[1];
-      properties[ShapePropertyName.originY] = this.shape.originY;
+      properties[FormPropertyName.originY] = this.shape.originY;
     }
     if (Object.keys(properties).length > 0) {
       this.updateOffsetRect();
       return [
         {
-          id: this.shape.properties[ShapePropertyName.id],
+          id: this.shape.properties[FormPropertyName.id],
           properties: properties,
         },
       ];
@@ -117,7 +117,7 @@ export class SelectedShape {
       this.updateOffsetRect();
       return [
         {
-          id: this.shape.properties[ShapePropertyName.id],
+          id: this.shape.properties[FormPropertyName.id],
           properties: properties,
         },
       ];

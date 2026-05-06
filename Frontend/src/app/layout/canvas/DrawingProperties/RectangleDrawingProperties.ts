@@ -1,11 +1,19 @@
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { RectangleStyle } from '../ShapeStyles/RectangleStyle';
 
-import { BaseDrawingProperties, DrawingProperties } from './DrawingProperties';
-import { DrawingPropertyName } from './DrawingPropertyName';
+import {
+  BaseDrawingProperties,
+  ChangableDrawingProperties,
+} from './DrawingProperties';
 
 export type RectangleDrawingProperties = Omit<
   BaseDrawingProperties,
-  DrawingPropertyName.style
-> & { [DrawingPropertyName.style]: RectangleStyle } & Required<
-    Pick<DrawingProperties, DrawingPropertyName.p0 | DrawingPropertyName.p1>
-  >;
+  FormPropertyName.style
+> & { [FormPropertyName.style]: RectangleStyle };
+
+export type ChangableRectangleDrawingProperties = Partial<
+  Pick<
+    ChangableDrawingProperties,
+    FormPropertyName.width | FormPropertyName.height
+  >
+>;

@@ -1,11 +1,19 @@
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { StraightLineStyle } from '../ShapeStyles/StraightLineStyle';
 
-import { BaseDrawingProperties, DrawingProperties } from './DrawingProperties';
-import { DrawingPropertyName } from './DrawingPropertyName';
+import {
+  BaseDrawingProperties,
+  ChangableDrawingProperties,
+} from './DrawingProperties';
 
 export type StraightLineDrawingProperties = Omit<
   BaseDrawingProperties,
-  DrawingPropertyName.style
-> & { [DrawingPropertyName.style]: StraightLineStyle } & Required<
-    Pick<DrawingProperties, DrawingPropertyName.p0 | DrawingPropertyName.p1>
-  >;
+  FormPropertyName.style
+> & { [FormPropertyName.style]: StraightLineStyle };
+
+export type ChangableStraightLineDrawingProperties = Partial<
+  Pick<
+    ChangableDrawingProperties,
+    FormPropertyName.width | FormPropertyName.height
+  >
+>;

@@ -1,7 +1,7 @@
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { Rect } from '../Geometry';
 import { GroupShapeProperties } from '../ShapeProperties/GroupShapeProperties';
 import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
-import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { GroupShapeStyle } from '../ShapeStyles/GroupShapeStyle';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 
@@ -13,40 +13,40 @@ export class GroupShape extends Shape {
 
   constructor(properties: GroupShapeProperties, ctx: CanvasRenderingContext2D) {
     if (
-      !properties[ShapePropertyName.style] ||
-      properties[ShapePropertyName.originX] === undefined ||
-      properties[ShapePropertyName.originY] === undefined ||
-      properties[ShapePropertyName.originalWidth] === undefined ||
-      properties[ShapePropertyName.originalHeight] === undefined
+      !properties[FormPropertyName.style] ||
+      properties[FormPropertyName.originX] === undefined ||
+      properties[FormPropertyName.originY] === undefined ||
+      properties[FormPropertyName.originalWidth] === undefined ||
+      properties[FormPropertyName.originalHeight] === undefined
     ) {
       [
-        properties[ShapePropertyName.originX],
-        properties[ShapePropertyName.originY],
-        properties[ShapePropertyName.originalWidth],
-        properties[ShapePropertyName.originalHeight],
-      ] = calcRect(properties[ShapePropertyName.shapes], false, false);
-      properties[ShapePropertyName.style] = new GroupShapeStyle(
-        properties[ShapePropertyName.shapes].map(s => s.style)
+        properties[FormPropertyName.originX],
+        properties[FormPropertyName.originY],
+        properties[FormPropertyName.originalWidth],
+        properties[FormPropertyName.originalHeight],
+      ] = calcRect(properties[FormPropertyName.shapes], false, false);
+      properties[FormPropertyName.style] = new GroupShapeStyle(
+        properties[FormPropertyName.shapes].map(s => s.style)
       );
-      for (const shape of properties[ShapePropertyName.shapes]) {
-        shape.originX -= properties[ShapePropertyName.originX];
-        shape.originY -= properties[ShapePropertyName.originY];
+      for (const shape of properties[FormPropertyName.shapes]) {
+        shape.originX -= properties[FormPropertyName.originX];
+        shape.originY -= properties[FormPropertyName.originY];
       }
     }
-    if (!properties[ShapePropertyName.horizontallyInvertable]) {
-      properties[ShapePropertyName.horizontallyInvertable] = !properties[
-        ShapePropertyName.shapes
+    if (!properties[FormPropertyName.horizontallyInvertable]) {
+      properties[FormPropertyName.horizontallyInvertable] = !properties[
+        FormPropertyName.shapes
       ].some(s => !s.horizontallyInvertable);
     }
-    if (!properties[ShapePropertyName.verticallyInvertable]) {
-      properties[ShapePropertyName.verticallyInvertable] = !properties[
-        ShapePropertyName.shapes
+    if (!properties[FormPropertyName.verticallyInvertable]) {
+      properties[FormPropertyName.verticallyInvertable] = !properties[
+        FormPropertyName.shapes
       ].some(s => !s.verticallyInvertable);
     }
     super(properties as Required<GroupShapeProperties>, ctx);
     if (this.shapes.length !== 0) {
-      this.properties[ShapePropertyName.minWidth] = this.calcMinWidth();
-      this.properties[ShapePropertyName.minHeight] = this.calcMinHeight();
+      this.properties[FormPropertyName.minWidth] = this.calcMinWidth();
+      this.properties[FormPropertyName.minHeight] = this.calcMinHeight();
     }
   }
 
@@ -60,11 +60,11 @@ export class GroupShape extends Shape {
   }
 
   override get style(): GroupShapeStyle {
-    return this.properties[ShapePropertyName.style];
+    return this.properties[FormPropertyName.style];
   }
 
   get shapes() {
-    return this.properties[ShapePropertyName.shapes];
+    return this.properties[FormPropertyName.shapes];
   }
 
   override setStyleProperty(
@@ -74,15 +74,15 @@ export class GroupShape extends Shape {
     if (updated) {
       const shapesProperties = this.shapes.map(s => {
         return {
-          [ShapePropertyName.id]: s.properties[ShapePropertyName.id],
+          [FormPropertyName.id]: s.properties[FormPropertyName.id],
           properties: s.setStyleProperty(styleProperty),
         };
       });
       return {
-        [ShapePropertyName.style]: {
+        [FormPropertyName.style]: {
           [styleProperty.name]: styleProperty.value,
         },
-        [ShapePropertyName.shapes]: shapesProperties,
+        [FormPropertyName.shapes]: shapesProperties,
       };
     }
     return {};
@@ -253,24 +253,24 @@ export class GroupShape extends Shape {
     this.originY = newOriginY;
     this.width = newWidth;
     this.height = newHeight;
-    this.properties[ShapePropertyName.originalWidth] = this.width / this.scaleX;
-    this.properties[ShapePropertyName.originalHeight] =
+    this.properties[FormPropertyName.originalWidth] = this.width / this.scaleX;
+    this.properties[FormPropertyName.originalHeight] =
       this.height / this.scaleY;
 
     this.shapeToLocal(shape);
 
     this.shapes.push(shape);
-    this.properties[ShapePropertyName.style] = new GroupShapeStyle(
+    this.properties[FormPropertyName.style] = new GroupShapeStyle(
       this.shapes.map(s => s.style)
     );
 
-    this.properties[ShapePropertyName.horizontallyInvertable] =
+    this.properties[FormPropertyName.horizontallyInvertable] =
       !this.shapes.some(s => !s.horizontallyInvertable);
-    this.properties[ShapePropertyName.verticallyInvertable] = !this.shapes.some(
+    this.properties[FormPropertyName.verticallyInvertable] = !this.shapes.some(
       s => !s.verticallyInvertable
     );
-    this.properties[ShapePropertyName.minWidth] = this.calcMinWidth();
-    this.properties[ShapePropertyName.minHeight] = this.calcMinHeight();
+    this.properties[FormPropertyName.minWidth] = this.calcMinWidth();
+    this.properties[FormPropertyName.minHeight] = this.calcMinHeight();
   }
 
   shapesToGlobal() {
@@ -286,7 +286,7 @@ export class GroupShape extends Shape {
   }
 
   clearShapes() {
-    this.properties[ShapePropertyName.shapes] = [];
+    this.properties[FormPropertyName.shapes] = [];
   }
 
   removeShape(shape: Shape) {
@@ -296,16 +296,16 @@ export class GroupShape extends Shape {
 
       this.shapeToGlobal(shape);
 
-      this.properties[ShapePropertyName.style] = new GroupShapeStyle(
+      this.properties[FormPropertyName.style] = new GroupShapeStyle(
         this.shapes.map(s => s.style)
       );
 
-      this.properties[ShapePropertyName.horizontallyInvertable] =
+      this.properties[FormPropertyName.horizontallyInvertable] =
         !this.shapes.some(s => !s.horizontallyInvertable);
-      this.properties[ShapePropertyName.verticallyInvertable] =
+      this.properties[FormPropertyName.verticallyInvertable] =
         !this.shapes.some(s => !s.verticallyInvertable);
-      this.properties[ShapePropertyName.minWidth] = this.calcMinWidth();
-      this.properties[ShapePropertyName.minHeight] = this.calcMinHeight();
+      this.properties[FormPropertyName.minWidth] = this.calcMinWidth();
+      this.properties[FormPropertyName.minHeight] = this.calcMinHeight();
 
       // calc new rect
       const [localOriginX, localOriginY, localWidth, localHeight] = calcRect(
@@ -336,8 +336,8 @@ export class GroupShape extends Shape {
       this.originY = newOriginY;
       this.width = newWidth;
       this.height = newHeight;
-      this.properties[ShapePropertyName.originalWidth] = localWidth;
-      this.properties[ShapePropertyName.originalHeight] = localHeight;
+      this.properties[FormPropertyName.originalWidth] = localWidth;
+      this.properties[FormPropertyName.originalHeight] = localHeight;
     }
   }
 
@@ -368,7 +368,7 @@ export class GroupShape extends Shape {
       let shapeProperties: ChangableSerializedShapeProperties = {};
       if (shape instanceof TextBoxShape && !shape.wrap) {
         shape.wrap = true;
-        shapeProperties[ShapePropertyName.wrap] = true;
+        shapeProperties[FormPropertyName.wrap] = true;
       }
       shapeProperties = {
         ...shapeProperties,
@@ -376,7 +376,7 @@ export class GroupShape extends Shape {
       };
       if (Object.keys(shapeProperties).length !== 0) {
         const serialized = {
-          id: shape.properties[ShapePropertyName.id],
+          id: shape.properties[FormPropertyName.id],
           properties: shapeProperties,
         };
         if (properties.shapes) {

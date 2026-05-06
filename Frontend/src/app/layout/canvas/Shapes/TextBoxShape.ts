@@ -1,9 +1,9 @@
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { Point, Rect } from '../Geometry';
 import {
   ChangableSerializedShapeProperties,
   ChangableShapeProperties,
 } from '../ShapeProperties/ShapeProperties';
-import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import {
   tabSize,
   TextBoxShapeProperties,
@@ -34,21 +34,21 @@ export class TextBoxShape extends Shape {
     bufferCtx: CanvasRenderingContext2D
   ) {
     if (
-      properties[ShapePropertyName.wrap] &&
-      properties[ShapePropertyName.originalWidth] === undefined
+      properties[FormPropertyName.wrap] &&
+      properties[FormPropertyName.originalWidth] === undefined
     ) {
       throw new Error('Text cannot be wrapped inside TextBox without width');
     }
-    if (properties[ShapePropertyName.originalWidth] === undefined) {
-      properties[ShapePropertyName.originalWidth] = 1;
+    if (properties[FormPropertyName.originalWidth] === undefined) {
+      properties[FormPropertyName.originalWidth] = 1;
     }
-    if (properties[ShapePropertyName.originalHeight] === undefined) {
-      properties[ShapePropertyName.originalHeight] = 1;
+    if (properties[FormPropertyName.originalHeight] === undefined) {
+      properties[FormPropertyName.originalHeight] = 1;
     }
     super(properties as Required<TextBoxShapeProperties>, bufferCtx);
     this.#lineSpace = calcLineSpace(this.style);
     this.#lineHeight = calcLineHeight(this.style, this.#lineSpace);
-    this.resizeContent(this.properties[ShapePropertyName.text].length > 0);
+    this.resizeContent(this.properties[FormPropertyName.text].length > 0);
   }
 
   override set properties(properties: Required<TextBoxShapeProperties>) {
@@ -61,19 +61,19 @@ export class TextBoxShape extends Shape {
   }
 
   get text() {
-    return this.properties[ShapePropertyName.text];
+    return this.properties[FormPropertyName.text];
   }
 
   get wrap() {
-    return this.properties[ShapePropertyName.wrap];
+    return this.properties[FormPropertyName.wrap];
   }
 
   set wrap(wrap: boolean) {
-    this.properties[ShapePropertyName.wrap] = wrap;
+    this.properties[FormPropertyName.wrap] = wrap;
   }
 
   override get style(): TextBoxStyle {
-    return this.properties[ShapePropertyName.style];
+    return this.properties[FormPropertyName.style];
   }
 
   override renderShape(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {
@@ -112,7 +112,7 @@ export class TextBoxShape extends Shape {
       }
       return {
         ...this.resizeContent(),
-        [ShapePropertyName.style]: {
+        [FormPropertyName.style]: {
           [styleProperty.name]: styleProperty.value,
         },
       };
@@ -123,9 +123,9 @@ export class TextBoxShape extends Shape {
   override updateProperties(properties: ChangableShapeProperties) {
     super.updateProperties(properties);
     if (
-      (properties[ShapePropertyName.width] !== undefined && this.wrap) ||
-      properties[ShapePropertyName.text] !== undefined ||
-      properties[ShapePropertyName.wrap] !== undefined
+      (properties[FormPropertyName.width] !== undefined && this.wrap) ||
+      properties[FormPropertyName.text] !== undefined ||
+      properties[FormPropertyName.wrap] !== undefined
     ) {
       this.resizeContent();
     }
@@ -164,7 +164,7 @@ export class TextBoxShape extends Shape {
       this.wrap = true;
       return {
         ...super.resizeLeft(x),
-        [ShapePropertyName.wrap]: true,
+        [FormPropertyName.wrap]: true,
       };
     } else {
       return super.resizeLeft(x);
@@ -176,7 +176,7 @@ export class TextBoxShape extends Shape {
       this.wrap = true;
       return {
         ...super.resizeRight(x),
-        [ShapePropertyName.wrap]: true,
+        [FormPropertyName.wrap]: true,
       };
     } else {
       return super.resizeRight(x);
@@ -205,9 +205,9 @@ export class TextBoxShape extends Shape {
     const lastOriginalLineIndex = oldLastOriginalLineIndex + changedLinesCount;
 
     let properties: ChangableSerializedShapeProperties = {};
-    this.properties[ShapePropertyName.text] =
+    this.properties[FormPropertyName.text] =
       this.text.slice(0, firstIndex) + text + this.text.slice(lastIndex);
-    properties[ShapePropertyName.text] = {
+    properties[FormPropertyName.text] = {
       startIndex: startIndex,
       endIndex: endIndex,
       text: text,
@@ -267,11 +267,11 @@ export class TextBoxShape extends Shape {
     }
 
     const minWidth = this.minWidth;
-    this.properties[ShapePropertyName.minWidth] =
+    this.properties[FormPropertyName.minWidth] =
       Math.max(...this.#lines.map(l => l.maxChunkWidth)) + this.#padding * 2;
     this.width = Math.max(this.width, this.minWidth);
     if (minWidth !== this.minWidth) {
-      properties[ShapePropertyName.minWidth] = this.minWidth;
+      properties[FormPropertyName.minWidth] = this.minWidth;
     }
 
     const newHeight = this.#lineHeight * this.#lines.length + this.#padding * 2;
@@ -311,11 +311,11 @@ export class TextBoxShape extends Shape {
 
     if (minWidthChanged) {
       const minWidth = this.minWidth;
-      this.properties[ShapePropertyName.minWidth] =
+      this.properties[FormPropertyName.minWidth] =
         Math.max(...this.#lines.map(l => l.maxChunkWidth)) + this.#padding * 2;
       this.width = Math.max(this.width, this.minWidth);
       if (minWidth !== this.minWidth) {
-        properties[ShapePropertyName.minWidth] = this.minWidth;
+        properties[FormPropertyName.minWidth] = this.minWidth;
       }
     }
 

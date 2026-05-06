@@ -1,12 +1,11 @@
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { Point, Rect } from '../Geometry';
 import {
   Chunk,
-  LinePoints,
   LineShapeProperties,
   Segment,
 } from '../ShapeProperties/LineShapeProperties';
 import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
-import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { LineStyle } from '../ShapeStyles/LineStyle';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { StyleName } from '../ShapeStyles/StyleName';
@@ -22,36 +21,6 @@ export class LineShape extends Shape {
     properties: LineShapeProperties,
     bufferCtx: CanvasRenderingContext2D
   ) {
-    if (
-      properties[ShapePropertyName.originX] === undefined ||
-      properties[ShapePropertyName.originY] === undefined ||
-      properties[ShapePropertyName.originalWidth] === undefined ||
-      properties[ShapePropertyName.originalHeight] === undefined
-    ) {
-      const originX = minX(
-        properties[ShapePropertyName.points],
-        properties[ShapePropertyName.style][StyleName.LineWidth]
-      );
-      const originY = minY(
-        properties[ShapePropertyName.points],
-        properties[ShapePropertyName.style][StyleName.LineWidth]
-      );
-      properties[ShapePropertyName.originX] = originX;
-      properties[ShapePropertyName.originY] = originY;
-      properties[ShapePropertyName.originalWidth] =
-        maxX(
-          properties[ShapePropertyName.points],
-          properties[ShapePropertyName.style][StyleName.LineWidth]
-        ) - properties[ShapePropertyName.originX];
-      properties[ShapePropertyName.originalHeight] =
-        maxY(
-          properties[ShapePropertyName.points],
-          properties[ShapePropertyName.style][StyleName.LineWidth]
-        ) - properties[ShapePropertyName.originY];
-      properties[ShapePropertyName.points] = properties[
-        ShapePropertyName.points
-      ].map(p => [p[0] - originX, p[1] - originY]) as LinePoints;
-    }
     super(properties as Required<LineShapeProperties>, bufferCtx);
 
     this.chunks = getLineChunks(
@@ -98,11 +67,11 @@ export class LineShape extends Shape {
   }
 
   override get style(): LineStyle {
-    return this.properties[ShapePropertyName.style];
+    return this.properties[FormPropertyName.style];
   }
 
   get points() {
-    return this.properties[ShapePropertyName.points];
+    return this.properties[FormPropertyName.points];
   }
 
   override setStyleProperty(
@@ -111,7 +80,7 @@ export class LineShape extends Shape {
     const updated = this.style.updateProperty(styleProperty);
     if (updated) {
       return {
-        [ShapePropertyName.style]: {
+        [FormPropertyName.style]: {
           [styleProperty.name]: styleProperty.value,
         },
       };

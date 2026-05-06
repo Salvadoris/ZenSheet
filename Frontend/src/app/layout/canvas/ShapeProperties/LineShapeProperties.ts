@@ -1,12 +1,13 @@
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { Point, Rect } from '../Geometry';
 import { LineStyle, LineStyleType } from '../ShapeStyles/LineStyle';
 
 import {
   BaseSerializedShapeProperties,
+  BaseShapeProperties,
   SerializedShapeProperties,
   ShapeProperties,
 } from './ShapeProperties';
-import { ShapePropertyName } from './ShapePropertyName';
 
 export type LinePoints =
   | [Point, Point, ...Point[]]
@@ -23,29 +24,21 @@ export interface Segment {
   chunkIndex: number;
 }
 
-export type LineShapeProperties = Partial<
-  Omit<
-    ShapeProperties,
-    ShapePropertyName.id | ShapePropertyName.style | ShapePropertyName.points
-  >
-> & { [ShapePropertyName.style]: LineStyle } & Required<
-    Pick<
-      ShapeProperties,
-      | ShapePropertyName.id
-      | ShapePropertyName.points
-      | ShapePropertyName.edited
-      | ShapePropertyName.selected
-    >
+export type LineShapeProperties = Omit<
+  BaseShapeProperties,
+  FormPropertyName.style
+> & { [FormPropertyName.style]: LineStyle } & Required<
+    Pick<ShapeProperties, FormPropertyName.points>
   >;
 
 export type SerializedLineShapeProperties = Omit<
   BaseSerializedShapeProperties,
-  ShapePropertyName.style
+  FormPropertyName.style
 > & {
-  [ShapePropertyName.style]: LineStyleType;
+  [FormPropertyName.style]: LineStyleType;
 } & Required<
     Pick<
       SerializedShapeProperties,
-      ShapePropertyName.points | ShapePropertyName.edited
+      FormPropertyName.points | FormPropertyName.edited
     >
   >;

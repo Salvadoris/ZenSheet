@@ -1,7 +1,7 @@
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { Rect } from '../Geometry';
 import { ImageShapeProperties } from '../ShapeProperties/ImageShapeProperties';
 import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
-import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { ImageStyle } from '../ShapeStyles/ImageStyle';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { StyleName } from '../ShapeStyles/StyleName';
@@ -29,7 +29,7 @@ export class ImageShape extends Shape {
   }
 
   override get style(): ImageStyle {
-    return this.properties[ShapePropertyName.style];
+    return this.properties[FormPropertyName.style];
   }
 
   override setStyleProperty(
@@ -38,7 +38,7 @@ export class ImageShape extends Shape {
     const updated = this.style.updateProperty(styleProperty);
     if (updated) {
       return {
-        [ShapePropertyName.style]: {
+        [FormPropertyName.style]: {
           [styleProperty.name]: styleProperty.value,
         },
       };

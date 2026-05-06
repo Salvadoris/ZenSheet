@@ -1,9 +1,10 @@
 import { generateUuid } from '../../../utils/uuid';
-import { ChangableDrawingProperties } from '../DrawingProperties/DrawingProperties';
-import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
-import { StraightLineDrawingProperties } from '../DrawingProperties/StraightLineDrawingProperties';
+import {
+  ChangableStraightLineDrawingProperties,
+  StraightLineDrawingProperties,
+} from '../DrawingProperties/StraightLineDrawingProperties';
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { Point, Rect } from '../Geometry';
-import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { Shape } from '../Shapes/Shape';
 import { StraightLineShape } from '../Shapes/StraightLineShape';
 import { StraightLineStyle } from '../ShapeStyles/StraightLineStyle';
@@ -11,55 +12,49 @@ import { StyleName } from '../ShapeStyles/StyleName';
 
 import { Drawing } from './Drawing';
 
-export class StraightLineDrawing implements Drawing {
-  constructor(
-    public properties: StraightLineDrawingProperties,
-    public bufferCtx: CanvasRenderingContext2D
-  ) {}
+export class StraightLineDrawing extends Drawing {
+  declare properties: StraightLineDrawingProperties;
 
-  get p0() {
-    return this.properties[DrawingPropertyName.p0];
-  }
-
-  get p1() {
-    return this.properties[DrawingPropertyName.p1];
-  }
-
-  get style(): StraightLineStyle {
-    return this.properties[DrawingPropertyName.style];
+  override get style(): StraightLineStyle {
+    return this.properties[FormPropertyName.style];
   }
 
   path(): Path2D {
     const path = new Path2D();
-    path.moveTo(this.p0[0], this.p0[1]);
-    path.lineTo(this.p1[0], this.p1[1]);
+    path.moveTo(this.originX, this.originY);
+    path.lineTo(this.originX + this.width, this.originY + this.height);
     return path;
   }
 
   toShape(): Shape {
     return new StraightLineShape(
       {
-        [ShapePropertyName.id]: generateUuid(),
-        [ShapePropertyName.style]: this.style,
-        [ShapePropertyName.originX]: this.p0[0],
-        [ShapePropertyName.originY]: this.p0[1],
-        [ShapePropertyName.originalWidth]: this.p1[0] - this.p0[0],
-        [ShapePropertyName.originalHeight]: this.p1[1] - this.p0[1],
-        [ShapePropertyName.edited]: false,
-        [ShapePropertyName.selected]: false,
+        [FormPropertyName.id]: generateUuid(),
+        [FormPropertyName.style]: this.style,
+        [FormPropertyName.originX]: this.originX,
+        [FormPropertyName.originY]: this.originY,
+        [FormPropertyName.originalWidth]: this.width,
+        [FormPropertyName.originalHeight]: this.height,
+        [FormPropertyName.edited]: false,
+        [FormPropertyName.selected]: false,
       },
       this.bufferCtx
     );
   }
 
-  update(
-    p: Point
-  ): Required<Pick<ChangableDrawingProperties, DrawingPropertyName.p1>> {
-    this.p1[0] = p[0];
-    this.p1[1] = p[1];
-    return {
-      [DrawingPropertyName.p1]: [this.p1[0], this.p1[1]],
-    };
+  update(p: Point): ChangableStraightLineDrawingProperties {
+    const properties: ChangableStraightLineDrawingProperties = {};
+    const newWidth = p[0] - this.originX;
+    if (newWidth !== this.width) {
+      this.properties[FormPropertyName.width] = newWidth;
+      properties[FormPropertyName.width] = newWidth;
+    }
+    const newHeight = p[1] - this.originY;
+    if (newHeight !== this.height) {
+      this.properties[FormPropertyName.height] = newHeight;
+      properties[FormPropertyName.height] = newHeight;
+    }
+    return properties;
   }
 
   render(canvasRect: Rect, ctx: CanvasRenderingContext2D): void {

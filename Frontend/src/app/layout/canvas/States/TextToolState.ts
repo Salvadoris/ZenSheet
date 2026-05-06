@@ -1,7 +1,7 @@
 import { generateUuid } from '../../../utils/uuid';
 import { CanvasComponent } from '../canvas.component';
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
-import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { calcLineSpace, TextBoxShape } from '../Shapes/TextBoxShape';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { StyleName } from '../ShapeStyles/StyleName';
@@ -33,7 +33,7 @@ export class TextToolState extends CanvasToolState {
       const properties = this.#currentTextBox.setStyleProperty(styleProperty);
       this.canvas.changeShapesProperties([
         {
-          id: this.#currentTextBox.properties[ShapePropertyName.id],
+          id: this.#currentTextBox.properties[FormPropertyName.id],
           properties: properties,
         },
       ]);
@@ -60,14 +60,14 @@ export class TextToolState extends CanvasToolState {
     if (this.#currentTextBox) {
       if (this.#currentTextBox.text.length == 0) {
         this.canvas.removeShapes([
-          this.#currentTextBox.properties[ShapePropertyName.id],
+          this.#currentTextBox.properties[FormPropertyName.id],
         ]);
       } else {
-        this.#currentTextBox.properties[ShapePropertyName.edited] = false;
+        this.#currentTextBox.properties[FormPropertyName.edited] = false;
         this.canvas.changeShapesProperties([
           {
-            id: this.#currentTextBox.properties[ShapePropertyName.id],
-            properties: { [ShapePropertyName.edited]: false },
+            id: this.#currentTextBox.properties[FormPropertyName.id],
+            properties: { [FormPropertyName.edited]: false },
           },
         ]);
       }
@@ -138,16 +138,16 @@ export class TextToolState extends CanvasToolState {
     const lineSpace = calcLineSpace(style);
     this.#currentTextBox = new TextBoxShape(
       {
-        [ShapePropertyName.id]: generateUuid(),
-        [ShapePropertyName.text]: '',
-        [ShapePropertyName.style]: new TextBoxStyle(this.canvas.style),
-        [ShapePropertyName.wrap]: false,
-        [ShapePropertyName.originX]: this.canvas.cursor[0],
-        [ShapePropertyName.originY]:
+        [FormPropertyName.id]: generateUuid(),
+        [FormPropertyName.text]: '',
+        [FormPropertyName.style]: new TextBoxStyle(this.canvas.style),
+        [FormPropertyName.wrap]: false,
+        [FormPropertyName.originX]: this.canvas.cursor[0],
+        [FormPropertyName.originY]:
           this.canvas.cursor[1] - (style[StyleName.FontSize] / 2 - lineSpace),
-        [ShapePropertyName.edited]: true,
-        [ShapePropertyName.selected]: false,
-        [ShapePropertyName.horizontallyInvertable]: false,
+        [FormPropertyName.edited]: true,
+        [FormPropertyName.selected]: false,
+        [FormPropertyName.horizontallyInvertable]: false,
       },
       this.canvas.bufferCtx
     );
@@ -157,8 +157,8 @@ export class TextToolState extends CanvasToolState {
   private setCurrentTextBox(textBox: TextBoxShape) {
     if (this.#currentTextBox) {
       if (
-        textBox.properties[ShapePropertyName.id] ===
-        this.#currentTextBox.properties[ShapePropertyName.id]
+        textBox.properties[FormPropertyName.id] ===
+        this.#currentTextBox.properties[FormPropertyName.id]
       ) {
         return;
       } else {
@@ -166,11 +166,11 @@ export class TextToolState extends CanvasToolState {
       }
     }
     this.#currentTextBox = textBox;
-    this.#currentTextBox.properties[ShapePropertyName.edited] = true;
+    this.#currentTextBox.properties[FormPropertyName.edited] = true;
     this.canvas.changeShapesProperties([
       {
-        id: this.#currentTextBox.properties[ShapePropertyName.id],
-        properties: { [ShapePropertyName.edited]: true },
+        id: this.#currentTextBox.properties[FormPropertyName.id],
+        properties: { [FormPropertyName.edited]: true },
       },
     ]);
   }
@@ -179,7 +179,7 @@ export class TextToolState extends CanvasToolState {
     if (this.#currentTextBox && Object.keys(properties).length !== 0) {
       this.canvas.changeShapesProperties([
         {
-          id: this.#currentTextBox.properties[ShapePropertyName.id],
+          id: this.#currentTextBox.properties[FormPropertyName.id],
           properties: properties,
         },
       ]);

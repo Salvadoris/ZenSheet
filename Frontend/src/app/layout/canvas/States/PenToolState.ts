@@ -1,7 +1,7 @@
 import { generateUuid } from '../../../utils/uuid';
 import { CanvasComponent } from '../canvas.component';
-import { DrawingPropertyName } from '../DrawingProperties/DrawingPropertyName';
 import { LineDrawing } from '../Drawings/LineDrawing';
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { Point } from '../Geometry';
 import { LinePoints } from '../ShapeProperties/LineShapeProperties';
 import { LineStyle } from '../ShapeStyles/LineStyle';
@@ -40,12 +40,26 @@ export class PenToolState extends CanvasToolState {
         ) {
           this.#currentDrawing = new LineDrawing(
             {
-              [DrawingPropertyName.id]: generateUuid(),
-              [DrawingPropertyName.points]: [
+              [FormPropertyName.id]: generateUuid(),
+              [FormPropertyName.points]: [
                 [this.canvas.startCursor[0], this.canvas.startCursor[1]],
                 [this.canvas.cursor[0], this.canvas.cursor[1]],
               ],
-              [DrawingPropertyName.style]: new LineStyle(this.canvas.style),
+              [FormPropertyName.originX]: Math.min(
+                this.canvas.startCursor[0],
+                this.canvas.cursor[0]
+              ),
+              [FormPropertyName.originY]: Math.min(
+                this.canvas.startCursor[1],
+                this.canvas.cursor[1]
+              ),
+              [FormPropertyName.width]: Math.abs(
+                this.canvas.startCursor[0] - this.canvas.cursor[0]
+              ),
+              [FormPropertyName.height]: Math.abs(
+                this.canvas.startCursor[1] - this.canvas.cursor[1]
+              ),
+              [FormPropertyName.style]: new LineStyle(this.canvas.style),
             },
             this.canvas.bufferCtx
           );
@@ -67,7 +81,7 @@ export class PenToolState extends CanvasToolState {
           this.canvas.renderCanvas({ drawingsChanged: true });
           if (changeProperties) {
             this.canvas.changeDrawingsProperties(
-              [this.#currentDrawing.properties[DrawingPropertyName.id]],
+              [this.#currentDrawing.properties[FormPropertyName.id]],
               changeProperties
             );
           }

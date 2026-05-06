@@ -1,3 +1,4 @@
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { ImageStyle, ImageStyleType } from '../ShapeStyles/ImageStyle';
 
 import {
@@ -6,18 +7,17 @@ import {
   SerializedShapeProperties,
   ShapeProperties,
 } from './ShapeProperties';
-import { ShapePropertyName } from './ShapePropertyName';
 
 export type ImageShapeProperties = Omit<
   BaseShapeProperties,
-  ShapePropertyName.style
+  FormPropertyName.style
 > & {
-  [ShapePropertyName.style]: ImageStyle;
-} & Required<Pick<ShapeProperties, ShapePropertyName.src>>;
+  [FormPropertyName.style]: ImageStyle;
+} & Required<Pick<ShapeProperties, FormPropertyName.src>>;
 
 export type SerializedImageShapeProperties = Omit<
   BaseSerializedShapeProperties,
-  ShapePropertyName.style
+  FormPropertyName.style
 > & {
-  [ShapePropertyName.style]: ImageStyleType;
-} & Required<Pick<SerializedShapeProperties, ShapePropertyName.src>>;
+  [FormPropertyName.style]: ImageStyleType;
+} & Required<Pick<SerializedShapeProperties, FormPropertyName.src>>;

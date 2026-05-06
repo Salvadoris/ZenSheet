@@ -1,7 +1,7 @@
 import { ChangedShapeProperties } from '../Actions/ChangeShapesPropertiesAction';
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { Point } from '../Geometry';
 import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
-import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { StraightLineShape } from '../Shapes/StraightLineShape';
 
 import { Resize, SelectedShape } from './SelectedShape';
@@ -62,7 +62,7 @@ export class SelectedStraightLineShape extends SelectedShape {
     if (Object.keys(properties).length > 0) {
       return [
         {
-          id: this.shape.properties[ShapePropertyName.id],
+          id: this.shape.properties[FormPropertyName.id],
           properties: properties,
         },
       ];

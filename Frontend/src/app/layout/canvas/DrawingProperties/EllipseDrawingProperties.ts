@@ -1,11 +1,19 @@
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { EllipseStyle } from '../ShapeStyles/EllipseStyle';
 
-import { BaseDrawingProperties, DrawingProperties } from './DrawingProperties';
-import { DrawingPropertyName } from './DrawingPropertyName';
+import {
+  BaseDrawingProperties,
+  ChangableDrawingProperties,
+} from './DrawingProperties';
 
 export type EllipseDrawingProperties = Omit<
   BaseDrawingProperties,
-  DrawingPropertyName.style
-> & { [DrawingPropertyName.style]: EllipseStyle } & Required<
-    Pick<DrawingProperties, DrawingPropertyName.p0 | DrawingPropertyName.p1>
-  >;
+  FormPropertyName.style
+> & { [FormPropertyName.style]: EllipseStyle };
+
+export type ChangableEllipseDrawingProperties = Partial<
+  Pick<
+    ChangableDrawingProperties,
+    FormPropertyName.width | FormPropertyName.height
+  >
+>;

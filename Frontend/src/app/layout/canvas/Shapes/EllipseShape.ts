@@ -1,7 +1,7 @@
+import { FormPropertyName } from '../FormProperties/FormPropertyName';
 import { Rect } from '../Geometry';
 import { EllipseShapeProperties } from '../ShapeProperties/EllipseShapeProperties';
 import { ChangableSerializedShapeProperties } from '../ShapeProperties/ShapeProperties';
-import { ShapePropertyName } from '../ShapeProperties/ShapePropertyName';
 import { EllipseStyle } from '../ShapeStyles/EllipseStyle';
 import { ShapeStyleProperty } from '../ShapeStyles/ShapeStyle';
 import { StyleName } from '../ShapeStyles/StyleName';
@@ -27,7 +27,7 @@ export class EllipseShape extends Shape {
   }
 
   override get style(): EllipseStyle {
-    return this.properties[ShapePropertyName.style];
+    return this.properties[FormPropertyName.style];
   }
 
   override setStyleProperty(
@@ -36,7 +36,7 @@ export class EllipseShape extends Shape {
     const updated = this.style.updateProperty(styleProperty);
     if (updated) {
       return {
-        [ShapePropertyName.style]: {
+        [FormPropertyName.style]: {
           [styleProperty.name]: styleProperty.value,
         },
       };
